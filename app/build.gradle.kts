@@ -6,6 +6,7 @@ plugins {
     id("com.google.devtools.ksp")
     id("com.google.dagger.hilt.android")
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.google.gms.google.services)
 }
 
 android {
@@ -58,6 +59,10 @@ dependencies {
 
     // Room
     implementation(libs.androidx.room.runtime)
+    implementation(libs.firebase.auth)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
     annotationProcessor(libs.androidx.room.compiler)
     ksp(libs.androidx.room.compiler)
     //  optional - Kotlin Extensions and Coroutines support for Room
@@ -83,6 +88,30 @@ dependencies {
     testImplementation(libs.robolectric)
 
     implementation(libs.androidx.material.icons.extended)
+
+    //Gson for type converter
+    implementation (libs.gson)
+
+    implementation(libs.coil.compose)
+
+    implementation (libs.material3)  // Asegúrate de tener la versión correcta
+    implementation (libs.androidx.foundation) // Para swipe-to-refresh
+
+    // Import the BoM for the Firebase platform
+    implementation(platform(libs.firebase.bom))
+
+    // Add the dependency for the Firebase Authentication library
+    // When using the BoM, you don't specify versions in Firebase library dependencies
+    implementation(libs.google.firebase.auth)
+
+    // Also add the dependency for the Google Play services library and specify its version
+    implementation(libs.play.services.auth)
+
+    //splash api
+    implementation(libs.androidx.core.splashscreen)
+
+    //icon api
+    implementation(libs.androidx.material.icons.extended.v175)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
