@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "410208684680",
+    "project_id": "doers-300ad",
+    "storage_bucket": "doers-300ad.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:410208684680:android:2f6ea2e32458b968e46d3d",
+        "android_client_info": {
+          "package_name": "edu.ucne.doers"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "410208684680-tbds8vj9bmamftef2pjoarftnatbm2ra.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA4BeukRGdJscFLK10kfsNGmkzNKyY1_Tg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "410208684680-tbds8vj9bmamftef2pjoarftnatbm2ra.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
