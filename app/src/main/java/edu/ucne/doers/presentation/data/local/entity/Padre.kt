@@ -9,5 +9,7 @@ data class Padre(
     val padreID: String,
     val nombre: String,
     val telefono: String?,
-    val email: String
+    val email: String,
+    val fotoPerfilUrl: String?,
+    val fechaRegistro: String?
 )

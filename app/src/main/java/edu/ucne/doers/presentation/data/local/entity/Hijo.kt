@@ -19,5 +19,6 @@ data class Hijo(
     val salaID: Int,
     val nombre: String,
     val fechaNacimiento: String?,
+    val fotoPerfilUrl: String?,
     val edad: Int?
 )
