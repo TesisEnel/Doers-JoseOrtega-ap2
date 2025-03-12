@@ -2,7 +2,10 @@ package edu.ucne.doers.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
+import edu.ucne.doers.data.local.model.EstadoTarea
+import java.util.Date
 
 @Entity(
     tableName = "Tareas",
@@ -11,7 +14,8 @@ import androidx.room.PrimaryKey
         parentColumns = ["salaID"],
         childColumns = ["salaID"],
         onDelete = ForeignKey.CASCADE
-    )]
+    )],
+    indices = [Index(value = ["salaID"])]
 )
 data class Tarea(
     @PrimaryKey(autoGenerate = true) val tareaID: Int = 0,
@@ -20,6 +24,6 @@ data class Tarea(
     val descripcion: String,
     val imagenURL: String?,
     val puntos: Int,
-    val tiempoLimite: String,
-    val estado: String = "Pendiente"
+    val fechaLimite: Date,
+    val estado: EstadoTarea = EstadoTarea.PENDIENTE
 )
