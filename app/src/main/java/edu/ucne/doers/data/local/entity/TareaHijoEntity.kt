@@ -11,13 +11,13 @@ import java.util.Date
     tableName = "TareasHijos",
     foreignKeys = [
         ForeignKey(
-            entity = Tarea::class,
+            entity = TareaEntity::class,
             parentColumns = ["tareaID"],
             childColumns = ["tareaID"],
             onDelete = ForeignKey.CASCADE
         ),
         ForeignKey(
-            entity = Hijo::class,
+            entity = HijoEntity::class,
             parentColumns = ["hijoID"],
             childColumns = ["hijoID"],
             onDelete = ForeignKey.NO_ACTION
@@ -25,7 +25,7 @@ import java.util.Date
     ],
     indices = [Index(value = ["tareaID", "hijoID"])]
 )
-data class TareasHijos(
+data class TareaHijoEntity(
     @PrimaryKey(autoGenerate = true) val tareaHijoID: Int = 0,
     val tareaID: Int,
     val hijoID: Int,
