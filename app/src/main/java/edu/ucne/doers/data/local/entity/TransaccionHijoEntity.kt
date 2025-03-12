@@ -10,14 +10,14 @@ import java.util.Date
 @Entity(
     tableName = "TransaccionesHijo",
     foreignKeys = [ForeignKey(
-        entity = Hijo::class,
+        entity = HijoEntity::class,
         parentColumns = ["hijoID"],
         childColumns = ["hijoID"],
         onDelete = ForeignKey.CASCADE
     )],
     indices = [Index(value = ["hijoID"])]
 )
-data class TransaccionesHijo(
+data class TransaccionHijoEntity(
     @PrimaryKey(autoGenerate = true) val transaccionID: Int = 0,
     val hijoId: Int,
     val tipo: TipoTransaccion,
