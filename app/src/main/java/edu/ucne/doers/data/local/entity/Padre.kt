@@ -7,6 +7,6 @@ import androidx.room.PrimaryKey
 data class Padre(
     @PrimaryKey val padreID: String, // UUID en String
     val nombre: String,
-    val telefono: String?,
+    val profilePictureUrl: String?,
     val email: String
 )
