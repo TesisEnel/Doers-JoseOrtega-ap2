@@ -10,14 +10,14 @@ import java.util.Date
 @Entity(
     tableName = "Recompensas",
     foreignKeys = [ForeignKey(
-        entity = Sala::class,
+        entity = SalaEntity::class,
         parentColumns = ["salaID"],
         childColumns = ["salaID"],
         onDelete = ForeignKey.CASCADE
     )],
     indices = [Index(value = ["salaID"])]
 )
-data class Recompensa(
+data class RecompensaEntity(
     @PrimaryKey(autoGenerate = true) val recompensaID: Int = 0,
     val salaID: Int,
     val nombre: String,

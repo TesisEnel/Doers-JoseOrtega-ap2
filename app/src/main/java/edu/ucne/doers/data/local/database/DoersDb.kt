@@ -3,25 +3,25 @@ package edu.ucne.doers.data.local.database
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import edu.ucne.doers.data.local.entity.Hijo
-import edu.ucne.doers.data.local.entity.TransaccionesHijo
-import edu.ucne.doers.data.local.entity.Padre
-import edu.ucne.doers.data.local.entity.Recompensa
-import edu.ucne.doers.data.local.entity.Sala
-import edu.ucne.doers.data.local.entity.Tarea
-import edu.ucne.doers.data.local.entity.Canjeo
-import edu.ucne.doers.data.local.entity.TareasHijos
+import edu.ucne.doers.data.local.entity.HijoEntity
+import edu.ucne.doers.data.local.entity.TransaccionHijoEntity
+import edu.ucne.doers.data.local.entity.PadreEntity
+import edu.ucne.doers.data.local.entity.RecompensaEntity
+import edu.ucne.doers.data.local.entity.SalaEntity
+import edu.ucne.doers.data.local.entity.TareaEntity
+import edu.ucne.doers.data.local.entity.CanjeoEntity
+import edu.ucne.doers.data.local.entity.TareaHijoEntity
 
 @Database(
     entities = [
-        Padre::class,
-        Sala::class,
-        Hijo::class,
-        Tarea::class,
-        TareasHijos::class,
-        Recompensa::class,
-        Canjeo::class,
-        TransaccionesHijo::class
+        PadreEntity::class,
+        SalaEntity::class,
+        HijoEntity::class,
+        TareaEntity::class,
+        TareaHijoEntity::class,
+        RecompensaEntity::class,
+        CanjeoEntity::class,
+        TransaccionHijoEntity::class
     ],
     version = 1
 )
