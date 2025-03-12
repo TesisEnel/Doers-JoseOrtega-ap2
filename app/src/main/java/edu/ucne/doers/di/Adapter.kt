@@ -2,6 +2,7 @@ package edu.ucne.doers.di
 
 import com.squareup.moshi.FromJson
 import com.squareup.moshi.ToJson
+import edu.ucne.doers.data.local.model.EstadoRecompensa
 import edu.ucne.doers.data.local.model.EstadoTarea
 import edu.ucne.doers.data.local.model.EstadoTareaHijo
 import edu.ucne.doers.data.local.model.TipoTransaccion
@@ -12,7 +13,6 @@ import java.util.Locale
 class Adapter {
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US)
 
-    // Date conversion methods
     @ToJson
     fun toJson(value: Date?): String? {
         return value?.let { dateFormat.format(it) }
@@ -39,4 +39,10 @@ class Adapter {
 
     @FromJson
     fun fromJsonToTipoTransaccion(value: String): TipoTransaccion = TipoTransaccion.valueOf(value)
+
+    @ToJson
+    fun fromEstadoRecompensaToJson(value: EstadoRecompensa): String = value.name
+
+    @FromJson
+    fun fromJsonToEstadoRecompensa(value: String): EstadoRecompensa = EstadoRecompensa.valueOf(value)
 }
