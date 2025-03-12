@@ -8,14 +8,14 @@ import androidx.room.PrimaryKey
 @Entity(
     tableName = "Salas",
     foreignKeys = [ForeignKey(
-        entity = Padre::class,
+        entity = PadreEntity::class,
         parentColumns = ["padreID"],
         childColumns = ["padreID"],
         onDelete = ForeignKey.CASCADE
     )],
     indices = [Index(value = ["padreId"])]
 )
-data class Sala(
+data class SalaEntity(
     @PrimaryKey(autoGenerate = true) val salaID: Int = 0,
     val codigoSala: String,
     val padreID: String
