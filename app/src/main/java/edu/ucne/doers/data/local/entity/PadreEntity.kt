@@ -4,7 +4,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 @Entity(tableName = "Padres")
-data class Padre(
+data class PadreEntity(
     @PrimaryKey val padreID: String, // UUID en String
     val nombre: String,
     val profilePictureUrl: String?,
