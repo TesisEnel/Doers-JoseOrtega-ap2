@@ -1,6 +1,7 @@
 package edu.ucne.doers.data.local.database
 
 import androidx.room.TypeConverter
+import edu.ucne.doers.data.local.model.EstadoRecompensa
 import edu.ucne.doers.data.local.model.EstadoTarea
 import edu.ucne.doers.data.local.model.EstadoTareaHijo
 import edu.ucne.doers.data.local.model.TipoTransaccion
@@ -30,4 +31,10 @@ class Converters {
 
     @TypeConverter
     fun toTipoTransaccion(value: String): TipoTransaccion = TipoTransaccion.valueOf(value)
+
+    @TypeConverter
+    fun fromEstadoRecompensa(value: EstadoRecompensa): String = value.name
+
+    @TypeConverter
+    fun toEstadoRecompensa(value: String): EstadoRecompensa = EstadoRecompensa.valueOf(value)
 }
