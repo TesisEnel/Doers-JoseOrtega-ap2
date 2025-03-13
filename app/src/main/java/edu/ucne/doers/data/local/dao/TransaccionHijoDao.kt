@@ -4,16 +4,16 @@ import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Query
 import androidx.room.Upsert
-import edu.ucne.doers.data.local.entity.TransaccionHijoEntity
+import edu.ucne.doers.data.local.entity.TransaccionHijo
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TransaccionHijoDao {
     @Upsert
-    suspend fun save(transaccionHijoEntity: TransaccionHijoEntity)
+    suspend fun save(transaccionHijo: TransaccionHijo)
 
     @Upsert()
-    suspend fun save(transaccionHijoEntity: List<TransaccionHijoEntity>)
+    suspend fun save(transaccionHijo: List<TransaccionHijo>)
 
     @Query(
         """
@@ -23,11 +23,11 @@ interface TransaccionHijoDao {
             LIMIT 1
         """
     )
-    suspend fun find(id: Int): TransaccionHijoEntity?
+    suspend fun find(id: Int): TransaccionHijo?
 
     @Delete
-    suspend fun delete(transaccionHijoEntity: TransaccionHijoEntity)
+    suspend fun delete(transaccionHijo: TransaccionHijo)
 
     @Query("SELECT * FROM transaccioneshijo")
-    fun getAll(): Flow<List<TransaccionHijoEntity>>
+    fun getAll(): Flow<List<TransaccionHijo>>
 }

@@ -19,7 +19,7 @@ interface RecompensaDao {
         """
             SELECT *
             FROM "Recompensas"
-            WHERE recompensaID=:id
+            WHERE recompensaId=:id
             LIMIT 1
         """
     )

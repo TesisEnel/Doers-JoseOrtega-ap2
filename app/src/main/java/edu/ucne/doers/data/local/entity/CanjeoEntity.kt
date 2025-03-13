@@ -15,8 +15,8 @@ import java.util.Date
     indices = [Index(value = ["hijoID", "recompensaID"])]
 )
 data class CanjeoEntity(
-    @PrimaryKey(autoGenerate = true) val canjeoID: Int = 0,
-    val hijoID: Int,
-    val recompensaID: Int,
-    val fechaCanjeo: Date
+    @PrimaryKey(autoGenerate = true) val canjeoId: Int = 0,
+    val hijoId: Int,
+    val recompensaId: Int,
+    val fecha: Date
 )

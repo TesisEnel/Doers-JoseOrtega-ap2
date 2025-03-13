@@ -25,11 +25,12 @@ import java.util.Date
     ],
     indices = [Index(value = ["tareaID", "hijoID"])]
 )
-data class TareaHijoEntity(
+data class TareaHijo(
     @PrimaryKey(autoGenerate = true) val tareaHijoID: Int = 0,
     val tareaID: Int,
     val hijoID: Int,
     val estado: EstadoTareaHijo = EstadoTareaHijo.PENDIENTE_VERIFICACION,
-    val fechaCompletada: Date,
-    val fechaVerificada: Date? = null
+    val fechaVerificacion: Date? = null,
+    val saldoActual: Int = 0,
+    val balance: Int = 0
 )

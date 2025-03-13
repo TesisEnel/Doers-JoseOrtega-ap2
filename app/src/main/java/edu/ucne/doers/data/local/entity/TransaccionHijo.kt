@@ -17,11 +17,11 @@ import java.util.Date
     )],
     indices = [Index(value = ["hijoID"])]
 )
-data class TransaccionHijoEntity(
+data class TransaccionHijo(
     @PrimaryKey(autoGenerate = true) val transaccionID: Int = 0,
     val hijoId: Int,
     val tipo: TipoTransaccion,
     val monto: Int,
     val descripcion: String?,
-    val fechaMovimiento: Date
+    val fecha: Date
 )
