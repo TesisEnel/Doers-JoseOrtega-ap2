@@ -5,8 +5,9 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "Padres")
 data class PadreEntity(
-    @PrimaryKey val padreID: String, // UUID en String
+    @PrimaryKey val padreId: String,
     val nombre: String,
     val profilePictureUrl: String?,
-    val email: String
+    val email: String,
+    val codigoSala: String,
 )
