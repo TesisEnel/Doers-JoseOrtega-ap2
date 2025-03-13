@@ -5,24 +5,22 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import edu.ucne.doers.data.local.model.EstadoRecompensa
-import java.util.Date
 
 @Entity(
     tableName = "Recompensas",
     foreignKeys = [ForeignKey(
-        entity = SalaEntity::class,
-        parentColumns = ["salaID"],
-        childColumns = ["salaID"],
+        entity = PadreEntity::class,
+        parentColumns = ["padreId"],
+        childColumns = ["padreId"],
         onDelete = ForeignKey.CASCADE
     )],
-    indices = [Index(value = ["salaID"])]
+    indices = [Index(value = ["padreId"])]
 )
 data class RecompensaEntity(
-    @PrimaryKey(autoGenerate = true) val recompensaID: Int = 0,
-    val salaID: Int,
-    val nombre: String,
+    @PrimaryKey(autoGenerate = true) val recompensaId: Int = 0,
+    val padreId: Int,
+    val descripcion: String,
     val imagenURL: String?,
     val puntosNecesarios: Int,
-    val tiempoLimite: Date?,
     val estado: EstadoRecompensa = EstadoRecompensa.DISPONIBLE
 )
