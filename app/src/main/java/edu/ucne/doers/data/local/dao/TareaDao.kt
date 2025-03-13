@@ -19,7 +19,7 @@ interface TareaDao {
         """
             SELECT *
             FROM "Tareas"
-            WHERE tareaID=:id
+            WHERE tareaId=:id
             LIMIT 1
         """
     )

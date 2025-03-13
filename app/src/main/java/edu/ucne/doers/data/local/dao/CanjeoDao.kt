@@ -19,7 +19,7 @@ interface CanjeoDao {
         """
             SELECT *
             FROM "Canjeos"
-            WHERE canjeoID=:id
+            WHERE canjeoId=:id
             LIMIT 1
         """
     )

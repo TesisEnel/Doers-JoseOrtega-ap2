@@ -19,7 +19,7 @@ interface HijoDao {
         """
             SELECT *
             FROM "Hijos"
-            WHERE hijoID=:id
+            WHERE hijoId=:id
             LIMIT 1
         """
     )

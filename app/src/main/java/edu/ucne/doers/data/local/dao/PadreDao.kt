@@ -19,7 +19,7 @@ interface PadreDao {
         """
             SELECT *
             FROM "Padres"
-            WHERE padreID=:id
+            WHERE padreId=:id
             LIMIT 1
         """
     )
