@@ -41,4 +41,21 @@ object AppModule {
     @Provides
     @Singleton
     fun providesFirebaseAuth() = FirebaseAuth.getInstance()
+
+    @Provides
+    fun providePadreDao(doersDb: DoersDb) = doersDb.padreDao()
+    @Provides
+    fun provideHijoDao(doersDb: DoersDb) = doersDb.hijoDao()
+    @Provides
+    fun provideTareaDao(doersDb: DoersDb) = doersDb.tareaDao()
+    @Provides
+    fun provideTareaHijoDao(doersDb: DoersDb) = doersDb.tareaHijoDao()
+    @Provides
+    fun provideRecompensaDao(doersDb: DoersDb) = doersDb.recompensaDao()
+    @Provides
+    fun provideCanjeoDao(doersDb: DoersDb) = doersDb.canjeoDao()
+    @Provides
+    fun provideTransaccionHijoDao(doersDb: DoersDb) = doersDb.transaccionHijoDao()
+    @Provides
+    fun provideSolicitudRecompensaDao(doersDb: DoersDb) = doersDb.solicitudRecompensaDao()
 }
