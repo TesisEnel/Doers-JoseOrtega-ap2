@@ -23,7 +23,7 @@ interface PadreDao {
             LIMIT 1
         """
     )
-    suspend fun find(id: Int): PadreEntity?
+    suspend fun find(id: String): PadreEntity?
 
     @Delete
     suspend fun delete(padreEntity: PadreEntity)

@@ -18,7 +18,7 @@ import edu.ucne.doers.data.local.model.EstadoTarea
 )
 data class TareaEntity(
     @PrimaryKey(autoGenerate = true) val tareaId: Int = 0,
-    val padreId: Int,
+    val padreId: String,
     val descripcion: String,
     val imagenURL: String?,
     val puntos: Int,

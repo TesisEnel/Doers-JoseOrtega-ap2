@@ -17,6 +17,6 @@ import androidx.room.PrimaryKey
 )
 data class HijoEntity(
     @PrimaryKey(autoGenerate = true) val hijoId: Int = 0,
-    val salaID: Int,
+    val padreId: String,
     val nombre: String,
 )

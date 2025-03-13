@@ -18,7 +18,7 @@ import edu.ucne.doers.data.local.model.EstadoRecompensa
 )
 data class RecompensaEntity(
     @PrimaryKey(autoGenerate = true) val recompensaId: Int = 0,
-    val padreId: Int,
+    val padreId: String,
     val descripcion: String,
     val imagenURL: String?,
     val puntosNecesarios: Int,
