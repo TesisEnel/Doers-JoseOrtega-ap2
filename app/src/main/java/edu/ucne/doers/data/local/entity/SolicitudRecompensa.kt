@@ -18,12 +18,12 @@ import java.util.Date
         ),
         ForeignKey(
             entity = HijoEntity::class,
-            parentColumns = ["hijoID"],
-            childColumns = ["hijoID"],
+            parentColumns = ["hijoId"],
+            childColumns = ["hijoId"],
             onDelete = ForeignKey.NO_ACTION
         )
     ],
-    indices = [Index(value = ["recompensaId", "hijoID"])]
+    indices = [Index(value = ["recompensaId", "hijoId"])]
 )
 data class SolicitudRecompensa(
     @PrimaryKey(autoGenerate = true) val solicitudId: Int = 0,

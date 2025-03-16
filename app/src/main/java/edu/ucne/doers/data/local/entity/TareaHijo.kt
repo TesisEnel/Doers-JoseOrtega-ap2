@@ -12,23 +12,23 @@ import java.util.Date
     foreignKeys = [
         ForeignKey(
             entity = TareaEntity::class,
-            parentColumns = ["tareaID"],
-            childColumns = ["tareaID"],
+            parentColumns = ["tareaId"],
+            childColumns = ["tareaId"],
             onDelete = ForeignKey.CASCADE
         ),
         ForeignKey(
             entity = HijoEntity::class,
-            parentColumns = ["hijoID"],
-            childColumns = ["hijoID"],
+            parentColumns = ["hijoId"],
+            childColumns = ["hijoId"],
             onDelete = ForeignKey.NO_ACTION
         )
     ],
-    indices = [Index(value = ["tareaID", "hijoID"])]
+    indices = [Index(value = ["tareaId", "hijoId"])]
 )
 data class TareaHijo(
-    @PrimaryKey(autoGenerate = true) val tareaHijoID: Int = 0,
-    val tareaID: Int,
-    val hijoID: Int,
+    @PrimaryKey(autoGenerate = true) val tareaHijoId: Int = 0,
+    val tareaId: Int,
+    val hijoId: Int,
     val estado: EstadoTareaHijo = EstadoTareaHijo.PENDIENTE_VERIFICACION,
     val fechaVerificacion: Date? = null,
     val saldoActual: Int = 0,
