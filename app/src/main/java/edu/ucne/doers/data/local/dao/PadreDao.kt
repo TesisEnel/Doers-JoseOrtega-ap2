@@ -18,12 +18,21 @@ interface PadreDao {
     @Query(
         """
             SELECT *
-            FROM "Padres"
+            FROM Padres
             WHERE padreId=:id
             LIMIT 1
         """
     )
     suspend fun find(id: String): PadreEntity?
+
+    @Query(
+        """
+        SELECT * FROM Padres
+        WHERE email =:email
+        LIMIT 1 
+    """
+    )
+    suspend fun findEmail(email: String): PadreEntity?
 
     @Delete
     suspend fun delete(padreEntity: PadreEntity)
