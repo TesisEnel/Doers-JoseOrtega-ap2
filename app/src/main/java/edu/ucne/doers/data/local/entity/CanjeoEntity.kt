@@ -9,10 +9,10 @@ import java.util.Date
 @Entity(
     tableName = "Canjeos",
     foreignKeys = [
-        ForeignKey(entity = HijoEntity::class, parentColumns = ["hijoID"], childColumns = ["hijoID"], onDelete = ForeignKey.NO_ACTION),
-        ForeignKey(entity = RecompensaEntity::class, parentColumns = ["recompensaID"], childColumns = ["recompensaID"], onDelete = ForeignKey.CASCADE)
+        ForeignKey(entity = HijoEntity::class, parentColumns = ["hijoId"], childColumns = ["hijoId"], onDelete = ForeignKey.NO_ACTION),
+        ForeignKey(entity = RecompensaEntity::class, parentColumns = ["recompensaId"], childColumns = ["recompensaId"], onDelete = ForeignKey.CASCADE)
     ],
-    indices = [Index(value = ["hijoID", "recompensaID"])]
+    indices = [Index(value = ["hijoId", "recompensaId"])]
 )
 data class CanjeoEntity(
     @PrimaryKey(autoGenerate = true) val canjeoId: Int = 0,
