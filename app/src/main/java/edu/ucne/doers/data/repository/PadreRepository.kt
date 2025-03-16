@@ -15,4 +15,6 @@ class PadreRepository @Inject constructor(
     fun getAll(): Flow<List<PadreEntity>> = padreDao.getAll()
 
     suspend fun delete(padre: PadreEntity) = padreDao.delete(padre)
+
+    suspend fun findEmail(correo: String) = padreDao.findEmail(correo)
 }
