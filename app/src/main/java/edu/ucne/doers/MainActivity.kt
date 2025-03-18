@@ -22,7 +22,8 @@ class MainActivity : ComponentActivity() {
                 val googleAuthUiClient by lazy {
                     GoogleAuthUiClient(
                         context = applicationContext,
-                        oneTapClient = Identity.getSignInClient(applicationContext)
+                        oneTapClient = Identity.getSignInClient(applicationContext),
+                        sharedPreferences = getSharedPreferences("user", MODE_PRIVATE)
                     )
                 }
                 DoersNavHost(navHost, googleAuthUiClient)
