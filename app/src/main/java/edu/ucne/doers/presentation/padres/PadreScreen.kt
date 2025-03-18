@@ -42,7 +42,7 @@ fun PadreScreen(
     } else {
         Scaffold(
             bottomBar = {
-                BottomNavigationBar(navController)
+                BottomNavigationBar(navController, Screen.Padre)
             }
         ) { innerPadding ->
             Box(
@@ -153,7 +153,8 @@ fun PadreScreen(
 
 @Composable
 fun BottomNavigationBar(
-    navController: NavController
+    navController: NavController,
+    currentScreen: Screen
 ) {
     NavigationBar(
         containerColor = Color(0xFFE0E6EB),
@@ -162,20 +163,20 @@ fun BottomNavigationBar(
         NavigationBarItem(
             icon = { Icon(Icons.Filled.Checklist, contentDescription = "Tarea") },
             label = { Text("Tarea") },
-            selected = false,
-            onClick = {  }
+            selected = currentScreen == Screen.PantallaTareas,
+            onClick = { navController.navigate(Screen.PantallaTareas) }
         )
         NavigationBarItem(
             icon = { Icon(Icons.Filled.Star, contentDescription = "Recompensas") },
             label = { Text("Recompensas") },
-            selected = false,
+            selected = currentScreen == Screen.RecompensaList,
             onClick = { navController.navigate(Screen.RecompensaList) }
         )
         NavigationBarItem(
             icon = { Icon(Icons.Filled.Person, contentDescription = "Perfil") },
             label = { Text("Perfil") },
-            selected = false,
-            onClick = { navController.navigate(Screen.Padre) }
+            selected = currentScreen == Screen.Padre,
+            onClick = {  }
         )
     }
 }
