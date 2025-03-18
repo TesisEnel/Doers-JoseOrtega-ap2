@@ -1,3 +1,4 @@
+/*
 package edu.ucne.doers.data.repository
 
 import com.google.firebase.auth.AuthResult
@@ -38,4 +39,17 @@ class AuthRepository @Inject constructor(
     fun logout(){
         firebaseAuth.signOut()
     }
+}*/
+
+package edu.ucne.doers.data.repository
+
+import edu.ucne.doers.presentation.sign_in.GoogleAuthUiClient
+import javax.inject.Inject
+
+class AuthRepository @Inject constructor(
+    private val googleAuthUiClient: GoogleAuthUiClient
+) {
+    suspend fun getUser() = googleAuthUiClient.getSignedInUser()
+
+    suspend fun logout() = googleAuthUiClient.signOut()
 }

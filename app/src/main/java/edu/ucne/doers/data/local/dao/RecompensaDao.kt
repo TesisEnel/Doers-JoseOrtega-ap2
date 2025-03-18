@@ -12,7 +12,7 @@ interface RecompensaDao {
     @Upsert
     suspend fun save(recompensaEntity: RecompensaEntity)
 
-    @Upsert()
+    @Upsert
     suspend fun save(recompensaEntity: List<RecompensaEntity>)
 
     @Query(

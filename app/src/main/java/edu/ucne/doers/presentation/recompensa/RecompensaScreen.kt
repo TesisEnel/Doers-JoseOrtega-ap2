@@ -139,6 +139,15 @@ fun RecompensaBodyScreen(
                     )
                     Spacer(modifier = Modifier.padding(4.dp))
 
+                    Text(
+                        text = if (uiState.padreId.isNotEmpty()) {"Padre ID: ${uiState.padreId}"}
+                        else {"Padre ID: No encontrado"},
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(start = 8.dp, top = 4.dp)
+                    )
+                    Spacer(modifier = Modifier.padding(4.dp))
+
                     OutlinedTextField(
                         label = { Text(text = "Puntos Necesarios") },
                         value = uiState.puntosNecesarios.toString(),

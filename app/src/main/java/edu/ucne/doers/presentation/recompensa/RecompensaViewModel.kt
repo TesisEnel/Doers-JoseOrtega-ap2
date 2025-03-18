@@ -5,11 +5,13 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import edu.ucne.doers.data.local.entity.RecompensaEntity
 import edu.ucne.doers.data.local.model.EstadoRecompensa
+import edu.ucne.doers.data.repository.PadreRepository
 import edu.ucne.doers.data.repository.RecompensaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,14 +24,33 @@ import javax.inject.Inject
 @HiltViewModel
 class RecompensaViewModel @Inject constructor(
     private val recompensaRepository: RecompensaRepository,
+    private val padreRepository: PadreRepository,
     application: Application
 ) : ViewModel() {
     private val appContext: Application = application
     private val _uiState = MutableStateFlow(RecompensaUiState())
     val uiState = _uiState.asStateFlow()
 
+    private fun loadPadreId() {
+        viewModelScope.launch {
+            val currentPadre = padreRepository.getCurrentUser()
+            if (currentPadre == null) {
+                Log.e("RecompensaViewModel", "Error: No se encontró un PadreEntity para el usuario autenticado")
+                _uiState.update {
+                    it.copy(errorMessage = "No se encontró un usuario autenticado. Por favor, inicia sesión nuevamente.")
+                }
+            } else {
+                _uiState.update {
+                    it.copy(padreId = currentPadre.padreId)
+                }
+                Log.d("RecompensaViewModel", "padreId cargado: ${currentPadre.padreId}")
+            }
+        }
+    }
+
     init {
         getRecompensas()
+        loadPadreId()
     }
 
     fun savePhotoFromUri(context: Context, uri: Uri) {
@@ -56,11 +77,24 @@ class RecompensaViewModel @Inject constructor(
         }
     }
 
-    fun save(recompensa: RecompensaEntity? = null) {
+    fun save() {
         viewModelScope.launch {
-            val entityToSave = recompensa ?: _uiState.value.toEntity()
-            recompensaRepository.save(entityToSave)
-            getRecompensas()
+            val recompensa = RecompensaEntity(
+                recompensaId = if (uiState.value.recompensaId == 0) 0 else uiState.value.recompensaId,
+                descripcion = uiState.value.descripcion,
+                imagenURL = uiState.value.imagenURL,
+                puntosNecesarios = uiState.value.puntosNecesarios,
+                estado = uiState.value.estado.toString(),
+                padreId = uiState.value.padreId
+            )
+            recompensaRepository.save(recompensa)
+        }
+    }
+
+    fun saveRecompensa(recompensa: RecompensaEntity) {
+        viewModelScope.launch {
+            recompensaRepository.save(recompensa)
+            Log.d("RecompensaViewModel", "Recompensa actualizada: $recompensa")
         }
     }
 
@@ -104,7 +138,7 @@ class RecompensaViewModel @Inject constructor(
             if (recompensaId != null) {
                 val recompensa = recompensaRepository.find(recompensaId)
                 if (recompensa != null) {
-                    val updatedRecompensa = recompensa.copy(estado = estado)
+                    val updatedRecompensa = recompensa.copy(estado = estado.toString())
                     recompensaRepository.save(updatedRecompensa)
                     getRecompensas()
                 }
@@ -119,9 +153,9 @@ class RecompensaViewModel @Inject constructor(
             val recompensa = recompensaRepository.find(recompensaId)
             if (recompensa != null) {
                 val newEstado = if (isAvailable) EstadoRecompensa.DISPONIBLE else EstadoRecompensa.AGOTADA
-                val updatedRecompensa = recompensa.copy(estado = newEstado)
+                val updatedRecompensa = recompensa.copy(estado = newEstado.toString())
                 recompensaRepository.save(updatedRecompensa)
-                getRecompensas() // Refrescar lista solo con los datos actualizados
+                getRecompensas()
             }
         }
     }
@@ -137,7 +171,7 @@ class RecompensaViewModel @Inject constructor(
                             descripcion = dto.descripcion,
                             imagenURL = dto.imagenURL,
                             puntosNecesarios = dto.puntosNecesarios,
-                            estado = dto.estado
+                            estado = EstadoRecompensa.valueOf(dto.estado)
                         )
                     }
                 }
@@ -148,9 +182,9 @@ class RecompensaViewModel @Inject constructor(
 
 fun RecompensaUiState.toEntity() = RecompensaEntity(
     recompensaId = recompensaId,
-    //padreId = "",
+    padreId = padreId,
     descripcion = descripcion,
     imagenURL = imagenURL,
     puntosNecesarios = puntosNecesarios,
-    estado = estado
+    estado = estado.toString()
 )

@@ -1,7 +1,10 @@
 package edu.ucne.doers.di
 
 import android.content.Context
+import android.content.SharedPreferences
 import androidx.room.Room
+import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.gms.auth.api.identity.SignInClient
 import com.google.firebase.auth.FirebaseAuth
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -11,6 +14,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import edu.ucne.doers.data.local.database.DoersDb
+import edu.ucne.doers.data.repository.AuthRepository
+import edu.ucne.doers.presentation.sign_in.GoogleAuthUiClient
 import javax.inject.Singleton
 
 @InstallIn(SingletonComponent::class)
@@ -58,4 +63,31 @@ object AppModule {
     fun provideTransaccionHijoDao(doersDb: DoersDb) = doersDb.transaccionHijoDao()
     @Provides
     fun provideSolicitudRecompensaDao(doersDb: DoersDb) = doersDb.solicitudRecompensaDao()
+
+    @Provides
+    @Singleton
+    fun provideSignInClient(
+        @ApplicationContext context: Context
+    ): SignInClient {
+        return Identity.getSignInClient(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGoogleAuthUiClient(
+        @ApplicationContext context: Context,
+        signInClient: SignInClient
+    ): GoogleAuthUiClient {
+        return GoogleAuthUiClient(
+            context = context,
+            oneTapClient = signInClient,
+            sharedPreferences = context.getSharedPreferences("prefs", Context.MODE_PRIVATE)
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideSharedPreferences(@ApplicationContext context: Context): SharedPreferences {
+        return context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+    }
 }

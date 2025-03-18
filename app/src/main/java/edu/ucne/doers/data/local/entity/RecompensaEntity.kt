@@ -5,6 +5,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import edu.ucne.doers.data.local.model.EstadoRecompensa
+import edu.ucne.doers.presentation.recompensa.RecompensaUiState
 
 @Entity(
     tableName = "Recompensas",
@@ -20,7 +21,16 @@ data class RecompensaEntity(
     @PrimaryKey(autoGenerate = true) val recompensaId: Int = 0,
     val padreId: String,
     val descripcion: String,
-    val imagenURL: String?,
+    val imagenURL: String,
     val puntosNecesarios: Int,
-    val estado: EstadoRecompensa = EstadoRecompensa.DISPONIBLE
-)
+    val estado: String
+) {
+    fun toUiState() = RecompensaUiState(
+        recompensaId = recompensaId,
+        padreId = padreId,
+        imagenURL = imagenURL,
+        descripcion = descripcion,
+        puntosNecesarios = puntosNecesarios,
+        estado = EstadoRecompensa.valueOf(estado),
+    )
+}
