@@ -236,17 +236,3 @@ fun TaskCard(
         }
     }
 }
-
-@Preview(showSystemUi = true, showBackground = true)
-@Composable
-fun TaskCardPreview() {
-    DoersTheme {
-        val tarea = TareaEntity(
-            tareaId = 1,
-            descripcion = "Fregar toda la loza que esta en la cocina antes de que llegue a casa",
-            puntos = 10,
-            estado = EstadoTarea.PENDIENTE
-        )
-        //TaskCard(tarea)
-    }
-}
