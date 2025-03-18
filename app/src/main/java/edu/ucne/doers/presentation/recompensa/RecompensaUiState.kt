@@ -5,7 +5,7 @@ import edu.ucne.doers.data.local.model.EstadoRecompensa
 
 data class RecompensaUiState(
     val recompensaId: Int = 0,
-    //val padreId: String = "",
+    val padreId: String = "",
     val descripcion: String = "",
     val imagenURL: String = "",
     val puntosNecesarios: Int = 0,
@@ -14,4 +14,3 @@ data class RecompensaUiState(
     val recompensas: List<RecompensaEntity> = emptyList(),
     val isLoading: Boolean = false,
 )
-
