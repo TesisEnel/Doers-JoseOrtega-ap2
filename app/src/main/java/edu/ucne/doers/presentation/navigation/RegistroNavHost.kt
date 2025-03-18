@@ -25,6 +25,8 @@ import edu.ucne.doers.presentation.padres.PadreViewModel
 import edu.ucne.doers.presentation.recompensa.RecompensaScreen
 import edu.ucne.doers.presentation.recompensa.RecompensasListScreen
 import edu.ucne.doers.presentation.sign_in.GoogleAuthUiClient
+import edu.ucne.doers.presentation.tareas.CrearTareaScreen
+import edu.ucne.doers.presentation.tareas.PantallaTareas
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -147,6 +149,21 @@ fun DoersNavHost(
                         navHostController.navigate(Screen.Recompensa(it))
                     },
                     navController = navHostController
+                )
+            }
+            composable<Screen.PantallaTareas> {
+                PantallaTareas(
+                    goBackToHome = { navHostController.navigate(Screen.Home) },
+                    goToAgregarTarea = { navHostController.navigate(Screen.CrearTarea(0)) },
+                    navController = navHostController
+                )
+            }
+
+            composable<Screen.CrearTarea> {
+                val tareaId = it.toRoute<Screen.CrearTarea>().tareaId
+                CrearTareaScreen(
+                    goBackToPantallaTareas = { navHostController.navigate(Screen.PantallaTareas) },
+                    tareaId = tareaId
                 )
             }
         }
