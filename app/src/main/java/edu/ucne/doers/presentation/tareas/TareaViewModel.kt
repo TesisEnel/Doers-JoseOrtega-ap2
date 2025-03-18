@@ -1,10 +1,12 @@
 package edu.ucne.doers.presentation.tareas
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import edu.ucne.doers.data.local.entity.TareaEntity
 import edu.ucne.doers.data.local.model.EstadoTarea
+import edu.ucne.doers.data.repository.PadreRepository
 import edu.ucne.doers.data.repository.TareaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,13 +16,38 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TareaViewModel @Inject constructor(
-    private val tareaRepository: TareaRepository
+    private val tareaRepository: TareaRepository,
+    private val padreRepository: PadreRepository
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(TareaUiState())
+    private val _uiState = MutableStateFlow(TareaUiState(
+        tareaId = 0,
+        descripcion = "",
+        puntos = 0,
+        padreId = "",
+        imagenURL = "",
+    ))
     val uiState = _uiState.asStateFlow()
+
+    private fun loadPadreId() {
+        viewModelScope.launch {
+            val currentPadre = padreRepository.getCurrentUser()
+            if (currentPadre == null) {
+                Log.e("RecompensaViewModel", "Error: No se encontró un PadreEntity para el usuario autenticado")
+                _uiState.update {
+                    it.copy(errorMessage = "No se encontró un usuario autenticado. Por favor, inicia sesión nuevamente.")
+                }
+            } else {
+                _uiState.update {
+                    it.copy(padreId = currentPadre.padreId)
+                }
+                Log.d("RecompensaViewModel", "padreId cargado: ${currentPadre.padreId}")
+            }
+        }
+    }
 
     init {
         getAllTareas()
+        loadPadreId()
     }
 
     fun getAllTareas() {
@@ -68,7 +95,13 @@ class TareaViewModel @Inject constructor(
     }
 
     fun new(){
-        _uiState.value = TareaUiState()
+        _uiState.value = TareaUiState(
+            tareaId = 0,
+            descripcion = "",
+            puntos = 0,
+            padreId = "",
+            imagenURL = "",
+        )
     }
 
     fun onDescripcionChange(descripcion: String){
@@ -115,5 +148,7 @@ fun TareaUiState.toEntity() = TareaEntity(
     tareaId = this.tareaId,
     descripcion = this.descripcion,
     puntos = this.puntos,
+    padreId = this.padreId,
+    imagenURL = this.imagenURL,
     estado = this.estado
 )
