@@ -21,6 +21,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -180,6 +181,16 @@ fun CreateTaskForm(
             onEstadoSelected = viewModel::onEstadoChange
         )
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = if (uiState.padreId.isNotEmpty()) {"Padre ID: ${uiState.padreId}"}
+            else {"Padre ID: No encontrado"},
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 8.dp, top = 4.dp)
+        )
+
         Spacer(modifier = Modifier.height(24.dp))
 
         // Mensaje de error general
@@ -246,6 +257,7 @@ fun CreateTaskForm(
                     Button(
                         onClick = {
                             viewModel.save()
+                            goBackToPantallaTareas()
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF388E3C)) // Asignar color aquí
                     ) {
