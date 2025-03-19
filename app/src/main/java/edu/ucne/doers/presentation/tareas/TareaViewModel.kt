@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import edu.ucne.doers.data.local.entity.TareaEntity
 import edu.ucne.doers.data.local.model.CondicionTarea
+import edu.ucne.doers.data.local.model.EstadoTarea
 import edu.ucne.doers.data.local.model.PeriodicidadTarea
 import edu.ucne.doers.data.repository.PadreRepository
 import edu.ucne.doers.data.repository.TareaRepository
@@ -25,8 +26,9 @@ class TareaViewModel @Inject constructor(
         descripcion = "",
         puntos = 0,
         padreId = "",
-        imagenURL = "",
+        estado = EstadoTarea.PENDIENTE,
         periodicidad = null,
+        condicion = CondicionTarea.INACTIVA
     ))
     val uiState = _uiState.asStateFlow()
 
@@ -108,14 +110,15 @@ class TareaViewModel @Inject constructor(
     }
 
     fun new(){
-        _uiState.value = TareaUiState(
-            tareaId = 0,
-            descripcion = "",
-            puntos = 0,
-            padreId = "",
-            imagenURL = "",
-            periodicidad = null
-        )
+        _uiState.update {
+            it.copy(
+                tareaId = 0,
+                descripcion = "",
+                puntos = 0,
+                periodicidad = null,
+                errorMessage = null
+            )
+        }
     }
 
     fun onDescripcionChange(descripcion: String){
@@ -159,12 +162,12 @@ class TareaViewModel @Inject constructor(
 }
 
 fun TareaUiState.toEntity() = TareaEntity(
-    tareaId = this.tareaId,
-    descripcion = this.descripcion,
-    puntos = this.puntos,
-    padreId = this.padreId,
-    imagenURL = this.imagenURL,
-    estado = this.estado,
-    periodicidad = this.periodicidad,
-    condicion = this.condicion
+    tareaId = tareaId,
+    descripcion = descripcion,
+    puntos = puntos,
+    padreId = padreId,
+    imagenURL = imagenURL,
+    estado = estado,
+    periodicidad = periodicidad,
+    condicion = condicion
 )
