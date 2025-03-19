@@ -137,7 +137,8 @@ fun RecompensaBodyScreen(
                         label = { Text(text = "Descripción") },
                         value = uiState.descripcion,
                         onValueChange = viewModel::onDescripcionChange,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = uiState.errorMessage?.contains("Descripción") == true
                     )
                     Spacer(modifier = Modifier.padding(4.dp))
 
@@ -159,12 +160,18 @@ fun RecompensaBodyScreen(
                             )
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
+                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+                        isError = uiState.errorMessage?.contains("puntos") == true // Resaltar si hay error en puntos
                     )
                     Spacer(modifier = Modifier.padding(4.dp))
 
+                    // Mostrar mensaje de error
                     uiState.errorMessage?.let {
-                        Text(text = it, color = MaterialTheme.colorScheme.error)
+                        Text(
+                            text = it,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(8.dp)
+                        )
                     }
 
                     Row(
@@ -189,7 +196,6 @@ fun RecompensaBodyScreen(
                         OutlinedButton(
                             onClick = {
                                 viewModel.save()
-                                goRecompensasList()
                             }) {
                             Icon(
                                 imageVector = Icons.Default.Check,
@@ -202,4 +208,4 @@ fun RecompensaBodyScreen(
             }
         }
     }
-} 
+}

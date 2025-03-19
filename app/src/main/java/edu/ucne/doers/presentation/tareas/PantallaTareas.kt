@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Person
@@ -25,7 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -34,19 +33,16 @@ import androidx.navigation.NavHostController
 import edu.ucne.doers.data.local.entity.TareaEntity
 import edu.ucne.doers.presentation.navigation.Screen
 import edu.ucne.doers.presentation.tareas.components.TaskOverview
-import edu.ucne.doers.ui.theme.DoersTheme
 
 @Composable
 fun PantallaTareas(
     viewModel: TareaViewModel = hiltViewModel(),
-    goBackToHome: () -> Unit,
     goToAgregarTarea: () -> Unit,
     navController: NavHostController
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     PantallaBodyTareas(
         uiState,
-        goBackToHome,
         goToAgregarTarea,
         onEdit = { tareaId ->
             navController.navigate(Screen.CrearTarea(tareaId))
@@ -62,7 +58,6 @@ fun PantallaTareas(
 @Composable
 fun PantallaBodyTareas(
     uiState: TareaUiState,
-    goBackToHome: () -> Unit,
     goToAgregarTarea: () -> Unit,
     onEdit: (Int) -> Unit,
     onDelete: (TareaEntity) -> Unit,
@@ -82,16 +77,8 @@ fun PantallaBodyTareas(
                             fontSize = 30.sp,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center,
-                            color = Color.White
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = goBackToHome) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver",
-                            tint = Color.White
+                            color = Color.White,
+                            modifier = Modifier.padding(start = 11.dp)
                         )
                     }
                 },
