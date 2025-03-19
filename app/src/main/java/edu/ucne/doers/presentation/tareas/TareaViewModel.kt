@@ -5,7 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import edu.ucne.doers.data.local.entity.TareaEntity
-import edu.ucne.doers.data.local.model.EstadoTarea
+import edu.ucne.doers.data.local.model.CondicionTarea
+import edu.ucne.doers.data.local.model.PeriodicidadTarea
 import edu.ucne.doers.data.repository.PadreRepository
 import edu.ucne.doers.data.repository.TareaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +26,7 @@ class TareaViewModel @Inject constructor(
         puntos = 0,
         padreId = "",
         imagenURL = "",
+        periodicidad = null,
     ))
     val uiState = _uiState.asStateFlow()
 
@@ -81,7 +83,8 @@ class TareaViewModel @Inject constructor(
                         tareaId = tarea.tareaId,
                         descripcion = tarea.descripcion,
                         puntos = tarea.puntos,
-                        estado = tarea.estado
+                        estado = tarea.estado,
+                        periodicidad = tarea.periodicidad
                     )
                 }
             }
@@ -94,6 +97,16 @@ class TareaViewModel @Inject constructor(
         }
     }
 
+    fun onCondicionChange(tareaId: Int, nuevaCondicion: CondicionTarea) {
+        viewModelScope.launch {
+            val tarea = tareaRepository.find(tareaId)
+            if (tarea != null) {
+                val tareaActualizada = tarea.copy(condicion = nuevaCondicion)
+                tareaRepository.save(tareaActualizada)
+            }
+        }
+    }
+
     fun new(){
         _uiState.value = TareaUiState(
             tareaId = 0,
@@ -101,6 +114,7 @@ class TareaViewModel @Inject constructor(
             puntos = 0,
             padreId = "",
             imagenURL = "",
+            periodicidad = null
         )
     }
 
@@ -125,10 +139,10 @@ class TareaViewModel @Inject constructor(
         }
     }
 
-    fun onEstadoChange(estado: EstadoTarea) {
+    fun onPeriodicidadChange(periodicidad: PeriodicidadTarea) {
         _uiState.update {
             it.copy(
-                estado = estado
+                periodicidad = periodicidad
             )
         }
     }
@@ -136,7 +150,7 @@ class TareaViewModel @Inject constructor(
     private fun isValidate(): Boolean {
         val state = uiState.value
 
-        if (state.descripcion.isBlank() || state.puntos <= 0) {
+        if (state.descripcion.isBlank() || state.puntos <= 0 || state.periodicidad == null) {
             _uiState.update { it.copy(errorMessage = "Todos los campos son requeridos.") }
             return false
         }
@@ -150,5 +164,7 @@ fun TareaUiState.toEntity() = TareaEntity(
     puntos = this.puntos,
     padreId = this.padreId,
     imagenURL = this.imagenURL,
-    estado = this.estado
+    estado = this.estado,
+    periodicidad = this.periodicidad,
+    condicion = this.condicion
 )
