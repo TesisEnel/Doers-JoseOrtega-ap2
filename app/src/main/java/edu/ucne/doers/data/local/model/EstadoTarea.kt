@@ -8,6 +8,17 @@ enum class EstadoTarea(val nombreMostrable: String, val color: Color) {
     CANCELADA("Cancelada", Color(0xFFD32F2F))
 }
 
+enum class CondicionTarea(val nombreMostrable: String) {
+    ACTIVA("Activa"),
+    INACTIVA("Inactiva")
+}
+
+enum class PeriodicidadTarea(val nombreMostrable: String) {
+    DIARIA("Diaria"),
+    SEMANAL("Semanal"),
+    UNICA("Unica")
+}
+
 enum class EstadoTareaHijo(val nombreMostrable: String) {
     PENDIENTE_VERIFICACION("Pendiente de verificación"),
     APROBADA("Aprobada"),
