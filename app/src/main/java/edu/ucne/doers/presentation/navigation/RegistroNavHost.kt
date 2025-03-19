@@ -153,7 +153,6 @@ fun DoersNavHost(
             }
             composable<Screen.PantallaTareas> {
                 PantallaTareas(
-                    goBackToHome = { navHostController.navigate(Screen.Home) },
                     goToAgregarTarea = { navHostController.navigate(Screen.CrearTarea(0)) },
                     navController = navHostController
                 )
