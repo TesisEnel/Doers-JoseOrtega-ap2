@@ -17,8 +17,10 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import edu.ucne.doers.data.local.entity.TareaEntity
 import edu.ucne.doers.data.local.model.EstadoTarea
+import edu.ucne.doers.presentation.tareas.TareaViewModel
 
 @Composable
 fun TaskOverview(
@@ -26,6 +28,7 @@ fun TaskOverview(
     tareas: List<TareaEntity>,
     onEdit: (Int) -> Unit,
     onDelete: (TareaEntity) -> Unit,
+    viewModel: TareaViewModel = hiltViewModel()
 ) {
     Column(
         modifier = modifier
@@ -73,7 +76,10 @@ fun TaskOverview(
                 TaskCard(
                     tarea,
                     onEdit = onEdit,
-                    onDelete = onDelete
+                    onDelete = onDelete,
+                    onCondicionChange = { nuevaCondicion ->
+                        viewModel.onCondicionChange(tarea.tareaId, nuevaCondicion)
+                    }
                 )
             }
         }
