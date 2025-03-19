@@ -4,7 +4,9 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import edu.ucne.doers.data.local.model.CondicionTarea
 import edu.ucne.doers.data.local.model.EstadoTarea
+import edu.ucne.doers.data.local.model.PeriodicidadTarea
 
 @Entity(
     tableName = "Tareas",
@@ -22,5 +24,7 @@ data class TareaEntity(
     val descripcion: String,
     val imagenURL: String?,
     val puntos: Int,
-    val estado: EstadoTarea = EstadoTarea.PENDIENTE
+    val estado: EstadoTarea = EstadoTarea.PENDIENTE,
+    val periodicidad: PeriodicidadTarea? = null,
+    val condicion: CondicionTarea = CondicionTarea.INACTIVA
 )
