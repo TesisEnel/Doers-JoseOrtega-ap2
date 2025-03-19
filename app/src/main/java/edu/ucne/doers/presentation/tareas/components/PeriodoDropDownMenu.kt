@@ -13,25 +13,27 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import edu.ucne.doers.data.local.model.EstadoTarea
+import edu.ucne.doers.data.local.model.PeriodicidadTarea
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EstadoDropdownMenu(
-    selectedEstado: EstadoTarea,
-    onEstadoSelected: (EstadoTarea) -> Unit
+fun PeriodoDropdownMenu(
+    selectedPeriodo: PeriodicidadTarea?,
+    onPeriodoSelected: (PeriodicidadTarea) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val estadosTarea = listOf(EstadoTarea.PENDIENTE, EstadoTarea.COMPLETADA)
+    val periocidadTarea = listOf(
+        PeriodicidadTarea.DIARIA, PeriodicidadTarea.SEMANAL, PeriodicidadTarea.UNICA
+    )
 
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = !expanded }
     ) {
         OutlinedTextField(
-            value = selectedEstado.nombreMostrable,
+            value = selectedPeriodo?.nombreMostrable ?: "Seleccione una duración",
             onValueChange = {},
-            label = { Text("Estado") },
+            label = { Text("Duración") },
             modifier = Modifier
                 .menuAnchor()
                 .fillMaxWidth(),
@@ -44,11 +46,11 @@ fun EstadoDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
-            estadosTarea.forEach { estado ->
+            periocidadTarea.forEach { estado ->
                 DropdownMenuItem(
                     text = { Text(estado.nombreMostrable) },
                     onClick = {
-                        onEstadoSelected(estado)
+                        onPeriodoSelected(estado)
                         expanded = false
                     }
                 )

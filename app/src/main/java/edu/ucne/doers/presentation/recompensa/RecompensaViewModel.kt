@@ -79,15 +79,11 @@ class RecompensaViewModel @Inject constructor(
 
     fun save() {
         viewModelScope.launch {
-            val recompensa = RecompensaEntity(
-                recompensaId = if (uiState.value.recompensaId == 0) 0 else uiState.value.recompensaId,
-                descripcion = uiState.value.descripcion,
-                imagenURL = uiState.value.imagenURL,
-                puntosNecesarios = uiState.value.puntosNecesarios,
-                estado = uiState.value.estado.toString(),
-                padreId = uiState.value.padreId
-            )
-            recompensaRepository.save(recompensa)
+            if(isValidate()) {
+                recompensaRepository.save(_uiState.value.toEntity())
+                _uiState.update { it.copy(errorMessage = null) }
+                new()
+            }
         }
     }
 
@@ -177,6 +173,15 @@ class RecompensaViewModel @Inject constructor(
                 }
             }
         }
+    }
+    private fun isValidate(): Boolean {
+        val state = uiState.value
+
+        if (state.descripcion.isBlank() || state.puntosNecesarios <= 0) {
+            _uiState.update { it.copy(errorMessage = "Todos los campos son requeridos.") }
+            return false
+        }
+        return true
     }
 }
 

@@ -25,6 +25,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -40,7 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import edu.ucne.doers.presentation.tareas.components.EstadoDropdownMenu
+import edu.ucne.doers.presentation.tareas.components.PeriodoDropdownMenu
 
 @Composable
 fun CrearTareaScreen(
@@ -84,7 +86,8 @@ fun CrearTareaBody(
                             fontSize = 30.sp,
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center,
-                            color = Color.White
+                            color = Color.White,
+                            modifier = Modifier.padding(end = 50.dp)
                         )
                     }
                 },
@@ -115,6 +118,7 @@ fun CrearTareaBody(
     )
 }
 
+
 @Composable
 fun CreateTaskForm(
     modifier: Modifier,
@@ -130,7 +134,7 @@ fun CreateTaskForm(
     ) {
         // Título centralizado "Crear Tarea"
         Text(
-            text = "Crear Nueva Tarea",
+            text = if(tareaId > 0) "Modificar Tarea" else "Crear Nueva Tarea",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = Color.Black,
@@ -167,7 +171,7 @@ fun CreateTaskForm(
             isError = uiState.errorMessage?.contains("puntos") == true,
             supportingText = {
                 if (uiState.errorMessage?.contains("puntos") == true) {
-                    Text(text = uiState.errorMessage ?: "", color = Color.Red)
+                    Text(text = uiState.errorMessage, color = Color.Red)
                 }
             },
             keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
@@ -175,10 +179,22 @@ fun CreateTaskForm(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Campo Estado (Dropdown)
-        EstadoDropdownMenu(
-            selectedEstado = uiState.estado,
-            onEstadoSelected = viewModel::onEstadoChange
+        // Campo Periodo (Dropdown)
+        PeriodoDropdownMenu(
+            selectedPeriodo = uiState.periodicidad,
+            onPeriodoSelected = viewModel::onPeriodicidadChange
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Campo Estado
+        OutlinedTextField(
+            label = { Text("Estado") },
+            value = uiState.estado.name,
+            onValueChange = {},
+            readOnly = true,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = false
         )
 
         Spacer(modifier = Modifier.height(16.dp))

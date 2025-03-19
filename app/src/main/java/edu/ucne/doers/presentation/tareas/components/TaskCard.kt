@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -26,6 +27,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,21 +39,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import edu.ucne.doers.R
 import edu.ucne.doers.data.local.entity.TareaEntity
-import edu.ucne.doers.data.local.model.EstadoTarea
-import edu.ucne.doers.ui.theme.DoersTheme
+import edu.ucne.doers.data.local.model.CondicionTarea
 
 @Composable
 fun TaskCard(
     tarea: TareaEntity,
     onEdit: (Int) -> Unit,
-    onDelete: (TareaEntity) -> Unit
+    onDelete: (TareaEntity) -> Unit,
+    onCondicionChange: (CondicionTarea) -> Unit
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -60,7 +65,41 @@ fun TaskCard(
             .fillMaxWidth()
             .padding(8.dp)
     ) {
+        // Fila para el contador de tareas y el estado
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Contador de tareas
+            Text(
+                text = "Tarea #${tarea.tareaId}",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(bottom = 4.dp, start = 4.dp)
+            )
 
+            // Estado de la tarea
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .background(tarea.estado.color, shape = CircleShape)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = tarea.estado.nombreMostrable,
+                    fontSize = 15.sp,
+                    color = tarea.estado.color,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+
+        // Card principal
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -79,27 +118,48 @@ fun TaskCard(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+                    // Duración de la tarea
                     Text(
-                        text = "Tarea #${tarea.tareaId}",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(bottom = 4.dp)
+                        modifier = Modifier.padding(bottom = 5.dp),
+                        text = buildAnnotatedString {
+                            withStyle(
+                                style = SpanStyle(
+                                    color = Color.Black,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            ) {
+                                append("Duración: ")
+                            }
+                            withStyle(
+                                style = SpanStyle(
+                                    color = Color(0xFF1976D2),
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            ) {
+                                append("${tarea.periodicidad}")
+                            }
+                        },
+                        fontSize = 15.sp
                     )
 
-                    // Estado de la tarea
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier
-                                .size(10.dp)
-                                .background(tarea.estado.color, shape = CircleShape)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = tarea.estado.nombreMostrable,
-                            fontSize = 15.sp,
-                            color = tarea.estado.color,
-                            fontWeight = FontWeight.SemiBold
+                    // Condicion de la tarea y Switch de Condición
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Switch(
+                            checked = tarea.condicion == CondicionTarea.ACTIVA,
+                            onCheckedChange = { isChecked ->
+                                val nuevaCondicion =
+                                    if (isChecked) CondicionTarea.ACTIVA else CondicionTarea.INACTIVA
+                                onCondicionChange(nuevaCondicion)
+                            },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = Color(0xFF1976D2),
+                                uncheckedThumbColor = Color.White,
+                                uncheckedTrackColor = Color.Gray
+                            ),
+                            modifier = Modifier.padding(end = 8.dp)
                         )
                     }
                 }
@@ -114,7 +174,6 @@ fun TaskCard(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
-
                 ) {
                     // Puntos de la tarea
                     Text(
@@ -124,19 +183,17 @@ fun TaskCard(
                         color = MaterialTheme.colorScheme.primary
                     )
 
-                    // Boton espandible
+                    // Botón expandible (cambia entre ExpandMore y ExpandLess)
                     Icon(
-                        imageVector = Icons.Default.ExpandMore,
-                        contentDescription = "Expandir",
+                        imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (isExpanded) "Colapsar" else "Expandir",
                         modifier = Modifier.size(30.dp)
                     )
-
                 }
-
             }
         }
 
-        // Mostrar botones de "Editar" y "Eliminar" cuando esté expandido
+        // Mostrar botones de "Editar" y "Eliminar"
         if (isExpanded) {
             Spacer(modifier = Modifier.height(8.dp))
             Row(
