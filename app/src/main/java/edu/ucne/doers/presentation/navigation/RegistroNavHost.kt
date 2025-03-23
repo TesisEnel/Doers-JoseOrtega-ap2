@@ -25,8 +25,8 @@ import edu.ucne.doers.presentation.padres.PadreViewModel
 import edu.ucne.doers.presentation.recompensa.RecompensaScreen
 import edu.ucne.doers.presentation.recompensa.RecompensasListScreen
 import edu.ucne.doers.presentation.sign_in.GoogleAuthUiClient
-import edu.ucne.doers.presentation.tareas.CrearTareaScreen
-import edu.ucne.doers.presentation.tareas.PantallaTareas
+import edu.ucne.doers.presentation.tareas.padre.TareaScreen
+import edu.ucne.doers.presentation.tareas.padre.TareasListScreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -151,17 +151,17 @@ fun DoersNavHost(
                     navController = navHostController
                 )
             }
-            composable<Screen.PantallaTareas> {
-                PantallaTareas(
-                    goToAgregarTarea = { navHostController.navigate(Screen.CrearTarea(0)) },
+            composable<Screen.TareasList> {
+                TareasListScreen(
+                    goToAgregarTarea = { navHostController.navigate(Screen.Tarea(0)) },
                     navController = navHostController
                 )
             }
 
-            composable<Screen.CrearTarea> {
-                val tareaId = it.toRoute<Screen.CrearTarea>().tareaId
-                CrearTareaScreen(
-                    goBackToPantallaTareas = { navHostController.navigate(Screen.PantallaTareas) },
+            composable<Screen.Tarea> {
+                val tareaId = it.toRoute<Screen.Tarea>().tareaId
+                TareaScreen(
+                    goBackToPantallaTareas = { navHostController.navigate(Screen.TareasList) },
                     tareaId = tareaId
                 )
             }
