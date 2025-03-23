@@ -1,6 +1,7 @@
 package edu.ucne.doers.presentation.tareas.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,7 +21,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import edu.ucne.doers.data.local.entity.TareaEntity
 import edu.ucne.doers.data.local.model.EstadoTarea
-import edu.ucne.doers.presentation.tareas.TareaViewModel
+import edu.ucne.doers.presentation.tareas.padre.TareaViewModel
 
 @Composable
 fun TaskOverview(
@@ -30,57 +31,65 @@ fun TaskOverview(
     onDelete: (TareaEntity) -> Unit,
     viewModel: TareaViewModel = hiltViewModel()
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        // Título principal siempre visible
-        Text(
-            text = "Reporte de Tareas",
-            fontSize = 25.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.SansSerif,
-            modifier = Modifier.padding(bottom = 16.dp, top = 22.dp)
-        )
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val isHorizontal = maxWidth > maxHeight
 
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
-            TaskCounter(
-                "Tareas completadas",
-                tareas.count { it.estado == EstadoTarea.COMPLETADA },
-                EstadoTarea.COMPLETADA
-            )
-            TaskCounter(
-                "Tareas pendientes",
-                tareas.count { it.estado == EstadoTarea.PENDIENTE },
-                EstadoTarea.PENDIENTE
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = if (tareas.isEmpty()) "No se han creado tareas" else "Listado de pendientes",
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(16.dp)
-        )
-
-        LazyColumn(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            items(tareas) { tarea ->
-                TaskCard(
-                    tarea,
-                    onEdit = onEdit,
-                    onDelete = onDelete,
-                    onCondicionChange = { nuevaCondicion ->
-                        viewModel.onCondicionChange(tarea.tareaId, nuevaCondicion)
-                    }
+            if (!isHorizontal) {
+                // Título
+                Text(
+                    text = "Reporte de Tareas",
+                    fontSize = 25.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.SansSerif,
+                    modifier = Modifier.padding(bottom = 16.dp, top = 22.dp)
                 )
+
+
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    TaskCounter(
+                        "Tareas completadas",
+                        tareas.count { it.estado == EstadoTarea.COMPLETADA },
+                        EstadoTarea.COMPLETADA
+                    )
+                    TaskCounter(
+                        "Tareas pendientes",
+                        tareas.count { it.estado == EstadoTarea.PENDIENTE },
+                        EstadoTarea.PENDIENTE
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+            // Lista de tareas
+            Text(
+                text = if (tareas.isEmpty()) "No se han creado tareas" else "Listado de pendientes",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(16.dp)
+            )
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(tareas) { tarea ->
+                    TaskCard(
+                        tarea,
+                        onEdit = onEdit,
+                        onDelete = onDelete,
+                        onCondicionChange = { nuevaCondicion ->
+                            viewModel.onCondicionChange(tarea.tareaId, nuevaCondicion)
+                        }
+                    )
+                }
             }
         }
     }
