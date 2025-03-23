@@ -45,13 +45,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import edu.ucne.doers.presentation.tareas.components.PeriodoDropdownMenu
 
 @Composable
-fun CrearTareaScreen(
+fun TareaScreen(
     viewModel: TareaViewModel = hiltViewModel(),
     goBackToPantallaTareas: () -> Unit,
     tareaId: Int
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    CrearTareaBody(
+    TareaBodyScreen(
         viewModel,
         uiState,
         goBackToPantallaTareas,
@@ -61,7 +61,7 @@ fun CrearTareaScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CrearTareaBody(
+fun TareaBodyScreen(
     viewModel: TareaViewModel,
     uiState: TareaUiState,
     goBackToPantallaTareas: () -> Unit,
