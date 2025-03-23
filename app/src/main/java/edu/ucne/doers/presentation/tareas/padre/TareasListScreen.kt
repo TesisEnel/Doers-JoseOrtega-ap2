@@ -1,4 +1,4 @@
-package edu.ucne.doers.presentation.tareas
+package edu.ucne.doers.presentation.tareas.padre
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,17 +35,17 @@ import edu.ucne.doers.presentation.navigation.Screen
 import edu.ucne.doers.presentation.tareas.components.TaskOverview
 
 @Composable
-fun PantallaTareas(
+fun TareasListScreen(
     viewModel: TareaViewModel = hiltViewModel(),
     goToAgregarTarea: () -> Unit,
     navController: NavHostController
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    PantallaBodyTareas(
+    TareasBodyListScreen(
         uiState,
         goToAgregarTarea,
         onEdit = { tareaId ->
-            navController.navigate(Screen.CrearTarea(tareaId))
+            navController.navigate(Screen.Tarea(tareaId))
         },
         onDelete = { tarea ->
             viewModel.delete(tarea)
@@ -56,7 +56,7 @@ fun PantallaTareas(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PantallaBodyTareas(
+fun TareasBodyListScreen(
     uiState: TareaUiState,
     goToAgregarTarea: () -> Unit,
     onEdit: (Int) -> Unit,
@@ -99,7 +99,7 @@ fun PantallaBodyTareas(
         bottomBar = {
             BottomNavigationBar(
                 navController = navController,
-                currentScreen = Screen.PantallaTareas
+                currentScreen = Screen.TareasList
             )
         },
         content = { paddingValues ->
@@ -122,7 +122,7 @@ fun BottomNavigationBar(navController: NavController, currentScreen: Screen) {
         NavigationBarItem(
             icon = { Icon(Icons.Filled.Checklist, contentDescription = "Tarea") },
             label = { Text("Tarea") },
-            selected = currentScreen == Screen.PantallaTareas,
+            selected = currentScreen == Screen.TareasList,
             onClick = { }
         )
         NavigationBarItem(
