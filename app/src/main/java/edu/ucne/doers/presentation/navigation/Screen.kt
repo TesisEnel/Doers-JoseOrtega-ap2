@@ -12,7 +12,7 @@ sealed class Screen {
     @Serializable
     data class Recompensa(val recompensaId: Int) : Screen()
     @Serializable
-    data object PantallaTareas : Screen()
+    data object TareasList : Screen()
     @Serializable
-    data class  CrearTarea(val tareaId: Int) : Screen()
+    data class  Tarea(val tareaId: Int) : Screen()
 }

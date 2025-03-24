@@ -284,8 +284,8 @@ fun BottomNavigationBar(navController: NavController, currentScreen: Screen) {
         NavigationBarItem(
             icon = { Icon(Icons.Filled.Checklist, contentDescription = "Tarea") },
             label = { Text("Tarea") },
-            selected = currentScreen == Screen.PantallaTareas,
-            onClick = { navController.navigate(Screen.PantallaTareas) }
+            selected = currentScreen == Screen.TareasList,
+            onClick = { navController.navigate(Screen.TareasList) }
         )
         NavigationBarItem(
             icon = { Icon(Icons.Filled.Star, contentDescription = "Recompensas") },

@@ -1,4 +1,4 @@
-package edu.ucne.doers.presentation.tareas
+package edu.ucne.doers.presentation.tareas.padre
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -21,22 +21,27 @@ class TareaViewModel @Inject constructor(
     private val tareaRepository: TareaRepository,
     private val padreRepository: PadreRepository
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(TareaUiState(
-        tareaId = 0,
-        descripcion = "",
-        puntos = 0,
-        padreId = "",
-        estado = EstadoTarea.PENDIENTE,
-        periodicidad = null,
-        condicion = CondicionTarea.INACTIVA
-    ))
+    private val _uiState = MutableStateFlow(
+        TareaUiState(
+            tareaId = 0,
+            descripcion = "",
+            puntos = 0,
+            padreId = "",
+            estado = EstadoTarea.PENDIENTE,
+            periodicidad = null,
+            condicion = CondicionTarea.INACTIVA
+        )
+    )
     val uiState = _uiState.asStateFlow()
 
     private fun loadPadreId() {
         viewModelScope.launch {
             val currentPadre = padreRepository.getCurrentUser()
             if (currentPadre == null) {
-                Log.e("RecompensaViewModel", "Error: No se encontró un PadreEntity para el usuario autenticado")
+                Log.e(
+                    "RecompensaViewModel",
+                    "Error: No se encontró un PadreEntity para el usuario autenticado"
+                )
                 _uiState.update {
                     it.copy(errorMessage = "No se encontró un usuario autenticado. Por favor, inicia sesión nuevamente.")
                 }
@@ -65,9 +70,9 @@ class TareaViewModel @Inject constructor(
         }
     }
 
-    fun save(){
-        viewModelScope.launch{
-            if(isValidate()) {
+    fun save() {
+        viewModelScope.launch {
+            if (isValidate()) {
                 tareaRepository.save(_uiState.value.toEntity())
                 _uiState.update { it.copy(errorMessage = null) }
                 new()
@@ -75,7 +80,7 @@ class TareaViewModel @Inject constructor(
         }
     }
 
-    fun find(tareaId: Int){
+    fun find(tareaId: Int) {
         viewModelScope.launch {
             val tarea = tareaRepository.find(tareaId)
 
@@ -93,7 +98,7 @@ class TareaViewModel @Inject constructor(
         }
     }
 
-    fun delete(tarea: TareaEntity){
+    fun delete(tarea: TareaEntity) {
         viewModelScope.launch {
             tareaRepository.delete(tarea)
         }
@@ -109,7 +114,7 @@ class TareaViewModel @Inject constructor(
         }
     }
 
-    fun new(){
+    fun new() {
         _uiState.update {
             it.copy(
                 tareaId = 0,
@@ -121,7 +126,7 @@ class TareaViewModel @Inject constructor(
         }
     }
 
-    fun onDescripcionChange(descripcion: String){
+    fun onDescripcionChange(descripcion: String) {
         val descripcionRegularExpression = "^[A-Za-z0-9\\s'.,:áéíóúÁÉÍÓÚ-]+$".toRegex()
         _uiState.update {
             it.copy(
@@ -133,7 +138,7 @@ class TareaViewModel @Inject constructor(
         }
     }
 
-    fun onPuntosChange(puntos: Int){
+    fun onPuntosChange(puntos: Int) {
         _uiState.update {
             it.copy(
                 puntos = puntos,

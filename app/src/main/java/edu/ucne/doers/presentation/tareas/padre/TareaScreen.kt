@@ -1,4 +1,4 @@
-package edu.ucne.doers.presentation.tareas
+package edu.ucne.doers.presentation.tareas.padre
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -25,8 +27,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -45,13 +45,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import edu.ucne.doers.presentation.tareas.components.PeriodoDropdownMenu
 
 @Composable
-fun CrearTareaScreen(
+fun TareaScreen(
     viewModel: TareaViewModel = hiltViewModel(),
     goBackToPantallaTareas: () -> Unit,
     tareaId: Int
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    CrearTareaBody(
+    TareaBodyScreen(
         viewModel,
         uiState,
         goBackToPantallaTareas,
@@ -61,7 +61,7 @@ fun CrearTareaScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CrearTareaBody(
+fun TareaBodyScreen(
     viewModel: TareaViewModel,
     uiState: TareaUiState,
     goBackToPantallaTareas: () -> Unit,
@@ -127,14 +127,16 @@ fun CreateTaskForm(
     goBackToPantallaTareas: () -> Unit,
     tareaId: Int = 0
 ) {
+    // Envolvemos el contenido en un Column con scroll vertical
     Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState()) // Habilita el scroll vertical
             .padding(16.dp)
     ) {
         // Título centralizado "Crear Tarea"
         Text(
-            text = if(tareaId > 0) "Modificar Tarea" else "Crear Nueva Tarea",
+            text = if (tareaId > 0) "Modificar Tarea" else "Crear Nueva Tarea",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = Color.Black,
@@ -235,7 +237,7 @@ fun CreateTaskForm(
                             viewModel.save()
                             goBackToPantallaTareas()
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2)) // Asignar color aquí
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
                     ) {
                         Icon(
                             imageVector = Icons.Default.Edit,
@@ -246,8 +248,7 @@ fun CreateTaskForm(
                         Text(text = "Modificar", color = Color.White)
                     }
                 }
-            }
-            else{
+            } else {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly,
@@ -258,7 +259,7 @@ fun CreateTaskForm(
                         onClick = {
                             viewModel.new()
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2)) // Asignar color aquí
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
                     ) {
                         Icon(
                             imageVector = Icons.Default.Add,
@@ -275,7 +276,7 @@ fun CreateTaskForm(
                             viewModel.save()
                             goBackToPantallaTareas()
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF388E3C)) // Asignar color aquí
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF388E3C))
                     ) {
                         Icon(
                             imageVector = Icons.Default.Check,
