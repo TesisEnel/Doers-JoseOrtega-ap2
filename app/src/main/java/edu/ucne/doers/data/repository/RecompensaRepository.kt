@@ -14,5 +14,7 @@ class RecompensaRepository @Inject constructor(
 
     fun getAll(): Flow<List<RecompensaEntity>> = recompensaDao.getAll()
 
+    fun getRecompensasByPadreId(padreId: String): Flow<List<RecompensaEntity>> = recompensaDao.getRecompensasByPadreId(padreId)
+
     suspend fun delete(recompensa: RecompensaEntity) = recompensaDao.delete(recompensa)
 }
