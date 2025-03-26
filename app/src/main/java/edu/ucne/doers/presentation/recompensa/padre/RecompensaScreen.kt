@@ -199,6 +199,7 @@ fun RecompensaBodyScreen(
                         OutlinedButton(
                             onClick = {
                                 viewModel.save()
+                                goRecompensasList()
                             }) {
                             Icon(
                                 imageVector = Icons.Default.Check,
