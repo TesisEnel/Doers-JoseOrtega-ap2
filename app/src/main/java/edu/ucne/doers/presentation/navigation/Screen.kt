@@ -15,4 +15,6 @@ sealed class Screen {
     data object TareasList : Screen()
     @Serializable
     data class  Tarea(val tareaId: Int) : Screen()
+    @Serializable
+    data object HijoList : Screen()
 }
