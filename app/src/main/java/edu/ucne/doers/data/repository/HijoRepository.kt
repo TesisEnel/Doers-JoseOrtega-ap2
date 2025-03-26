@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 
 class HijoRepository @Inject constructor(
     private val hijoDao: HijoDao,
-    private val tareaHijoDao: TareaHijoDao
+    private val tareaHijoDao: TareaHijoDao,
     private val padreDao: PadreDao
 ) {
     suspend fun save(hijo: HijoEntity) = hijoDao.save(hijo)
