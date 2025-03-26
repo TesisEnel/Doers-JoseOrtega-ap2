@@ -4,12 +4,14 @@ import edu.ucne.doers.data.local.dao.HijoDao
 import edu.ucne.doers.data.local.dao.PadreDao
 import edu.ucne.doers.data.local.entity.HijoEntity
 import edu.ucne.doers.data.remote.Resource
+import edu.ucne.doers.presentation.extension.collectFirstOrNull
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 class HijoRepository @Inject constructor(
     private val hijoDao: HijoDao,
-    private val padreDao: PadreDao
+    private val padreDao: PadreDao,
+    private val padreRepository: PadreRepository
 ) {
     suspend fun save(hijo: HijoEntity) = hijoDao.save(hijo)
 
@@ -18,6 +20,15 @@ class HijoRepository @Inject constructor(
     fun getAll(): Flow<List<HijoEntity>> = hijoDao.getAll()
 
     suspend fun delete(hijo: HijoEntity) = hijoDao.delete(hijo)
+
+    suspend fun findByNombreAndPadreId(nombre: String, padreId: String): HijoEntity? {
+        return hijoDao.findByNombreAndPadreId(nombre, padreId)
+    }
+
+    suspend fun getPadreIdByCodigoSala(codigoSala: String): String? {
+        val padre = padreRepository.getAll().collectFirstOrNull()?.find { it.codigoSala == codigoSala }
+        return padre?.padreId
+    }
 
     suspend fun loginHijo(nombre: String, codigoSala: String): Resource<Boolean> {
         val padre = padreDao.findByCodigoSala(codigoSala)
