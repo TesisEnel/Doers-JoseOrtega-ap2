@@ -28,6 +28,9 @@ interface HijoDao {
     @Delete
     suspend fun delete(hijoEntity: HijoEntity)
 
+    @Query("SELECT * FROM Hijos WHERE nombre = :nombre AND padreId = :padreId LIMIT 1")
+    suspend fun findByNombreAndPadreId(nombre: String, padreId: String): HijoEntity?
+
     @Query("SELECT * FROM Hijos")
     fun getAll(): Flow<List<HijoEntity>>
 }
