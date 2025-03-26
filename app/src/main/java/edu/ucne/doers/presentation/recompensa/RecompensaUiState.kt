@@ -11,6 +11,6 @@ data class RecompensaUiState(
     val puntosNecesarios: Int = 0,
     val estado: EstadoRecompensa = EstadoRecompensa.DISPONIBLE,
     val errorMessage: String? = null,
-    val recompensas: List<RecompensaEntity> = emptyList(),
+    val recompensas: List<RecompensaUiState> = emptyList(),
     val isLoading: Boolean = false,
 )

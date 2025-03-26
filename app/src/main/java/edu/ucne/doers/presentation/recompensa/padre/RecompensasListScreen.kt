@@ -1,7 +1,6 @@
-package edu.ucne.doers.presentation.recompensa
+package edu.ucne.doers.presentation.recompensa.padre
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,7 +46,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -60,6 +58,9 @@ import coil.compose.rememberImagePainter
 import edu.ucne.doers.R
 import edu.ucne.doers.data.local.model.EstadoRecompensa
 import edu.ucne.doers.presentation.navigation.Screen
+import edu.ucne.doers.presentation.recompensa.RecompensaUiState
+import edu.ucne.doers.presentation.recompensa.RecompensaViewModel
+import edu.ucne.doers.presentation.recompensa.toEntity
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,40 +78,40 @@ fun RecompensasListScreen(
             TopAppBar(
                 title = { Text("Lista de Recompensas", fontSize = 20.sp) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFE0E6EB),
-                    titleContentColor = Color.Black
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
             )
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = createRecompensa,
-                containerColor = Color(0xFF4A90E2),
-                contentColor = Color.White
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Crear Recompensa")
             }
         },
         bottomBar = {
             BottomNavigationBar(navController = navController, currentScreen = Screen.RecompensaList)
-        }
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF0F2F5))
                 .padding(innerPadding)
         ) {
             LazyColumn {
                 items(uiState.recompensas) { recompensa ->
                     RecompensaRow(
-                        recompensa = recompensa.toUiState(),
+                        recompensa = recompensa,
                         onClick = { },
-                        onDelete = { viewModel.delete(recompensa) },
+                        onDelete = { viewModel.delete(recompensa.toEntity()) },
                         onEdit = { id -> goToRecompensa(id) },
                         onEstadoChange = { newEstado ->
                             viewModel.saveRecompensa(
-                                recompensa.copy(estado = newEstado.toString())
+                                recompensa.copy(estado = newEstado).toEntity()
                             )
                         }
                     )
@@ -136,7 +137,10 @@ fun RecompensaRow(
             .fillMaxWidth()
             .padding(8.dp)
             .clickable { isExpanded = !isExpanded },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        )
     ) {
         Column(
             modifier = Modifier
@@ -165,11 +169,13 @@ fun RecompensaRow(
                 ) {
                     Text(
                         text = recompensa.descripcion,
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "Puntos: ${recompensa.puntosNecesarios}",
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
@@ -192,16 +198,24 @@ fun RecompensaRow(
                     OutlinedButton(onClick = { onEdit(recompensa.recompensaId) }) {
                         Icon(
                             imageVector = Icons.Default.Edit,
-                            contentDescription = "Editar"
+                            contentDescription = "Editar",
+                            tint = MaterialTheme.colorScheme.primary
                         )
-                        Text("Editar")
+                        Text(
+                            "Editar",
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                     OutlinedButton(onClick = { showDeleteDialog = true }) {
                         Icon(
                             imageVector = Icons.Default.Delete,
-                            contentDescription = "Eliminar"
+                            contentDescription = "Eliminar",
+                            tint = MaterialTheme.colorScheme.error
                         )
-                        Text("Eliminar")
+                        Text(
+                            "Eliminar",
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
                 }
                 if (showDeleteDialog) {
@@ -211,7 +225,8 @@ fun RecompensaRow(
                             Text(
                                 text = "Confirmar eliminación",
                                 fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.Center
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         },
                         text = {
@@ -224,14 +239,15 @@ fun RecompensaRow(
                                     text = "¿Estás seguro que deseas eliminar esta tarea?",
                                     fontWeight = FontWeight.SemiBold,
                                     textAlign = TextAlign.Center,
-                                    fontSize = 20.sp
+                                    fontSize = 20.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Icon(
                                     painter = painterResource(id = R.drawable.pensado_negro),
                                     contentDescription = "Pensando",
                                     modifier = Modifier.size(70.dp),
-                                    tint = Color(0xFF1976D2)
+                                    tint = MaterialTheme.colorScheme.primary
                                 )
                             }
                         },
@@ -247,7 +263,10 @@ fun RecompensaRow(
                                         onDelete()
                                         showDeleteDialog = false
                                     },
-                                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.error,
+                                        contentColor = MaterialTheme.colorScheme.onError
+                                    ),
                                     modifier = Modifier.size(130.dp, 50.dp)
                                 ) {
                                     Row(
@@ -260,14 +279,13 @@ fun RecompensaRow(
                                             modifier = Modifier.size(20.dp)
                                         )
                                         Spacer(modifier = Modifier.width(4.dp))
-                                        Text(
-                                            "Eliminar",
-                                            color = Color.White
-                                        )
+                                        Text("Eliminar")
                                     }
                                 }
                             }
-                        }
+                        },
+                        containerColor = MaterialTheme.colorScheme.background,
+                        textContentColor = MaterialTheme.colorScheme.onBackground
                     )
                 }
             }
@@ -278,27 +296,40 @@ fun RecompensaRow(
 @Composable
 fun BottomNavigationBar(navController: NavController, currentScreen: Screen) {
     NavigationBar(
-        containerColor = Color(0xFFE0E6EB),
-        contentColor = Color.Black
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface
     ) {
         NavigationBarItem(
             icon = { Icon(Icons.Filled.Checklist, contentDescription = "Tarea") },
             label = { Text("Tarea") },
             selected = currentScreen == Screen.TareasList,
-            onClick = { navController.navigate(Screen.TareasList) }
+            onClick = {
+                navController.navigate(Screen.TareasList) {
+                    popUpTo(navController.graph.startDestinationId) { inclusive = false }
+                    launchSingleTop = true
+                }
+            }
         )
         NavigationBarItem(
             icon = { Icon(Icons.Filled.Star, contentDescription = "Recompensas") },
             label = { Text("Recompensas") },
             selected = currentScreen == Screen.RecompensaList,
-            onClick = { }
+            onClick = {
+                navController.navigate(Screen.RecompensaList) {
+                    popUpTo(navController.graph.startDestinationId) { inclusive = false }
+                    launchSingleTop = true
+                }
+            }
         )
         NavigationBarItem(
             icon = { Icon(Icons.Filled.Person, contentDescription = "Perfil") },
             label = { Text("Perfil") },
             selected = currentScreen == Screen.Padre,
             onClick = {
-                navController.navigate(Screen.Padre) { }
+                navController.navigate(Screen.Padre) {
+                    popUpTo(navController.graph.startDestinationId) { inclusive = false }
+                    launchSingleTop = true
+                }
             }
         )
     }

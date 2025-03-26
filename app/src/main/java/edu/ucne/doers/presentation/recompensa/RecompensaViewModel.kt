@@ -31,26 +31,26 @@ class RecompensaViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(RecompensaUiState())
     val uiState = _uiState.asStateFlow()
 
-    private fun loadPadreId() {
-        viewModelScope.launch {
-            val currentPadre = padreRepository.getCurrentUser()
-            if (currentPadre == null) {
-                Log.e("RecompensaViewModel", "Error: No se encontró un PadreEntity para el usuario autenticado")
-                _uiState.update {
-                    it.copy(errorMessage = "No se encontró un usuario autenticado. Por favor, inicia sesión nuevamente.")
-                }
-            } else {
-                _uiState.update {
-                    it.copy(padreId = currentPadre.padreId)
-                }
-                Log.d("RecompensaViewModel", "padreId cargado: ${currentPadre.padreId}")
+    private suspend fun loadPadreId() {
+        val currentPadre = padreRepository.getCurrentUser()
+        if (currentPadre == null) {
+            Log.e("RecompensaViewModel", "Error: No se encontró un PadreEntity para el usuario autenticado")
+            _uiState.update {
+                it.copy(errorMessage = "No se encontró un usuario autenticado. Por favor, inicia sesión nuevamente.")
             }
+        } else {
+            _uiState.update {
+                it.copy(padreId = currentPadre.padreId)
+            }
+            Log.d("RecompensaViewModel", "padreId cargado: ${currentPadre.padreId}")
         }
     }
 
     init {
-        getRecompensas()
-        loadPadreId()
+        viewModelScope.launch {
+            loadPadreId()
+            loadRecompensas()
+        }
     }
 
     fun savePhotoFromUri(context: Context, uri: Uri) {
@@ -69,13 +69,32 @@ class RecompensaViewModel @Inject constructor(
         }
     }
 
-    fun getRecompensas() {
+    fun loadRecompensas() {
         viewModelScope.launch {
-            recompensaRepository.getAll().collect { recompensas ->
-                _uiState.update { it.copy(recompensas = recompensas) }
+            val padreId = uiState.value.padreId
+            if (padreId.isNullOrEmpty()) {
+                Log.e("RecompensaViewModel", "padreId no está disponible al cargar recompensas")
+                _uiState.update {
+                    it.copy(errorMessage = "No se pudo cargar el usuario. Por favor, inicia sesión nuevamente.")
+                }
+                return@launch
+            }
+            recompensaRepository.getRecompensasByPadreId(padreId).collect { recompensas ->
+                _uiState.update { it.copy(recompensas = recompensas.map { it.toUiState() }) }
+                Log.d("RecompensaViewModel", "Recompensas cargadas para padreId $padreId: $recompensas")
             }
         }
     }
+
+    /*fun getRecompensas() {
+        viewModelScope.launch {
+            recompensaRepository.getAll().collect { recompensas ->
+                _uiState.update {
+                    it.copy(recompensas = recompensas.map { recompensa -> recompensa.toUiState() })
+                }
+            }
+        }
+    }*/
 
     fun save() {
         viewModelScope.launch {
@@ -99,7 +118,7 @@ class RecompensaViewModel @Inject constructor(
             val file = File(recompensa.imagenURL)
             if (file.exists()) file.delete()
             recompensaRepository.delete(recompensa)
-            getRecompensas()
+            loadRecompensas()
         }
     }
 
@@ -136,7 +155,7 @@ class RecompensaViewModel @Inject constructor(
                 if (recompensa != null) {
                     val updatedRecompensa = recompensa.copy(estado = estado.toString())
                     recompensaRepository.save(updatedRecompensa)
-                    getRecompensas()
+                    loadRecompensas()
                 }
             } else {
                 _uiState.update { it.copy(estado = estado) }
@@ -151,7 +170,7 @@ class RecompensaViewModel @Inject constructor(
                 val newEstado = if (isAvailable) EstadoRecompensa.DISPONIBLE else EstadoRecompensa.AGOTADA
                 val updatedRecompensa = recompensa.copy(estado = newEstado.toString())
                 recompensaRepository.save(updatedRecompensa)
-                getRecompensas()
+                loadRecompensas()
             }
         }
     }

@@ -3,17 +3,18 @@ package edu.ucne.doers.presentation.padres
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.android.gms.auth.api.identity.SignInClient
 import dagger.hilt.android.lifecycle.HiltViewModel
 import edu.ucne.doers.data.local.entity.PadreEntity
 import edu.ucne.doers.data.repository.AuthRepository
 import edu.ucne.doers.data.repository.PadreRepository
+import edu.ucne.doers.presentation.extension.collectFirstOrNull
 import edu.ucne.doers.presentation.sign_in.GoogleAuthUiClient
 import edu.ucne.doers.presentation.sign_in.SignInResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -26,7 +27,6 @@ class PadreViewModel @Inject constructor(
     val uiState = _uiState.asStateFlow()
 
     init {
-        //getPadres()
         viewModelScope.launch { checkAuthenticatedUser() }
     }
 
@@ -49,6 +49,17 @@ class PadreViewModel @Inject constructor(
             try {
                 setLoading(true)
                 Log.d("PadreViewModel", "onSignInResult: data = ${result.data}, error = ${result.errorMessage}")
+
+                val existingPadre = result.data?.userId?.let { padreRepository.find(it) }
+                val codigoSala = if (existingPadre != null && existingPadre.codigoSala.isNotEmpty()) {
+                    Log.d("PadreViewModel", "Código existente encontrado: ${existingPadre.codigoSala}")
+                    existingPadre.codigoSala
+                } else {
+                    val newCode = generateUniqueRoomCode()
+                    Log.d("PadreViewModel", "Nuevo código generado: $newCode")
+                    newCode
+                }
+
                 _uiState.update {
                     it.copy(
                         isSignInSuccessful = result.data != null,
@@ -57,13 +68,17 @@ class PadreViewModel @Inject constructor(
                         nombre = result.data?.userName ?: "Padre",
                         email = result.data?.email,
                         fotoPerfil = result.data?.profilePictureUrl,
+                        codigoSala = codigoSala,
                         isLoading = false
                     )
                 }
                 if (result.data != null) {
                     guardarPadre()
                 }
-                Log.d("PadreViewModel","Después de onSignInResult - Estado final: isLoading = ${_uiState.value.isLoading}, " + "isSignInSuccessful = ${_uiState.value.isSignInSuccessful}, " + "nombre = ${_uiState.value.nombre}")
+                Log.d("PadreViewModel", "Después de onSignInResult - Estado final: isLoading = ${_uiState.value.isLoading}, " +
+                        "isSignInSuccessful = ${_uiState.value.isSignInSuccessful}, " +
+                        "nombre = ${_uiState.value.nombre}, " +
+                        "codigoSala = ${_uiState.value.codigoSala}")
             } catch (e: Exception) {
                 Log.e("PadreViewModel", "Error en onSignInResult: ${e.message}", e)
                 _uiState.update {
@@ -92,7 +107,6 @@ class PadreViewModel @Inject constructor(
                         isLoading = false
                     )
                 }
-                padreRepository.delete(_uiState.value.toEntity())
             } catch (e: Exception) {
                 Log.e("PadreViewModel", "Error en signOut: ${e.message}", e)
                 _uiState.update {
@@ -112,6 +126,16 @@ class PadreViewModel @Inject constructor(
                 val currentUser = authRepository.getUser()
                 Log.d("PadreViewModel", "getCurrentUser - currentUser: $currentUser")
                 if (currentUser != null) {
+                    val existingPadre = padreRepository.find(currentUser.userId)
+                    val codigoSala = if (existingPadre != null && existingPadre.codigoSala.isNotEmpty()) {
+                        Log.d("PadreViewModel", "Código existente encontrado en getCurrentUser: ${existingPadre.codigoSala}")
+                        existingPadre.codigoSala
+                    } else {
+                        val newCode = generateUniqueRoomCode()
+                        Log.d("PadreViewModel", "Nuevo código generado en getCurrentUser: $newCode")
+                        newCode
+                    }
+
                     _uiState.update {
                         it.copy(
                             isSignInSuccessful = true,
@@ -119,10 +143,13 @@ class PadreViewModel @Inject constructor(
                             nombre = currentUser.userName ?: "Padre",
                             email = currentUser.email,
                             fotoPerfil = currentUser.profilePictureUrl,
+                            codigoSala = codigoSala,
                             signInError = null
                         )
                     }
-                    Log.d("PadreViewModel", "getCurrentUser - Estado actualizado: isSignInSuccessful = ${_uiState.value.isSignInSuccessful}")
+                    Log.d("PadreViewModel", "getCurrentUser - Estado actualizado: isSignInSuccessful = ${_uiState.value.isSignInSuccessful}, " +
+                            "codigoSala = ${_uiState.value.codigoSala}")
+                    guardarPadre()
                 } else {
                     _uiState.update {
                         it.copy(
@@ -157,66 +184,25 @@ class PadreViewModel @Inject constructor(
         }
     }
 
-    /*
-    Comentado por si deba usarse en un Futuro
-
-    private fun logout() {
-        viewModelScope.launch {
-            try {
-                authRepository.logout()
-            } catch (e: Exception) {
-                Log.e("PadreViewModel", "Error en logout: ${e.message}", e)
+    private suspend fun generateUniqueRoomCode(): String {
+        var code: String
+        do {
+            code = UUID.randomUUID().toString().substring(0, 6).uppercase()
+            Log.d("PadreViewModel", "Generando código: $code")
+            val padres = padreRepository.getAll().collectFirstOrNull() ?: emptyList()
+            Log.d("PadreViewModel", "Lista de padres obtenida: $padres")
+            val existingPadre = padres.find { it.codigoSala == code }
+            if (existingPadre != null) {
+                Log.d("PadreViewModel", "Código $code ya existe, generando uno nuevo")
             }
-        }
+        } while (existingPadre != null)
+        Log.d("PadreViewModel", "Código único generado: $code")
+        return code
     }
-
-    private fun getPadres() {
-        viewModelScope.launch {
-            padreRepository.getAll().collect { padres ->
-                _uiState.update {
-                    it.copy(padres = padres)
-                }
-            }
-        }
-    }
-
-    private fun updateUiState(update: (PadreUiState) -> PadreUiState) {
-        _uiState.update(update)
-    }
-
-    private fun handleSelectedPadre(usuarioId: String) {
-        viewModelScope.launch {
-            cargarPadreSeleccionado(usuarioId)
-        }
-    }
-
-    private fun handleDeleteEvent() {
-        viewModelScope.launch {
-            padreRepository.delete(_uiState.value.toEntity())
-        }
-    }*/
 
     private suspend fun guardarPadre() {
         padreRepository.save(_uiState.value.toEntity())
     }
-
-    /*
-    Comentado por si deba usarse en un Futuro
-
-    private fun cargarPadreSeleccionado(padreId: String) = viewModelScope.launch {
-        val padre = padreRepository.find(padreId)
-        if (padre != null) {
-            _uiState.update {
-                it.copy(
-                    padreId = padre.padreId,
-                    nombre = padre.nombre,
-                    email = padre.email,
-                    fotoPerfil = padre.profilePictureUrl,
-                    codigoSala = padre.codigoSala
-                )
-            }
-        }
-    }*/
 }
 
 fun PadreUiState.toEntity() = PadreEntity(

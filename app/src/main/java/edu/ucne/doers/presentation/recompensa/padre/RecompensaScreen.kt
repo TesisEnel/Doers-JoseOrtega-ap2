@@ -1,4 +1,4 @@
-package edu.ucne.doers.presentation.recompensa
+package edu.ucne.doers.presentation.recompensa.padre
 
 import android.content.Context
 import android.graphics.BitmapFactory
@@ -42,6 +42,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.rememberAsyncImagePainter
 import edu.ucne.doers.data.local.model.ImageUtils
+import edu.ucne.doers.presentation.recompensa.RecompensaUiState
+import edu.ucne.doers.presentation.recompensa.RecompensaViewModel
+import edu.ucne.doers.presentation.recompensa.toEntity
 import java.io.File
 
 @Composable
