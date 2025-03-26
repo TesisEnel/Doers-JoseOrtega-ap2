@@ -2,6 +2,7 @@ package edu.ucne.doers.presentation.recompensa.hijo
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -35,6 +36,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -58,6 +61,7 @@ fun RecompensasHijoScreen(
     navController: NavController
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val azulMar = Color(0xFF1976D2)
 
     LaunchedEffect(padreId) {
         viewModel.loadRecompensas()
@@ -66,10 +70,22 @@ fun RecompensasHijoScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Recompensas", fontSize = 20.sp) },
+                title = {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Doers",
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            color = Color.White,
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                    containerColor = azulMar
                 )
             )
         },
@@ -87,7 +103,8 @@ fun RecompensasHijoScreen(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                val pairedRecompensas = uiState.recompensas.chunked(2)
+                val availableRecompensas = uiState.recompensas.filter { it.estado == EstadoRecompensa.DISPONIBLE }
+                val pairedRecompensas = availableRecompensas.chunked(2)
                 items(pairedRecompensas) { pair ->
                     Row(
                         modifier = Modifier
