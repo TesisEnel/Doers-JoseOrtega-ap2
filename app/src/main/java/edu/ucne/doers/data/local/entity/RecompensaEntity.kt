@@ -32,5 +32,8 @@ data class RecompensaEntity(
         descripcion = descripcion,
         puntosNecesarios = puntosNecesarios,
         estado = EstadoRecompensa.valueOf(estado),
+        errorMessage = null,
+        recompensas = emptyList(),
+        isLoading = false
     )
 }
