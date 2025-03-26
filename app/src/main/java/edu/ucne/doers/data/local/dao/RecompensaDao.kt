@@ -25,6 +25,9 @@ interface RecompensaDao {
     )
     suspend fun find(id: Int): RecompensaEntity?
 
+    @Query("SELECT * FROM Recompensas WHERE padreId = :padreId")
+    fun getRecompensasByPadreId(padreId: String): Flow<List<RecompensaEntity>>
+
     @Delete
     suspend fun delete(recompensaEntity: RecompensaEntity)
 
