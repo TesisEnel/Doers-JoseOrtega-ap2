@@ -14,11 +14,13 @@ sealed class Screen {
     @Serializable
     data class Recompensa(val recompensaId: Int) : Screen()
     @Serializable
-    data object TareasList : Screen()
+    data object TareaList : Screen()
     @Serializable
     data class  Tarea(val tareaId: Int) : Screen()
     @Serializable
-    data object HijoList : Screen()
+    data object TareaHijo : Screen()
     @Serializable
     data object HijoLogin : Screen()
+    @Serializable
+    data object Hijo : Screen()
 }
