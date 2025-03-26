@@ -1,5 +1,6 @@
 package edu.ucne.doers.presentation.padres
 
+import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -14,10 +15,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -28,6 +32,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -137,6 +142,18 @@ fun PadreScreen(
                                 )
                             }
                         }
+                        IconButton(
+                            onClick = { showDialog = true },
+                            modifier = Modifier
+                                .size(40.dp)
+                                .padding(end = 8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                                contentDescription = "Cerrar sesión",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                     Spacer(modifier = Modifier.height(20.dp))
                     Card(
@@ -181,11 +198,97 @@ fun PadreScreen(
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
+                            IconButton(
+                                onClick = {
+                                    val mensaje = """
+                                        🎯 ¡${uiState.nombre} te invita a unirte a su sala en Doers! 👨‍👩‍👧‍👦
+                                        Ha creado una sala en Doers para motivarnos a completar tareas y ganar recompensas. 🎁
+                                        🔑 Código de la sala: ${uiState.codigoSala}
+                                        📲 Descarga la app y usa este código para unirte.
+                                        🚀 ¡Únete ahora y empieza a ganar recompensas divertidas! 🎉
+                                        """.trimIndent()
+
+                                    val intent = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_TEXT, mensaje)
+                                    }
+                                    context.startActivity(
+                                        Intent.createChooser(
+                                            intent,
+                                            "Compartir Código"
+                                        )
+                                    )
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Share,
+                                    contentDescription = "Compartir Código",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
                     }
                 }
             }
         }
+    }
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            icon = {
+                if (!uiState.fotoPerfil.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = uiState.fotoPerfil,
+                        contentDescription = "Foto de perfil del padre",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.secondaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = uiState.nombre?.firstOrNull()?.toString() ?: "P",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                    }
+                }
+            },
+            title = {
+                Text(
+                    "Cerrar Sesión",
+                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                )
+            },
+            text = { Text("¿Estás seguro de que quieres salir?") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.signOut()
+                        navController.navigate(Screen.Home) {
+                            popUpTo(Screen.Padre) { inclusive = true }
+                        }
+                    }
+                ) {
+                    Text("Sí, cerrar sesión", color = MaterialTheme.colorScheme.primary)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("No, volver atrás", color = MaterialTheme.colorScheme.primary)
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurface,
+            shape = MaterialTheme.shapes.medium,
+        )
     }
 }
 
