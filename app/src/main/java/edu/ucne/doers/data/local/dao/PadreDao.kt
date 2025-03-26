@@ -34,6 +34,16 @@ interface PadreDao {
     )
     suspend fun findEmail(email: String): PadreEntity?
 
+    @Query(
+        """
+            SELECT *
+            FROM Padres
+            WHERE codigoSala =:codigoSala
+            LIMIT 1
+        """
+    )
+    suspend fun findByCodigoSala(codigoSala: String): PadreEntity?
+
     @Delete
     suspend fun delete(padreEntity: PadreEntity)
 
