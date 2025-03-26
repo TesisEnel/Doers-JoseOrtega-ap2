@@ -36,7 +36,7 @@ import edu.ucne.doers.R
 @Composable
 fun HomeScreen(
     onSignClickWithGoogle: () -> Unit,
-    goToHijoList: () -> Unit,
+    onHijoClick: () -> Unit,
     isLoading: Boolean = false,
     errorMessage: String? = null,
 ) {
@@ -110,7 +110,7 @@ fun HomeScreen(
                 }
 
                 Button(
-                    onClick = { goToHijoList() },
+                    onClick = onHijoClick,
                     modifier = Modifier
                         .size(140.dp)
                         .clip(CircleShape)

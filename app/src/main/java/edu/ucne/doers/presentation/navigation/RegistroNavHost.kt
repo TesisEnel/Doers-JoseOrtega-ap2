@@ -19,6 +19,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import edu.ucne.doers.presentation.hijos.HijoLoginScreen
 import edu.ucne.doers.presentation.home.HomeScreen
 import edu.ucne.doers.presentation.padres.PadreScreen
 import edu.ucne.doers.presentation.padres.PadreViewModel
@@ -121,8 +122,8 @@ fun DoersNavHost(
                             }
                         }
                     },
-                    goToHijoList = {
-                        navHostController.navigate(Screen.HijoList)
+                    onHijoClick = {
+                        navHostController.navigate(Screen.HijoLogin)
                     }
 
                 )
@@ -132,6 +133,16 @@ fun DoersNavHost(
                 PadreScreen(
                     viewModel = viewModel,
                     navController = navHostController,
+                )
+            }
+
+            composable<Screen.HijoLogin> {
+                HijoLoginScreen(
+                    onChildLoggedIn = {
+                        navHostController.navigate("child_home") {
+                            popUpTo(Screen.Home) { inclusive = true }
+                        }
+                    }
                 )
             }
 
