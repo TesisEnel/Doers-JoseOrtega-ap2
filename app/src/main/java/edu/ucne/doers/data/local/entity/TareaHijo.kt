@@ -30,7 +30,5 @@ data class TareaHijo(
     val tareaId: Int,
     val hijoId: Int,
     val estado: EstadoTareaHijo = EstadoTareaHijo.PENDIENTE_VERIFICACION,
-    val fechaVerificacion: Date? = null,
-    val saldoActual: Int = 0,
-    val balance: Int = 0
+    val fechaVerificacion: Date? = null
 )
