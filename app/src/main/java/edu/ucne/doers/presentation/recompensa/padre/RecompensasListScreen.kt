@@ -302,9 +302,9 @@ fun BottomNavigationBar(navController: NavController, currentScreen: Screen) {
         NavigationBarItem(
             icon = { Icon(Icons.Filled.Checklist, contentDescription = "Tarea") },
             label = { Text("Tarea") },
-            selected = currentScreen == Screen.TareasList,
+            selected = currentScreen == Screen.TareaList,
             onClick = {
-                navController.navigate(Screen.TareasList) {
+                navController.navigate(Screen.TareaList) {
                     popUpTo(navController.graph.startDestinationId) { inclusive = false }
                     launchSingleTop = true
                 }
