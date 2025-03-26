@@ -31,7 +31,7 @@ import edu.ucne.doers.data.local.entity.TransaccionHijo
         TransaccionHijo::class,
         SolicitudRecompensa::class
     ],
-    version = 1
+    version = 2
 )
 @TypeConverters(Converters::class)
 abstract class DoersDb : RoomDatabase() {
