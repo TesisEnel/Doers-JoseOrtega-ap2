@@ -19,4 +19,6 @@ data class HijoEntity(
     @PrimaryKey(autoGenerate = true) val hijoId: Int = 0,
     val padreId: String,
     val nombre: String,
+    val saldoActual: Int = 0,
+    val balance: Int = 0
 )

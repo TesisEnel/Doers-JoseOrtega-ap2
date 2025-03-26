@@ -23,10 +23,18 @@ interface TareaHijoDao {
             LIMIT 1
         """
     )
+
     suspend fun find(id: Int): TareaHijo?
 
     @Delete
     suspend fun delete(tareaHijo: TareaHijo)
+
+    @Query
+        ("""
+        SELECT * FROM TareasHijos 
+        WHERE hijoId = :hijoId
+    """)
+    fun getByHijoId(hijoId: Int): Flow<List<TareaHijo>>
 
     @Query("SELECT * FROM TareasHijos")
     fun getAll(): Flow<List<TareaHijo>>
