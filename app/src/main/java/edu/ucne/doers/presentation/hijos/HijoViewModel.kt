@@ -62,19 +62,6 @@ class HijoViewModel @Inject constructor(
         return uiState.value.isAuthenticated
     }
 
-    fun logoutHijo() {
-        sharedPreferences.edit().remove("hijoId").apply()
-        _uiState.update {
-            it.copy(
-                hijoId = 0,
-                padreId = "",
-                nombre = "",
-                isAuthenticated = false,
-                errorMessage = null
-            )
-        }
-    }
-
     fun loginChild(nombre: String, codigoSala: String) {
         viewModelScope.launch {
             if (nombre.isBlank()) {
