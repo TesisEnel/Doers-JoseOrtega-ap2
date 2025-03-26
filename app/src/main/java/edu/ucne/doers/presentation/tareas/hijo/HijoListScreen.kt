@@ -85,7 +85,6 @@ fun HijoBodyListScreen(
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val boxConstraints = this.constraints
-        val imageSize = min(boxConstraints.maxWidth, boxConstraints.maxHeight) * 0.4f
 
         Box(modifier = Modifier.fillMaxSize()) {
             if (showModal) {
@@ -113,8 +112,7 @@ fun HijoBodyListScreen(
                         )
                     }
                 } else {
-                    Column(modifier = Modifier.weight(1f)) { // Asegura que ocupe el espacio restante
-                        // Filtro horizontal
+                    Column(modifier = Modifier.weight(1f)) {
                         HorizontalFilter(
                             options = periodicidades,
                             selectedOption = filtroSeleccionado,
@@ -172,7 +170,7 @@ fun HijoBodyListScreen(
                             LazyColumn(
                                 modifier = Modifier
                                     .padding(horizontal = 8.dp)
-                                    .weight(1f) // Ocupará el espacio disponible sin empujar la barra de navegación
+                                    .weight(1f)
                             ) {
                                 items(tareasFiltradas, key = { it.tareaId }) { tarea ->
                                     TareaCardHijo(
