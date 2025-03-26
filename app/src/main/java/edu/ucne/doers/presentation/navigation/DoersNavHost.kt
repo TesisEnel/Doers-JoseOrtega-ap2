@@ -1,7 +1,6 @@
 package edu.ucne.doers.presentation.navigation
 
 import android.app.Activity.RESULT_OK
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,11 +19,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import edu.ucne.doers.presentation.hijos.HijoLoginScreen
+import edu.ucne.doers.presentation.hijos.HijoScreen
+import edu.ucne.doers.presentation.hijos.HijoViewModel
 import edu.ucne.doers.presentation.home.HomeScreen
 import edu.ucne.doers.presentation.padres.PadreScreen
 import edu.ucne.doers.presentation.padres.PadreViewModel
-import edu.ucne.doers.presentation.recompensa.RecompensaScreen
-import edu.ucne.doers.presentation.recompensa.RecompensasListScreen
+import edu.ucne.doers.presentation.recompensa.hijo.RecompensasHijoScreen
+import edu.ucne.doers.presentation.recompensa.padre.RecompensaScreen
+import edu.ucne.doers.presentation.recompensa.padre.RecompensasListScreen
 import edu.ucne.doers.presentation.sign_in.GoogleAuthUiClient
 import edu.ucne.doers.presentation.tareas.hijo.HijoListScreen
 import edu.ucne.doers.presentation.tareas.padre.TareaScreen
@@ -38,41 +40,39 @@ fun DoersNavHost(
     googleAuthUiClient: GoogleAuthUiClient,
 ) {
     val scope = rememberCoroutineScope()
-    val viewModel: PadreViewModel = hiltViewModel()
-    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val padreViewModel: PadreViewModel = hiltViewModel()
+    val hijoViewModel: HijoViewModel = hiltViewModel()
+    val padreState by padreViewModel.uiState.collectAsStateWithLifecycle()
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartIntentSenderForResult(),
         onResult = { result ->
-            Log.d("DoersNavHost", "Launcher onResult: resultCode = ${result.resultCode}")
             if (result.resultCode == RESULT_OK) {
                 scope.launch {
-                    Log.d("DoersNavHost", "Procesando resultado del inicio de sesión...")
                     val signInResult = googleAuthUiClient.signInWithIntent(
                         intent = result.data ?: return@launch
                     )
-                    viewModel.onSignInResult(signInResult)
+                    padreViewModel.onSignInResult(signInResult)
                     delay(500)
-                    if (state.isSignInSuccessful && signInResult.errorMessage == null) {
-                        Log.d("DoersNavHost", "Inicio de sesión exitoso, navegando a PadreScreen")
+                    if (padreState.isSignInSuccessful && signInResult.errorMessage == null) {
                         navHostController.navigate(Screen.Padre) {
                             popUpTo(Screen.Home) { inclusive = true }
                         }
                     } else {
-                        Log.e("DoersNavHost", "Error en inicio de sesión: ${signInResult.errorMessage}")
-                        viewModel.setLoading(false)
-                        viewModel.setSignInError(signInResult.errorMessage ?: "Error desconocido")
+                        padreViewModel.setLoading(false)
+                        padreViewModel.setSignInError(
+                            signInResult.errorMessage ?: "Error desconocido"
+                        )
                     }
                 }
             } else {
-                Log.e("DoersNavHost", "Resultado no OK: ${result.resultCode}")
-                viewModel.setLoading(false)
-                viewModel.setSignInError("Inicio de sesión cancelado")
+                padreViewModel.setLoading(false)
+                padreViewModel.setSignInError("Inicio de sesión cancelado")
             }
         }
     )
 
-    if (state.isLoading) {
+    if (padreState.isLoading) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -88,104 +88,105 @@ fun DoersNavHost(
                 HomeScreen(
                     onSignClickWithGoogle = {
                         scope.launch {
-                            Log.d("DoersNavHost", "Verificando si el usuario está autenticado...")
-                            val isAuthenticated = viewModel.isAuthenticated()
-                            Log.d("DoersNavHost", "isAuthenticated = $isAuthenticated")
+                            val isAuthenticated = padreViewModel.isAuthenticated()
                             if (isAuthenticated) {
-                                Log.d("DoersNavHost", "Usuario ya autenticado, cargando datos...")
-                                viewModel.setLoading(true)
-                                viewModel.getCurrentUser()
+                                padreViewModel.setLoading(true)
+                                padreViewModel.getCurrentUser()
                                 delay(100)
-                                if (state.isSignInSuccessful) {
-                                    Log.d("DoersNavHost", "Datos cargados, navegando a PadreScreen")
+                                if (padreState.isSignInSuccessful) {
                                     navHostController.navigate(Screen.Padre) {
                                         popUpTo(Screen.Home) { inclusive = true }
                                     }
                                 } else {
-                                    Log.e("DoersNavHost", "Usuario autenticado pero datos no cargados")
-                                    viewModel.setSignInError("Error al cargar datos del usuario")
+                                    padreViewModel.setSignInError("Error al cargar datos del usuario")
                                 }
-                                viewModel.setLoading(false)
+                                padreViewModel.setLoading(false)
                             } else {
-                                Log.d("DoersNavHost", "Usuario no autenticado, iniciando proceso de inicio de sesión...")
-                                viewModel.setLoading(true)
+                                padreViewModel.setLoading(true)
                                 val signInIntentSender = googleAuthUiClient.signIn()
                                 if (signInIntentSender != null) {
                                     launcher.launch(
                                         IntentSenderRequest.Builder(signInIntentSender).build()
                                     )
                                 } else {
-                                    Log.e("DoersNavHost", "signInIntentSender es null")
-                                    viewModel.setLoading(false)
-                                    viewModel.setSignInError("Error al iniciar el proceso de autenticación")
+                                    padreViewModel.setLoading(false)
+                                    padreViewModel.setSignInError("Error al iniciar el proceso de autenticación")
                                 }
                             }
                         }
                     },
                     onHijoClick = {
-                        navHostController.navigate(Screen.HijoLogin)
-                    }
-
-                )
-            }
-
-            composable<Screen.Padre> {
-                PadreScreen(
-                    viewModel = viewModel,
-                    navController = navHostController,
-                )
-            }
-
-            composable<Screen.HijoLogin> {
-                HijoLoginScreen(
-                    onChildLoggedIn = {
-                        navHostController.navigate("child_home") {
-                            popUpTo(Screen.Home) { inclusive = true }
+                        scope.launch {
+                            val isHijoAuthenticated = hijoViewModel.isAuthenticated()
+                            if (isHijoAuthenticated) {
+                                navHostController.navigate(Screen.Hijo) {
+                                    popUpTo(Screen.Home) { inclusive = true }
+                                }
+                            } else {
+                                navHostController.navigate(Screen.HijoLogin)
+                            }
                         }
                     }
                 )
             }
 
+            composable<Screen.Padre> {
+                PadreScreen(
+                    viewModel = padreViewModel,
+                    navController = navHostController
+                )
+            }
+            composable<Screen.Hijo> {
+                HijoScreen(
+                    hijoViewModel = hijoViewModel,
+                    padreViewModel = padreViewModel,
+                    navController = navHostController
+                )
+            }
+            composable<Screen.HijoLogin> {
+                HijoLoginScreen(
+                    onChildLoggedIn = {
+                        navHostController.navigate(Screen.Hijo) {
+                            popUpTo(Screen.Home) { inclusive = true }
+                        }
+                    }
+                )
+            }
             composable<Screen.Recompensa> { arg ->
                 val recompensaId = arg.toRoute<Screen.Recompensa>().recompensaId
                 RecompensaScreen(
                     recompensaId = recompensaId,
-                    goRecompensasList = {
-                        navHostController.navigate(Screen.RecompensaList)
-                    }
+                    goRecompensasList = { navHostController.navigate(Screen.RecompensaList) }
                 )
             }
-
             composable<Screen.RecompensaList> {
                 RecompensasListScreen(
-                    createRecompensa = {
-                        navHostController.navigate(Screen.Recompensa(0))
-                    },
-                    goToRecompensa = {
-                        navHostController.navigate(Screen.Recompensa(it))
-                    },
+                    createRecompensa = { navHostController.navigate(Screen.Recompensa(0)) },
+                    goToRecompensa = { navHostController.navigate(Screen.Recompensa(it)) },
                     navController = navHostController
                 )
             }
-            composable<Screen.TareasList> {
+            composable<Screen.RecompensaHijo> {
+                RecompensasHijoScreen(
+                    navController = navHostController,
+                    padreId = padreState.padreId ?: ""
+                )
+            }
+            composable<Screen.TareaList> {
                 TareasListScreen(
                     goToAgregarTarea = { navHostController.navigate(Screen.Tarea(0)) },
                     navController = navHostController
                 )
             }
-
             composable<Screen.Tarea> {
                 val tareaId = it.toRoute<Screen.Tarea>().tareaId
                 TareaScreen(
-                    goBackToPantallaTareas = { navHostController.navigate(Screen.TareasList) },
+                    goBackToPantallaTareas = { navHostController.navigate(Screen.TareaList) },
                     tareaId = tareaId
                 )
             }
-
-            composable<Screen.HijoList> {
-                HijoListScreen(
-                    navController = navHostController
-                )
+            composable<Screen.TareaHijo> {
+                HijoListScreen(navController = navHostController)
             }
         }
     }
