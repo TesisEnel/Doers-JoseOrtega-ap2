@@ -99,7 +99,7 @@ fun TareasBodyListScreen(
         bottomBar = {
             BottomNavigationBar(
                 navController = navController,
-                currentScreen = Screen.TareasList
+                currentScreen = Screen.TareaList
             )
         },
         content = { paddingValues ->
@@ -122,7 +122,7 @@ fun BottomNavigationBar(navController: NavController, currentScreen: Screen) {
         NavigationBarItem(
             icon = { Icon(Icons.Filled.Checklist, contentDescription = "Tarea") },
             label = { Text("Tarea") },
-            selected = currentScreen == Screen.TareasList,
+            selected = currentScreen == Screen.TareaList,
             onClick = { }
         )
         NavigationBarItem(
