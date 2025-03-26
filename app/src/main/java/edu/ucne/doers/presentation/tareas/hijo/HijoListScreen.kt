@@ -12,13 +12,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Checklist
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -38,10 +44,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import edu.ucne.doers.R
 import edu.ucne.doers.data.local.model.PeriodicidadTarea
-import edu.ucne.doers.presentation.tareas.components.EmptyStateView
+import edu.ucne.doers.presentation.navigation.Screen
 import edu.ucne.doers.presentation.tareas.components.HorizontalFilter
 import edu.ucne.doers.presentation.tareas.components.TareaCardHijo
 import edu.ucne.doers.presentation.tareas.components.WelcomeModal
@@ -93,9 +100,7 @@ fun HijoBodyListScreen(
                 CenterAlignedTopAppBar(
                     title = { Text("Doers", color = Color.White, fontWeight = FontWeight.Bold) },
                     colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = Color(
-                            0xFF1976D2
-                        )
+                        containerColor = Color(0xFF1976D2)
                     ),
                     modifier = Modifier.shadow(elevation = 8.dp)
                 )
@@ -108,88 +113,110 @@ fun HijoBodyListScreen(
                         )
                     }
                 } else {
-                    when {
-                        uiState.listaTareas.isEmpty() -> {
-                            EmptyStateView(imageSize = imageSize)
-                        }
+                    Column(modifier = Modifier.weight(1f)) { // Asegura que ocupe el espacio restante
+                        // Filtro horizontal
+                        HorizontalFilter(
+                            options = periodicidades,
+                            selectedOption = filtroSeleccionado,
+                            onOptionSelected = { filtroSeleccionado = it },
+                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                        )
 
-                        else -> {
-                            Column(modifier = Modifier.fillMaxSize()) {
-                                // Filtro horizontal
-                                HorizontalFilter(
-                                    options = periodicidades,
-                                    selectedOption = filtroSeleccionado,
-                                    onOptionSelected = { filtroSeleccionado = it },
-                                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-                                )
+                        Text(
+                            "Tareas asignadas por tu padre o tutor",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                color = Color(0xFF1976D2),
+                                fontWeight = FontWeight.Bold
+                            ),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp)
+                        )
 
-                                Text(
-                                    "Tareas asignadas por tu padre o tutor",
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        color = Color(0xFF1976D2),
-                                        fontWeight = FontWeight.Bold
-                                    ),
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 8.dp)
-                                )
-
-                                // Filtrar tareas según selección
-                                val tareasFiltradas =
-                                    remember(uiState.listaTareas, filtroSeleccionado) {
-                                        if (filtroSeleccionado == "Todas") {
-                                            uiState.listaTareas
-                                        } else {
-                                            uiState.listaTareas.filter { it.periodicidad?.nombreMostrable == filtroSeleccionado }
-                                        }
-                                    }
-
-                                if (tareasFiltradas.isEmpty()) {
-                                    Box(
-                                        modifier = Modifier.size(500.dp, 300.dp),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Column(
-                                            horizontalAlignment = Alignment.CenterHorizontally,
-                                            verticalArrangement = Arrangement.Center
-                                        ) {
-                                            Image(
-                                                painter = painterResource(id = R.drawable.pantalla_de_espera),
-                                                contentDescription = "No se encontró tarea",
-                                                contentScale = ContentScale.Fit,
-                                                modifier = Modifier.height(250.dp).width(250.dp)
-                                            )
-                                            Spacer(modifier = Modifier.height(8.dp))
-                                            Text(
-                                                "No se han encontrado tareas con este estado",
-                                                style = MaterialTheme.typography.titleMedium,
-                                                color = Color.Gray,
-                                                textAlign = TextAlign.Center,
-                                                modifier = Modifier.padding(horizontal = 16.dp)
-                                            )
-                                        }
-                                    }
+                        val tareasFiltradas =
+                            remember(uiState.listaTareas, filtroSeleccionado) {
+                                if (filtroSeleccionado == "Todas") {
+                                    uiState.listaTareas
                                 } else {
-                                    LazyColumn(
-                                        modifier = Modifier
-                                            .padding(horizontal = 8.dp)
-                                            .weight(1f)
-                                    ) {
-                                        items(tareasFiltradas, key = { it.tareaId }) { tarea ->
-                                            TareaCardHijo(
-                                                tarea = tarea,
-                                                onCompletar = { viewModel.completarTarea(tarea.tareaId) }
-                                            )
-                                            Spacer(modifier = Modifier.height(8.dp))
-                                        }
-                                    }
+                                    uiState.listaTareas.filter { it.periodicidad?.nombreMostrable == filtroSeleccionado }
+                                }
+                            }
+
+                        if (tareasFiltradas.isEmpty()) {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.pantalla_de_espera),
+                                        contentDescription = "No se encontró tarea",
+                                        contentScale = ContentScale.Fit,
+                                        modifier = Modifier.size(250.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        "No se han encontrado tareas con este estado",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = Color.Gray,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.padding(horizontal = 16.dp)
+                                    )
+                                }
+                            }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .padding(horizontal = 8.dp)
+                                    .weight(1f) // Ocupará el espacio disponible sin empujar la barra de navegación
+                            ) {
+                                items(tareasFiltradas, key = { it.tareaId }) { tarea ->
+                                    TareaCardHijo(
+                                        tarea = tarea,
+                                        onCompletar = { viewModel.completarTarea(tarea.tareaId) }
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
                                 }
                             }
                         }
                     }
                 }
+                BottomNavigationBar(navController, Screen.TareaHijo)
             }
         }
+    }
+}
+
+@Composable
+fun BottomNavigationBar(
+    navController: NavController,
+    currentScreen: Screen
+) {
+    NavigationBar(
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface
+    ) {
+        NavigationBarItem(
+            icon = { Icon(Icons.Filled.Checklist, contentDescription = "Tareas") },
+            label = { Text("Tareas") },
+            selected = currentScreen == Screen.TareaHijo,
+            onClick = {}
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Filled.Star, contentDescription = "Recompensas") },
+            label = { Text("Recompensas") },
+            selected = currentScreen == Screen.RecompensaHijo,
+            onClick = { navController.navigate(Screen.RecompensaHijo) }
+        )
+        NavigationBarItem(
+            icon = { Icon(Icons.Filled.Person, contentDescription = "Perfil") },
+            label = { Text("Perfil") },
+            selected = currentScreen == Screen.Hijo,
+            onClick = { navController.navigate(Screen.Hijo) }
+        )
     }
 }
