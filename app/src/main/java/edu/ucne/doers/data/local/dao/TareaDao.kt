@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Query
 import androidx.room.Upsert
 import edu.ucne.doers.data.local.entity.TareaEntity
+import edu.ucne.doers.data.local.model.CondicionTarea
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -24,6 +25,15 @@ interface TareaDao {
         """
     )
     suspend fun find(id: Int): TareaEntity?
+
+    // Nueva funcion
+    @Query(
+        """
+            SELECT * FROM Tareas 
+            WHERE condicion = :condicion
+        """
+    )
+    fun getByCondition(condicion: CondicionTarea): Flow<List<TareaEntity>>
 
     @Delete
     suspend fun delete(tareaEntity: TareaEntity)
