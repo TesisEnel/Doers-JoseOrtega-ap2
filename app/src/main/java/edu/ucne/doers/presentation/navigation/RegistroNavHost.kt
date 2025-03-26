@@ -25,6 +25,7 @@ import edu.ucne.doers.presentation.padres.PadreViewModel
 import edu.ucne.doers.presentation.recompensa.RecompensaScreen
 import edu.ucne.doers.presentation.recompensa.RecompensasListScreen
 import edu.ucne.doers.presentation.sign_in.GoogleAuthUiClient
+import edu.ucne.doers.presentation.tareas.hijo.HijoListScreen
 import edu.ucne.doers.presentation.tareas.padre.TareaScreen
 import edu.ucne.doers.presentation.tareas.padre.TareasListScreen
 import kotlinx.coroutines.delay
@@ -119,7 +120,11 @@ fun DoersNavHost(
                                 }
                             }
                         }
+                    },
+                    goToHijoList = {
+                        navHostController.navigate(Screen.HijoList)
                     }
+
                 )
             }
 
@@ -163,6 +168,12 @@ fun DoersNavHost(
                 TareaScreen(
                     goBackToPantallaTareas = { navHostController.navigate(Screen.TareasList) },
                     tareaId = tareaId
+                )
+            }
+
+            composable<Screen.HijoList> {
+                HijoListScreen(
+                    navController = navHostController
                 )
             }
         }
