@@ -28,7 +28,6 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -71,22 +70,7 @@ fun RecompensasHijoScreen(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                     titleContentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                actions = {
-                    TextButton(
-                        onClick = {
-                            hijoViewModel.logoutHijo()
-                            navController.navigate(Screen.HijoLogin) {
-                                popUpTo(Screen.RecompensaHijo) { inclusive = true }
-                            }
-                        }
-                    ) {
-                        Text(
-                            "Salir",
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
+                )
             )
         },
         bottomBar = {
@@ -202,39 +186,31 @@ fun RecompensaRow(
 }
 
 @Composable
-fun BottomNavigationBar(navController: NavController, currentScreen: Screen) {
+fun BottomNavigationBar(
+    navController: NavController,
+    currentScreen: Screen
+) {
     NavigationBar(
         containerColor = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface
     ) {
         NavigationBarItem(
-            icon = { Icon(Icons.Filled.Checklist, contentDescription = "Tarea") },
-            label = { Text("Tarea") },
-            selected = currentScreen == Screen.RecompensaHijo,
-            onClick = {
-                navController.navigate(Screen.RecompensaHijo) {
-                    popUpTo(navController.graph.startDestinationId) { inclusive = false }
-                    launchSingleTop = true
-                }
-            }
+            icon = { Icon(Icons.Filled.Checklist, contentDescription = "Tareas") },
+            label = { Text("Tareas") },
+            selected = currentScreen == Screen.TareaHijo,
+            onClick = { navController.navigate(Screen.TareaHijo) }
         )
         NavigationBarItem(
             icon = { Icon(Icons.Filled.Star, contentDescription = "Recompensas") },
             label = { Text("Recompensas") },
             selected = currentScreen == Screen.RecompensaHijo,
-            onClick = {
-                navController.navigate(Screen.RecompensaHijo) {
-                    popUpTo(navController.graph.startDestinationId) { inclusive = false }
-                    launchSingleTop = true
-                }
-            }
+            onClick = {}
         )
         NavigationBarItem(
             icon = { Icon(Icons.Filled.Person, contentDescription = "Perfil") },
             label = { Text("Perfil") },
-            selected = currentScreen == Screen.RecompensaHijo,
-            onClick = {
-            }
+            selected = currentScreen == Screen.Hijo,
+            onClick = { navController.navigate(Screen.Hijo) }
         )
     }
 }
