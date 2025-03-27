@@ -1,6 +1,5 @@
 package edu.ucne.doers.presentation.padres
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -48,15 +47,12 @@ class PadreViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 setLoading(true)
-                Log.d("PadreViewModel", "onSignInResult: data = ${result.data}, error = ${result.errorMessage}")
 
                 val existingPadre = result.data?.userId?.let { padreRepository.find(it) }
                 val codigoSala = if (existingPadre != null && existingPadre.codigoSala.isNotEmpty()) {
-                    Log.d("PadreViewModel", "Código existente encontrado: ${existingPadre.codigoSala}")
                     existingPadre.codigoSala
                 } else {
                     val newCode = generateUniqueRoomCode()
-                    Log.d("PadreViewModel", "Nuevo código generado: $newCode")
                     newCode
                 }
 
@@ -75,12 +71,7 @@ class PadreViewModel @Inject constructor(
                 if (result.data != null) {
                     guardarPadre()
                 }
-                Log.d("PadreViewModel", "Después de onSignInResult - Estado final: isLoading = ${_uiState.value.isLoading}, " +
-                        "isSignInSuccessful = ${_uiState.value.isSignInSuccessful}, " +
-                        "nombre = ${_uiState.value.nombre}, " +
-                        "codigoSala = ${_uiState.value.codigoSala}")
             } catch (e: Exception) {
-                Log.e("PadreViewModel", "Error en onSignInResult: ${e.message}", e)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -108,7 +99,6 @@ class PadreViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                Log.e("PadreViewModel", "Error en signOut: ${e.message}", e)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -124,15 +114,12 @@ class PadreViewModel @Inject constructor(
             try {
                 setLoading(true)
                 val currentUser = authRepository.getUser()
-                Log.d("PadreViewModel", "getCurrentUser - currentUser: $currentUser")
                 if (currentUser != null) {
                     val existingPadre = padreRepository.find(currentUser.userId)
                     val codigoSala = if (existingPadre != null && existingPadre.codigoSala.isNotEmpty()) {
-                        Log.d("PadreViewModel", "Código existente encontrado en getCurrentUser: ${existingPadre.codigoSala}")
                         existingPadre.codigoSala
                     } else {
                         val newCode = generateUniqueRoomCode()
-                        Log.d("PadreViewModel", "Nuevo código generado en getCurrentUser: $newCode")
                         newCode
                     }
 
@@ -147,8 +134,6 @@ class PadreViewModel @Inject constructor(
                             signInError = null
                         )
                     }
-                    Log.d("PadreViewModel", "getCurrentUser - Estado actualizado: isSignInSuccessful = ${_uiState.value.isSignInSuccessful}, " +
-                            "codigoSala = ${_uiState.value.codigoSala}")
                     guardarPadre()
                 } else {
                     _uiState.update {
@@ -160,7 +145,6 @@ class PadreViewModel @Inject constructor(
                 }
                 setLoading(false)
             } catch (e: Exception) {
-                Log.e("PadreViewModel", "Error en getCurrentUser: ${e.message}", e)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -174,12 +158,9 @@ class PadreViewModel @Inject constructor(
     suspend fun isAuthenticated(): Boolean {
         return try {
             val user = authRepository.getUser()
-            Log.d("PadreViewModel", "isAuthenticated - user: $user")
             val isAuthenticated = user?.userId != null
-            Log.d("PadreViewModel", "isAuthenticated - resultado: $isAuthenticated")
             isAuthenticated
         } catch (e: Exception) {
-            Log.e("PadreViewModel", "Error en isAuthenticated: ${e.message}", e)
             false
         }
     }
@@ -188,15 +169,9 @@ class PadreViewModel @Inject constructor(
         var code: String
         do {
             code = UUID.randomUUID().toString().substring(0, 6).uppercase()
-            Log.d("PadreViewModel", "Generando código: $code")
             val padres = padreRepository.getAll().collectFirstOrNull() ?: emptyList()
-            Log.d("PadreViewModel", "Lista de padres obtenida: $padres")
             val existingPadre = padres.find { it.codigoSala == code }
-            if (existingPadre != null) {
-                Log.d("PadreViewModel", "Código $code ya existe, generando uno nuevo")
-            }
         } while (existingPadre != null)
-        Log.d("PadreViewModel", "Código único generado: $code")
         return code
     }
 
