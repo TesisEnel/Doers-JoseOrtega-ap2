@@ -55,7 +55,7 @@ fun HomeScreen(
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center, // Mantenemos Arrangement.Center para centrar los botones
+            verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -65,7 +65,7 @@ fun HomeScreen(
                     fontSize = 32.sp
                 ),
                 color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(bottom = 140.dp) // Aumentamos más el padding inferior para subir el título
+                modifier = Modifier.padding(bottom = 140.dp)
             )
 
             Row(

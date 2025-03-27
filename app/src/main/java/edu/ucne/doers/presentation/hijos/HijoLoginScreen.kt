@@ -24,7 +24,6 @@ fun HijoLoginScreen(
     var childName by remember { mutableStateOf("") }
     var roomCode by remember { mutableStateOf("") }
     val snackbarHostState = remember { SnackbarHostState() }
-    val context = LocalContext.current
 
     LaunchedEffect(uiState.signInError) {
         uiState.signInError?.let { errorMsg ->

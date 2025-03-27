@@ -43,7 +43,6 @@ fun TaskCounter(
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.padding(16.dp)
         ) {
-            // Contador de tareas
             Text(
                 text = count.toString(),
                 fontSize = 32.sp,
@@ -55,8 +54,6 @@ fun TaskCounter(
                     else -> Color.Black
                 }
             )
-
-            // Etiqueta (pendiente o completada)
             Text(
                 text = label,
                 fontSize = 16.sp,

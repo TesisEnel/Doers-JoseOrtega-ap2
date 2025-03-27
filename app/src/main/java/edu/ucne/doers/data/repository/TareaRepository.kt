@@ -17,7 +17,6 @@ class TareaRepository @Inject constructor(
 
     suspend fun delete(tarea: TareaEntity) = tareaDao.delete(tarea)
 
-    // Llamar a todas las tareas que esten activas
     fun getActiveTasks(): Flow<List<TareaEntity>> =
         tareaDao.getByCondition(CondicionTarea.ACTIVA)
 }

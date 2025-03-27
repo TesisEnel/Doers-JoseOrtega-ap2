@@ -41,9 +41,9 @@ class HijoViewModel @Inject constructor(
     fun completarTarea(tareaId: Int) {
         viewModelScope.launch {
             val tarea = tareaRepository.find(tareaId)
-            val hijo = hijoRepository.find(_uiState.value.hijoId) // Verifica que el hijo existe
+            val hijo = hijoRepository.find(_uiState.value.hijoId)
 
-            if (tarea != null && hijo != null) { // Asegura que ambos existen antes de insertar
+            if (tarea != null && hijo != null) {
                 val tareaHijo = TareaHijo(
                     tareaId = tareaId,
                     hijoId = _uiState.value.hijoId,
@@ -60,11 +60,8 @@ class HijoViewModel @Inject constructor(
 
     fun loadTareas() {
         viewModelScope.launch {
-            // Obtener tareas activas y las ya completadas por el hijo
             val tareasActivas = tareaRepository.getActiveTasks().first()
             val tareasCompletadas = hijoRepository.getTareasHijo(_uiState.value.hijoId).first()
-
-            // Filtrar: mostrar solo tareas activas NO completadas
             val tareasFiltradas = tareasActivas.filter { tarea ->
                 tareasCompletadas.none { it.tareaId == tarea.tareaId }
             }

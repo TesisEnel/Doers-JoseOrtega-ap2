@@ -164,7 +164,7 @@ fun RecompensaBodyScreen(
                         },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                        isError = uiState.errorMessage?.contains("puntos") == true // Resaltar si hay error en puntos
+                        isError = uiState.errorMessage?.contains("puntos") == true
                     )
                     Spacer(modifier = Modifier.padding(4.dp))
 

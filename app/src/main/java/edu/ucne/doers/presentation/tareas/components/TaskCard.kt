@@ -68,13 +68,11 @@ fun TaskCard(
             .fillMaxWidth()
             .padding(8.dp)
     ) {
-        // Fila para el contador de tareas y el estado
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Contador de tareas
             Text(
                 text = "Tarea #${tarea.tareaId}",
                 fontSize = 20.sp,
@@ -82,8 +80,6 @@ fun TaskCard(
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 4.dp, start = 4.dp)
             )
-
-            // Estado de la tarea
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -101,8 +97,6 @@ fun TaskCard(
                 )
             }
         }
-
-        // Card principal
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -116,12 +110,10 @@ fun TaskCard(
                     .padding(12.dp)
                     .fillMaxWidth()
             ) {
-                // Encabezado de la tarea
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Duración de la tarea
                     Text(
                         modifier = Modifier.padding(bottom = 5.dp),
                         text = buildAnnotatedString {
@@ -144,8 +136,6 @@ fun TaskCard(
                         },
                         fontSize = 15.sp
                     )
-
-                    // Condicion de la tarea y Switch de Condición
                     Row(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -168,8 +158,6 @@ fun TaskCard(
                         )
                     }
                 }
-
-                // Descripción de la tarea
                 Text(
                     text = if (isExpanded) tarea.descripcion else tarea.descripcion.take(40) + "...",
                     fontSize = 18.sp,
@@ -180,15 +168,12 @@ fun TaskCard(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Puntos de la tarea
                     Text(
                         text = "Puntos: ${tarea.puntos}",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
-
-                    // Botón expandible (cambia entre ExpandMore y ExpandLess)
                     Icon(
                         imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                         contentDescription = if (isExpanded) "Colapsar" else "Expandir",
@@ -197,8 +182,6 @@ fun TaskCard(
                 }
             }
         }
-
-        // Mostrar botones de "Editar" y "Eliminar"
         if (isExpanded) {
             Spacer(modifier = Modifier.height(8.dp))
             Row(
@@ -207,7 +190,6 @@ fun TaskCard(
                     .padding(horizontal = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                // Botón Editar
                 OutlinedButton(onClick = { onEdit(tarea.tareaId) }) {
                     Icon(
                         imageVector = Icons.Default.Edit,
@@ -216,8 +198,6 @@ fun TaskCard(
                     Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
                     Text("Editar")
                 }
-
-                // Botón Eliminar
                 OutlinedButton(onClick = { showDeleteDialog = true }) {
                     Icon(
                         imageVector = Icons.Default.Delete,
@@ -228,8 +208,6 @@ fun TaskCard(
                 }
             }
         }
-
-        // Modal de confirmación para eliminar
         if (showDeleteDialog) {
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },

@@ -18,13 +18,6 @@ class PadreRepository @Inject constructor(
 
     suspend fun delete(padre: PadreEntity) = padreDao.delete(padre)
 
-    suspend fun findEmail(email: String?): PadreEntity? { // Acepta String? y maneja null
-        return if (email != null) {
-            padreDao.findEmail(email)
-        } else {
-            null
-        }
-    }
     suspend fun getCurrentUser(): PadreEntity? {
         val userData = authRepository.getUser()
         val userId = userData?.userId

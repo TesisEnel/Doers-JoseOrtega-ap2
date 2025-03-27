@@ -40,7 +40,6 @@ fun TaskOverview(
                 .padding(16.dp)
         ) {
             if (!isHorizontal) {
-                // Título
                 Text(
                     text = "Reporte de Tareas",
                     fontSize = 25.sp,
@@ -48,8 +47,6 @@ fun TaskOverview(
                     fontFamily = FontFamily.SansSerif,
                     modifier = Modifier.padding(bottom = 16.dp, top = 22.dp)
                 )
-
-
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
@@ -65,11 +62,8 @@ fun TaskOverview(
                         EstadoTarea.PENDIENTE
                     )
                 }
-
                 Spacer(modifier = Modifier.height(16.dp))
             }
-
-            // Lista de tareas
             Text(
                 text = if (tareas.isEmpty()) "No se han creado tareas" else "Listado de pendientes",
                 fontSize = 22.sp,

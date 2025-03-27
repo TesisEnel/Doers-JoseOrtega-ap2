@@ -86,16 +86,6 @@ class RecompensaViewModel @Inject constructor(
         }
     }
 
-    /*fun getRecompensas() {
-        viewModelScope.launch {
-            recompensaRepository.getAll().collect { recompensas ->
-                _uiState.update {
-                    it.copy(recompensas = recompensas.map { recompensa -> recompensa.toUiState() })
-                }
-            }
-        }
-    }*/
-
     fun save() {
         viewModelScope.launch {
             if(isValidate()) {
