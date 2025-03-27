@@ -167,8 +167,6 @@ fun RecompensaBodyScreen(
                         isError = uiState.errorMessage?.contains("puntos") == true
                     )
                     Spacer(modifier = Modifier.padding(4.dp))
-
-                    // Mostrar mensaje de error
                     uiState.errorMessage?.let {
                         Text(
                             text = it,
@@ -176,7 +174,6 @@ fun RecompensaBodyScreen(
                             modifier = Modifier.padding(8.dp)
                         )
                     }
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly,
