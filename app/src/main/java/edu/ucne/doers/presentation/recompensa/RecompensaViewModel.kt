@@ -5,7 +5,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,7 +33,6 @@ class RecompensaViewModel @Inject constructor(
     private suspend fun loadPadreId() {
         val currentPadre = padreRepository.getCurrentUser()
         if (currentPadre == null) {
-            Log.e("RecompensaViewModel", "Error: No se encontró un PadreEntity para el usuario autenticado")
             _uiState.update {
                 it.copy(errorMessage = "No se encontró un usuario autenticado. Por favor, inicia sesión nuevamente.")
             }
@@ -42,7 +40,6 @@ class RecompensaViewModel @Inject constructor(
             _uiState.update {
                 it.copy(padreId = currentPadre.padreId)
             }
-            Log.d("RecompensaViewModel", "padreId cargado: ${currentPadre.padreId}")
         }
     }
 
@@ -73,7 +70,6 @@ class RecompensaViewModel @Inject constructor(
         viewModelScope.launch {
             val padreId = uiState.value.padreId
             if (padreId.isNullOrEmpty()) {
-                Log.e("RecompensaViewModel", "padreId no está disponible al cargar recompensas")
                 _uiState.update {
                     it.copy(errorMessage = "No se pudo cargar el usuario. Por favor, inicia sesión nuevamente.")
                 }
@@ -81,7 +77,6 @@ class RecompensaViewModel @Inject constructor(
             }
             recompensaRepository.getRecompensasByPadreId(padreId).collect { recompensas ->
                 _uiState.update { it.copy(recompensas = recompensas.map { it.toUiState() }) }
-                Log.d("RecompensaViewModel", "Recompensas cargadas para padreId $padreId: $recompensas")
             }
         }
     }
@@ -99,7 +94,6 @@ class RecompensaViewModel @Inject constructor(
     fun saveRecompensa(recompensa: RecompensaEntity) {
         viewModelScope.launch {
             recompensaRepository.save(recompensa)
-            Log.d("RecompensaViewModel", "Recompensa actualizada: $recompensa")
         }
     }
 
