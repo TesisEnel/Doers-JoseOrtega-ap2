@@ -1,6 +1,5 @@
 package edu.ucne.doers.presentation.tareas.padre
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -38,10 +37,6 @@ class TareaViewModel @Inject constructor(
         viewModelScope.launch {
             val currentPadre = padreRepository.getCurrentUser()
             if (currentPadre == null) {
-                Log.e(
-                    "RecompensaViewModel",
-                    "Error: No se encontró un PadreEntity para el usuario autenticado"
-                )
                 _uiState.update {
                     it.copy(errorMessage = "No se encontró un usuario autenticado. Por favor, inicia sesión nuevamente.")
                 }
@@ -49,7 +44,6 @@ class TareaViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(padreId = currentPadre.padreId)
                 }
-                Log.d("RecompensaViewModel", "padreId cargado: ${currentPadre.padreId}")
             }
         }
     }
