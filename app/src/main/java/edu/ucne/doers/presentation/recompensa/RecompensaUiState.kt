@@ -1,6 +1,5 @@
 package edu.ucne.doers.presentation.recompensa
 
-import edu.ucne.doers.data.local.entity.RecompensaEntity
 import edu.ucne.doers.data.local.model.EstadoRecompensa
 
 data class RecompensaUiState(
