@@ -1,6 +1,5 @@
 package edu.ucne.doers.presentation.tareas.hijo
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -51,8 +50,6 @@ class HijoViewModel @Inject constructor(
                 )
                 hijoRepository.insertTareaHijo(tareaHijo)
                 loadTareas()
-            } else {
-                Log.e("HijoViewModel", "Error: hijoId o tareaId no existen en la base de datos.")
             }
         }
     }
