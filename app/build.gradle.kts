@@ -114,6 +114,8 @@ dependencies {
     //icon api
     implementation(libs.androidx.material.icons.extended.v175)
 
+    implementation (libs.core)
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
