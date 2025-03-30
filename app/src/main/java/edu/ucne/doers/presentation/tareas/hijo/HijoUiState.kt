@@ -11,6 +11,7 @@ data class HijoUiState (
     val saldoActual: Int = 0,
     val balance: Int = 0,
     val listaTareas: List<TareaEntity> = emptyList(),
+    val listaTareasFiltradas: List<TareaEntity> = emptyList(),
     val errorMessage: String? = null,
     val successMessage: String? = null,
     val isLoading: Boolean = false
