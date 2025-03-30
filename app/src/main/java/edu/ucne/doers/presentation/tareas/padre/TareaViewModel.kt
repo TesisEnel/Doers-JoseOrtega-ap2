@@ -33,6 +33,11 @@ class TareaViewModel @Inject constructor(
     )
     val uiState = _uiState.asStateFlow()
 
+    init {
+        getAllTareas()
+        loadPadreId()
+    }
+
     private fun loadPadreId() {
         viewModelScope.launch {
             val currentPadre = padreRepository.getCurrentUser()
@@ -48,11 +53,6 @@ class TareaViewModel @Inject constructor(
         }
     }
 
-    init {
-        getAllTareas()
-        loadPadreId()
-    }
-
     fun getAllTareas() {
         viewModelScope.launch {
             tareaRepository.getAll().collect { listaTareas ->
@@ -66,7 +66,7 @@ class TareaViewModel @Inject constructor(
 
     fun save() {
         viewModelScope.launch {
-            if (isValidate()) {
+            if (isValid()) {
                 tareaRepository.save(_uiState.value.toEntity())
                 _uiState.update { it.copy(errorMessage = null) }
                 new()
@@ -121,7 +121,8 @@ class TareaViewModel @Inject constructor(
     }
 
     fun onDescripcionChange(descripcion: String) {
-        val descripcionRegularExpression = "^[A-Za-z0-9\\s'.,:áéíóúÁÉÍÓÚ-]+$".toRegex()
+        val descripcionRegularExpression = "^[A-Za-z0-9\\s'.,:áéíóúÁÉÍÓÚñÑ-]+$".toRegex()
+
         _uiState.update {
             it.copy(
                 descripcion = descripcion,
@@ -149,14 +150,14 @@ class TareaViewModel @Inject constructor(
         }
     }
 
-    private fun isValidate(): Boolean {
+    private fun isValid(): Boolean {
         val state = uiState.value
+        val isValid = state.descripcion.isNotBlank() || state.puntos > 0 || state.periodicidad != null
 
-        if (state.descripcion.isBlank() || state.puntos <= 0 || state.periodicidad == null) {
+        if (!isValid) {
             _uiState.update { it.copy(errorMessage = "Todos los campos son requeridos.") }
-            return false
         }
-        return true
+        return isValid
     }
 }
 
