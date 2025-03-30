@@ -1,6 +1,5 @@
 package edu.ucne.doers.presentation.tareas.hijo
 
-import android.content.res.Configuration
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,16 +27,18 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -46,13 +47,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import edu.ucne.doers.AppReferences
 import edu.ucne.doers.R
-import edu.ucne.doers.data.local.model.PeriodicidadTarea
 import edu.ucne.doers.presentation.navigation.Screen
 import edu.ucne.doers.presentation.tareas.components.HorizontalFilter
 import edu.ucne.doers.presentation.tareas.components.TareaCardHijo
 import edu.ucne.doers.presentation.tareas.components.WelcomeModal
-import kotlin.math.min
 
 @Composable
 fun HijoListScreen(
@@ -74,26 +74,25 @@ fun HijoBodyListScreen(
     viewModel: HijoViewModel,
     navController: NavHostController
 ) {
-    val periodicidades = remember {
-        listOf("Todas") + PeriodicidadTarea.entries.map { it.nombreMostrable }
-    }
+    val periodicidades by viewModel.periodicidadesDisponibles.collectAsState()
     var filtroSeleccionado by remember { mutableStateOf("Todas") }
 
-    val configuration = LocalConfiguration.current
-    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
-    var showModal by remember { mutableStateOf(isPortrait) }
+    val context = LocalContext.current
+    val appReferences = remember { AppReferences(context) }
+    var showModal by rememberSaveable { mutableStateOf(appReferences.isFirstTime()) }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
         val boxConstraints = this.constraints
 
         Box(modifier = Modifier.fillMaxSize()) {
-            if (showModal) {
-                WelcomeModal(
-                    showModal = showModal,
-                    onDismiss = { showModal = false },
-                    userName = uiState.nombre
-                )
-            }
+            WelcomeModal(
+                showModal = showModal,
+                onDismiss = {
+                    showModal = false
+                    appReferences.setFirstTimeCompleted()
+                },
+                userName = uiState.nombre
+            )
 
             Column(modifier = Modifier.fillMaxSize()) {
                 CenterAlignedTopAppBar(
@@ -116,7 +115,10 @@ fun HijoBodyListScreen(
                         HorizontalFilter(
                             options = periodicidades,
                             selectedOption = filtroSeleccionado,
-                            onOptionSelected = { filtroSeleccionado = it },
+                            onOptionSelected = {
+                                filtroSeleccionado = it
+                                viewModel.filtrarTareas(it)
+                            },
                             modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
                         )
 
@@ -132,14 +134,7 @@ fun HijoBodyListScreen(
                                 .padding(vertical = 8.dp)
                         )
 
-                        val tareasFiltradas =
-                            remember(uiState.listaTareas, filtroSeleccionado) {
-                                if (filtroSeleccionado == "Todas") {
-                                    uiState.listaTareas
-                                } else {
-                                    uiState.listaTareas.filter { it.periodicidad?.nombreMostrable == filtroSeleccionado }
-                                }
-                            }
+                        val tareasFiltradas = uiState.listaTareasFiltradas
 
                         if (tareasFiltradas.isEmpty()) {
                             Box(
@@ -188,6 +183,7 @@ fun HijoBodyListScreen(
         }
     }
 }
+
 
 @Composable
 fun BottomNavigationBar(

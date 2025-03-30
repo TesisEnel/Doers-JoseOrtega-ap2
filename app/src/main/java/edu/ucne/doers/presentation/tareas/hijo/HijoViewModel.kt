@@ -29,9 +29,14 @@ class HijoViewModel @Inject constructor(
             estado = EstadoTareaHijo.PENDIENTE_VERIFICACION,
             saldoActual = 0,
             balance = 0,
+            listaTareas = emptyList(),
+            listaTareasFiltradas = emptyList()
         )
     )
     val uiState = _uiState.asStateFlow()
+
+    private val _periodicidadesDisponibles = MutableStateFlow<List<String>>(emptyList())
+    val periodicidadesDisponibles = _periodicidadesDisponibles.asStateFlow()
 
     init {
         loadTareas()
@@ -54,8 +59,7 @@ class HijoViewModel @Inject constructor(
         }
     }
 
-
-    fun loadTareas() {
+    private fun loadTareas() {
         viewModelScope.launch {
             val tareasActivas = tareaRepository.getActiveTasks().first()
             val tareasCompletadas = hijoRepository.getTareasHijo(_uiState.value.hijoId).first()
@@ -64,16 +68,36 @@ class HijoViewModel @Inject constructor(
             }
 
             _uiState.update {
-                it.copy(listaTareas = tareasFiltradas)
+                it.copy(
+                    listaTareas = tareasFiltradas,
+                    listaTareasFiltradas = tareasFiltradas
+                )
             }
+            actualizarPeriodicidades()
+        }
+    }
+
+    private fun actualizarPeriodicidades() {
+        viewModelScope.launch {
+            val periodicidades = listOf("Todas") + _uiState.value.listaTareas
+                .mapNotNull { it.periodicidad?.nombreMostrable }
+                .distinct()
+
+            _periodicidadesDisponibles.value = periodicidades
+        }
+    }
+
+    fun filtrarTareas(periodicidad: String) {
+        viewModelScope.launch {
+            val todasLasTareas = _uiState.value.listaTareas
+
+            val tareasFiltradas = if (periodicidad == "Todas") {
+                todasLasTareas
+            } else {
+                todasLasTareas.filter { it.periodicidad?.nombreMostrable == periodicidad }
+            }
+
+            _uiState.update { it.copy(listaTareasFiltradas = tareasFiltradas) }
         }
     }
 }
-
-fun HijoUiState.ToEntity() = HijoEntity(
-    hijoId = hijoId,
-    padreId = padreId,
-    nombre = nombre,
-    saldoActual = saldoActual,
-    balance = balance
-)
