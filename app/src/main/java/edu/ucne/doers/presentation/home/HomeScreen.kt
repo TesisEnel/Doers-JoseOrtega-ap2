@@ -1,5 +1,6 @@
 package edu.ucne.doers.presentation.home
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -58,14 +59,12 @@ fun HomeScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Doers",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 32.sp
-                ),
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(bottom = 140.dp)
+            Image(
+                painter = painterResource(id = R.drawable.doers_logo),
+                contentDescription = "Logo",
+                modifier = Modifier
+                    .size(200.dp)
+                    .padding(bottom = 16.dp)
             )
 
             Row(

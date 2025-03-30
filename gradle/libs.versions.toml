@@ -1,7 +1,13 @@
 [versions]
+activityComposeVersion = "1.9.0"
 agp = "8.8.0"
+barcodeScanning = "17.3.0"
+cameraCoreVersion = "1.3.2"
+cameraLifecycleVersion = "1.3.2"
+cameraView = "1.4.2"
 coilCompose = "2.4.0"
 converterMoshi = "2.9.0"
+core = "3.5.2"
 coreSplashscreen = "1.0.1"
 firebaseBom = "32.8.0"
 foundation = "1.5.0"
@@ -26,6 +32,7 @@ mockk = "1.13.13"
 moshiKotlin = "1.14.0"
 navigationCompose = "2.8.0-rc01"
 playServicesAuth = "21.0.0"
+qrgen = "1.0.4"
 retrofit = "2.9.0"
 robolectric = "4.11.1"
 roomCompiler = "2.6.1"
@@ -40,8 +47,17 @@ credentials = "1.5.0-rc01"
 credentialsPlayServicesAuth = "1.3.0"
 googleid = "1.1.1"
 firebaseAuthKtx = "23.2.0"
+zxing = "3.5.2"
+cameraCore = "1.4.2"
+playServicesMlkitBarcodeScanning = "18.3.1"
+cameraLifecycle = "1.4.2"
 
 [libraries]
+androidx-activity-compose-v190 = { module = "androidx.activity:activity-compose", version.ref = "activityComposeVersion" }
+androidx-camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "cameraCoreVersion" }
+androidx-camera-core-v132 = { module = "androidx.camera:camera-core", version.ref = "cameraCoreVersion" }
+androidx-camera-lifecycle-v132 = { module = "androidx.camera:camera-lifecycle", version.ref = "cameraLifecycleVersion" }
+androidx-camera-view = { module = "androidx.camera:camera-view", version.ref = "cameraView" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
 androidx-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "foundation" }
@@ -53,8 +69,10 @@ androidx-navigation-compose = { module = "androidx.navigation:navigation-compose
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomCompiler" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomKtx" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
+barcode-scanning = { module = "com.google.mlkit:barcode-scanning", version.ref = "barcodeScanning" }
 coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
 converter-moshi = { module = "com.squareup.retrofit2:converter-moshi", version.ref = "converterMoshi" }
+core = { module = "com.google.zxing:core", version.ref = "core" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
 google-firebase-auth = { module = "com.google.firebase:firebase-auth" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
@@ -80,6 +98,7 @@ material3 = { module = "androidx.compose.material3:material3", version.ref = "ma
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 moshi-kotlin = { module = "com.squareup.moshi:moshi-kotlin", version.ref = "moshiKotlin" }
 play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
+qrgen = { module = "androidmads.library.qrgen:qrgen", version.ref = "qrgen" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 truth = { module = "com.google.truth:truth", version.ref = "truth" }
@@ -89,6 +108,10 @@ androidx-credentials = { group = "androidx.credentials", name = "credentials", v
 androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentialsPlayServicesAuth" }
 googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
 firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx", version.ref = "firebaseAuthKtx" }
+zxing = { module = "com.google.zxing:core", version.ref = "zxing" }
+androidx-camera-core = { group = "androidx.camera", name = "camera-core", version.ref = "cameraCore" }
+play-services-mlkit-barcode-scanning = { group = "com.google.android.gms", name = "play-services-mlkit-barcode-scanning", version.ref = "playServicesMlkitBarcodeScanning" }
+androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "cameraLifecycle" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

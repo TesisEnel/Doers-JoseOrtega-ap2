@@ -1,7 +1,9 @@
 package edu.ucne.doers.presentation.padres
 
 import android.content.Intent
+import android.graphics.Bitmap
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +21,7 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
@@ -42,6 +45,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
@@ -50,6 +55,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.MultiFormatWriter
+import com.google.zxing.common.BitMatrix
+import edu.ucne.doers.R
 import edu.ucne.doers.presentation.navigation.Screen
 
 @Composable
@@ -59,6 +68,7 @@ fun PadreScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
+    var showQrDialog by remember { mutableStateOf(false) }
 
     if (uiState.isLoading) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -226,6 +236,15 @@ fun PadreScreen(
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
+                            IconButton(
+                                onClick = { showQrDialog = true }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.QrCode,
+                                    contentDescription = "Ver QR",
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
                     }
                 }
@@ -238,10 +257,10 @@ fun PadreScreen(
             icon = {
                 if (!uiState.fotoPerfil.isNullOrEmpty()) {
                     AsyncImage(
-                        model = uiState.fotoPerfil,
-                        contentDescription = "Foto de perfil del padre",
+                        model = R.drawable.doers_logo,
+                        contentDescription = "logo de la aplicacion",
                         modifier = Modifier
-                            .size(40.dp)
+                            .size(100.dp)
                             .clip(CircleShape)
                     )
                 } else {
@@ -266,7 +285,11 @@ fun PadreScreen(
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
                 )
             },
-            text = { Text("¿Estás seguro de que quieres salir?") },
+            text = {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Text(text = "¿Estás seguro de que quieres salir?")
+                }
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -289,6 +312,55 @@ fun PadreScreen(
             textContentColor = MaterialTheme.colorScheme.onSurface,
             shape = MaterialTheme.shapes.medium,
         )
+    }
+
+    if (showQrDialog && uiState.codigoSala != null) {
+        AlertDialog(
+            onDismissRequest = { showQrDialog = false },
+            title = { Text("Código QR de la Sala") },
+            text = {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(250.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    val qrBitmap = remember { generateQRCode(uiState.codigoSala!!, 200, 200) }
+                    qrBitmap?.let {
+                        Image(
+                            bitmap = it.asImageBitmap(),
+                            contentDescription = "Código QR",
+                            modifier = Modifier.size(200.dp)
+                        )
+                    } ?: Text("Error generando QR")
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showQrDialog = false }) {
+                    Text("Cerrar")
+                }
+            }
+        )
+    }
+}
+
+fun generateQRCode(text: String, width: Int, height: Int): Bitmap? {
+    return try {
+        val bitMatrix: BitMatrix = MultiFormatWriter().encode(
+            text,
+            BarcodeFormat.QR_CODE,
+            width,
+            height
+        )
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+        for (x in 0 until width) {
+            for (y in 0 until height) {
+                bitmap.setPixel(x, y, if (bitMatrix[x, y]) Color.Black.hashCode() else Color.White.hashCode())
+            }
+        }
+        bitmap
+    } catch (e: Exception) {
+        null
     }
 }
 
