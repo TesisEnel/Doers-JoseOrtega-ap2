@@ -34,12 +34,14 @@ class HijoViewModel @Inject constructor(
             val hijoId = sharedPreferences.getInt("hijoId", 0)
             if (hijoId > 0) {
                 val hijo = hijoRepository.find(hijoId)
+                println("Imagen recuperada desde la BD: ${hijo?.fotoPerfil}")
                 if (hijo != null) {
                     _uiState.update {
                         it.copy(
                             hijoId = hijo.hijoId,
                             padreId = hijo.padreId,
                             nombre = hijo.nombre,
+                            fotoPerfil = hijo.fotoPerfil,
                             isAuthenticated = true
                         )
                     }
@@ -101,6 +103,7 @@ class HijoViewModel @Inject constructor(
                                 hijoId = existingHijo.hijoId,
                                 padreId = existingHijo.padreId,
                                 nombre = existingHijo.nombre,
+                                fotoPerfil = existingHijo.fotoPerfil,
                                 codigoSala = codigoSala,
                                 isSuccess = true,
                                 isSignInSuccessful = true,
@@ -124,6 +127,7 @@ class HijoViewModel @Inject constructor(
                                     hijoId = savedHijo.hijoId,
                                     padreId = savedHijo.padreId,
                                     nombre = savedHijo.nombre,
+                                    fotoPerfil = savedHijo.fotoPerfil,
                                     codigoSala = codigoSala,
                                     isSuccess = true,
                                     isSignInSuccessful = true,
@@ -207,6 +211,18 @@ class HijoViewModel @Inject constructor(
                         nombre = nombre
                     )
                 }
+            }
+        }
+    }
+
+    fun actualizarFotoPerfil(nuevaFoto: String) {
+        viewModelScope.launch {
+            val currentHijo = uiState.value.hijoId?.let { hijoRepository.find(it) }
+
+            if (currentHijo != null) {
+                val updatedHijo = currentHijo.copy(fotoPerfil = nuevaFoto)
+                hijoRepository.save(updatedHijo)
+                _uiState.update { it.copy(fotoPerfil = nuevaFoto) }
             }
         }
     }
