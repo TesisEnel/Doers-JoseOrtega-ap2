@@ -123,7 +123,9 @@ fun HijoBodyListScreen(
                         )
 
                         Text(
-                            "Tareas asignadas por tu padre o tutor",
+                            if(uiState.listaTareas.isEmpty()) "Tu padre o tutor no te ha asignado tareas"
+                            else "Tareas asignadas por tu padre o tutor",
+
                             style = MaterialTheme.typography.titleMedium.copy(
                                 color = Color(0xFF1976D2),
                                 fontWeight = FontWeight.Bold
