@@ -47,4 +47,6 @@ class HijoRepository @Inject constructor(
             Resource.Error("El código de sala no existe")
         }
     }
+
+    suspend fun updateHijo(hijo: HijoEntity) = hijoDao.update(hijo)
 }
