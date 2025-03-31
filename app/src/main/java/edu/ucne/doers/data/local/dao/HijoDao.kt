@@ -34,7 +34,4 @@ interface HijoDao {
 
     @Query("SELECT * FROM Hijos")
     fun getAll(): Flow<List<HijoEntity>>
-
-    @Update
-    suspend fun update(hijoEntity: HijoEntity)
 }
