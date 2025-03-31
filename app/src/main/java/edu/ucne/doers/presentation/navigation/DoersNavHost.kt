@@ -132,7 +132,8 @@ fun DoersNavHost(
 
             composable<Screen.Padre> {
                 PadreScreen(
-                    viewModel = padreViewModel,
+                    padreViewModel = padreViewModel,
+                    hijoViewModel = hijoViewModel,
                     navController = navHostController
                 )
             }
