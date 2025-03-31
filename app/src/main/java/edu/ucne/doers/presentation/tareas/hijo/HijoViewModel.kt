@@ -3,9 +3,9 @@ package edu.ucne.doers.presentation.tareas.hijo
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import edu.ucne.doers.data.local.entity.HijoEntity
 import edu.ucne.doers.data.local.entity.TareaHijo
 import edu.ucne.doers.data.local.model.EstadoTareaHijo
+import edu.ucne.doers.data.local.model.PeriodicidadTarea
 import edu.ucne.doers.data.repository.HijoRepository
 import edu.ucne.doers.data.repository.TareaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -79,11 +79,11 @@ class HijoViewModel @Inject constructor(
 
     private fun actualizarPeriodicidades() {
         viewModelScope.launch {
-            val periodicidades = listOf("Todas") + _uiState.value.listaTareas
-                .mapNotNull { it.periodicidad?.nombreMostrable }
-                .distinct()
+            val todasLasPeriodicidades = PeriodicidadTarea.entries.map { it.nombreMostrable }
 
-            _periodicidadesDisponibles.value = periodicidades
+            val periodicidadesDisponibles = listOf("Todas") + todasLasPeriodicidades
+
+            _periodicidadesDisponibles.value = periodicidadesDisponibles
         }
     }
 
