@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,11 +16,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Share
@@ -28,15 +33,18 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,6 +59,8 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -59,18 +69,30 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
 import com.google.zxing.common.BitMatrix
 import edu.ucne.doers.R
+import edu.ucne.doers.data.local.entity.HijoEntity
+import edu.ucne.doers.presentation.hijos.HijoViewModel
 import edu.ucne.doers.presentation.navigation.Screen
 
 @Composable
 fun PadreScreen(
-    viewModel: PadreViewModel,
+    padreViewModel: PadreViewModel,
+    hijoViewModel: HijoViewModel,
     navController: NavController
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    var showDialog by remember { mutableStateOf(false) }
+    val padreUiState by padreViewModel.uiState.collectAsState()
+    val hijoUiState by hijoViewModel.uiState.collectAsState()
+    var showDialogAgregarPuntos by remember { mutableStateOf(false) }
+    var showDialogEliminarHijo by remember { mutableStateOf(false) }
+    var showDialogCerrarSesion by remember { mutableStateOf(false) }
     var showQrDialog by remember { mutableStateOf(false) }
+    var selectedHijo by remember { mutableStateOf<HijoEntity?>(null) }
+    var puntosAgregar by remember { mutableStateOf("") }
 
-    if (uiState.isLoading) {
+    LaunchedEffect(Unit) {
+        padreUiState.padreId?.let { hijoViewModel.getHijosByPadre(it) }
+    }
+
+    if (padreUiState.isLoading) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
@@ -90,23 +112,32 @@ fun PadreScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 20.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(modifier = Modifier.size(60.dp), contentAlignment = Alignment.Center) {
-                            if (!uiState.fotoPerfil.isNullOrEmpty()) {
+                            if (!padreUiState.fotoPerfil.isNullOrEmpty()) {
                                 AsyncImage(
-                                    model = uiState.fotoPerfil,
+                                    model = padreUiState.fotoPerfil,
                                     contentDescription = "Foto de perfil del padre",
-                                    modifier = Modifier.size(60.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant)
+                                    modifier = Modifier
+                                        .size(60.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.surfaceVariant)
                                 )
                             } else {
                                 Box(
-                                    modifier = Modifier.size(60.dp).clip(CircleShape).background(MaterialTheme.colorScheme.secondaryContainer),
+                                    modifier = Modifier
+                                        .size(60.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.secondaryContainer),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
-                                        text = uiState.nombre?.firstOrNull()?.toString() ?: "P",
+                                        text = padreUiState.nombre?.firstOrNull()?.toString()
+                                            ?: "P",
                                         style = MaterialTheme.typography.headlineMedium,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
@@ -116,14 +147,14 @@ fun PadreScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = uiState.nombre ?: "Padre",
+                                text = padreUiState.nombre ?: "Padre",
                                 style = MaterialTheme.typography.bodyLarge.copy(
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 18.sp
                                 ),
                                 color = MaterialTheme.colorScheme.onBackground
                             )
-                            uiState.email?.let {
+                            padreUiState.email?.let {
                                 Text(
                                     text = it,
                                     style = MaterialTheme.typography.bodyMedium,
@@ -153,7 +184,7 @@ fun PadreScreen(
                             }
                         }
                         IconButton(
-                            onClick = { showDialog = true },
+                            onClick = { showDialogCerrarSesion = true },
                             modifier = Modifier
                                 .size(40.dp)
                                 .padding(end = 8.dp)
@@ -175,7 +206,9 @@ fun PadreScreen(
                         val clipboardManager = LocalClipboardManager.current
                         val context = LocalContext.current
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
@@ -188,7 +221,7 @@ fun PadreScreen(
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = uiState.codigoSala ?: "N/A",
+                                    text = padreUiState.codigoSala ?: "N/A",
                                     style = MaterialTheme.typography.headlineMedium.copy(
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 24.sp,
@@ -198,8 +231,13 @@ fun PadreScreen(
                             }
                             IconButton(
                                 onClick = {
-                                    clipboardManager.setText(AnnotatedString(uiState.codigoSala ?: ""))
-                                    Toast.makeText(context, "Código copiado", Toast.LENGTH_SHORT).show()
+                                    clipboardManager.setText(
+                                        AnnotatedString(
+                                            padreUiState.codigoSala ?: ""
+                                        )
+                                    )
+                                    Toast.makeText(context, "Código copiado", Toast.LENGTH_SHORT)
+                                        .show()
                                 }
                             ) {
                                 Icon(
@@ -211,9 +249,9 @@ fun PadreScreen(
                             IconButton(
                                 onClick = {
                                     val mensaje = """
-                                        🎯 ¡${uiState.nombre} te invita a unirte a su sala en Doers! 👨‍👩‍👧‍👦
+                                        🎯 ¡${padreUiState.nombre} te invita a unirte a su sala en Doers! 👨‍👩‍👧‍👦
                                         Ha creado una sala en Doers para motivarnos a completar tareas y ganar recompensas. 🎁
-                                        🔑 Código de la sala: ${uiState.codigoSala}
+                                        🔑 Código de la sala: ${padreUiState.codigoSala}
                                         📲 Descarga la app y usa este código para unirte.
                                         🚀 ¡Únete ahora y empieza a ganar recompensas divertidas! 🎉
                                         """.trimIndent()
@@ -247,15 +285,187 @@ fun PadreScreen(
                             }
                         }
                     }
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.medium,
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        elevation = CardDefaults.cardElevation(4.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "Hijos Registrados",
+                                style = MaterialTheme.typography.headlineSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .align(Alignment.CenterHorizontally),
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Nombre",
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.weight(1f),
+                                    textAlign = TextAlign.Start
+                                )
+                                Text(
+                                    text = "Puntos",
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.weight(1f),
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = "Agregar",
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.weight(1f),
+                                    textAlign = TextAlign.End
+                                )
+                                Text(
+                                    text = "",
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                            HorizontalDivider()
+                            hijoUiState.hijos.forEach { hijo ->
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = hijo.nombre,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.weight(1f),
+                                        textAlign = TextAlign.Start
+                                    )
+                                    Text(
+                                        text = "${hijo.saldoActual}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.weight(1f),
+                                        textAlign = TextAlign.Center
+                                    )
+                                    IconButton(
+                                        onClick = {
+                                            selectedHijo = hijo
+                                            showDialogAgregarPuntos = true
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    {
+                                        Icon(
+                                            imageVector = Icons.Filled.Add,
+                                            contentDescription = "Agregar Puntos",
+                                        )
+                                    }
+                                    IconButton(
+                                        onClick = {
+                                            selectedHijo = hijo
+                                            showDialogEliminarHijo = true
+                                        },
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Delete,
+                                            contentDescription = "Eliminar Hijo",
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
     }
-    if (showDialog) {
+    if (showDialogAgregarPuntos && selectedHijo != null) {
         AlertDialog(
-            onDismissRequest = { showDialog = false },
+            onDismissRequest = { showDialogAgregarPuntos = false },
             icon = {
-                if (!uiState.fotoPerfil.isNullOrEmpty()) {
+                AsyncImage(
+                    model = R.drawable.celebration,
+                    contentDescription = "Logo",
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(CircleShape)
+                )
+            },
+            title = {
+                Column {
+                    Text(
+                        text = "Agregar Puntos",
+                        style = MaterialTheme.typography.headlineLarge,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentWidth(Alignment.CenterHorizontally)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = selectedHijo?.nombre ?: "",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentWidth(Alignment.CenterHorizontally)
+                    )
+                }
+            },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = puntosAgregar,
+                        onValueChange = { puntosAgregar = it },
+                        label = { Text("Cantidad de Puntos") },
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            keyboardType = KeyboardType.Number
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        puntosAgregar.toIntOrNull()?.let { puntos ->
+                            hijoViewModel.agregarPuntos(selectedHijo!!, puntos)
+                            showDialogAgregarPuntos = false
+                        }
+                    }
+                ) {
+                    Text("Agregar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialogAgregarPuntos = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    if (showDialogCerrarSesion) {
+        AlertDialog(
+            onDismissRequest = { showDialogCerrarSesion = false },
+            icon = {
+                if (!padreUiState.fotoPerfil.isNullOrEmpty()) {
                     AsyncImage(
                         model = R.drawable.doers_logo,
                         contentDescription = "logo de la aplicacion",
@@ -272,7 +482,7 @@ fun PadreScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = uiState.nombre?.firstOrNull()?.toString() ?: "P",
+                            text = padreUiState.nombre?.firstOrNull()?.toString() ?: "P",
                             style = MaterialTheme.typography.headlineMedium,
                             color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
@@ -293,7 +503,7 @@ fun PadreScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        viewModel.signOut()
+                        padreViewModel.signOut()
                         navController.navigate(Screen.Home) {
                             popUpTo(Screen.Padre) { inclusive = true }
                         }
@@ -303,7 +513,7 @@ fun PadreScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDialog = false }) {
+                TextButton(onClick = { showDialogCerrarSesion = false }) {
                     Text("No, volver atrás", color = MaterialTheme.colorScheme.primary)
                 }
             },
@@ -314,7 +524,7 @@ fun PadreScreen(
         )
     }
 
-    if (showQrDialog && uiState.codigoSala != null) {
+    if (showQrDialog && padreUiState.codigoSala != null) {
         AlertDialog(
             onDismissRequest = { showQrDialog = false },
             title = { Text("Código QR de la Sala") },
@@ -325,7 +535,7 @@ fun PadreScreen(
                         .height(250.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    val qrBitmap = remember { generateQRCode(uiState.codigoSala!!, 200, 200) }
+                    val qrBitmap = remember { generateQRCode(padreUiState.codigoSala!!, 200, 200) }
                     qrBitmap?.let {
                         Image(
                             bitmap = it.asImageBitmap(),
@@ -342,6 +552,64 @@ fun PadreScreen(
             }
         )
     }
+
+    if (showDialogEliminarHijo && selectedHijo != null) {
+        AlertDialog(
+            onDismissRequest = { showDialogEliminarHijo = false },
+            icon = {
+                AsyncImage(
+                    model = R.drawable.anxiety,
+                    contentDescription = "Logo",
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(CircleShape)
+                )
+            },
+            title = {
+                Text(
+                    "Eliminando Hijo",
+                    style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold)
+                )
+            },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "¿Estás seguro de eliminar a ${selectedHijo?.nombre}?",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Normal),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "¡Esta acción es irreversible!",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        selectedHijo?.let {
+                            hijoViewModel.eliminarHijo(it)
+                        }
+                        showDialogEliminarHijo = false
+                    }
+                ) {
+                    Text("Sí, eliminar", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialogEliminarHijo = false }) {
+                    Text("No, volver atrás", color = MaterialTheme.colorScheme.primary)
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurface,
+            shape = MaterialTheme.shapes.medium,
+        )
+    }
+
 }
 
 fun generateQRCode(text: String, width: Int, height: Int): Bitmap? {
@@ -355,7 +623,11 @@ fun generateQRCode(text: String, width: Int, height: Int): Bitmap? {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
         for (x in 0 until width) {
             for (y in 0 until height) {
-                bitmap.setPixel(x, y, if (bitMatrix[x, y]) Color.Black.hashCode() else Color.White.hashCode())
+                bitmap.setPixel(
+                    x,
+                    y,
+                    if (bitMatrix[x, y]) Color.Black.hashCode() else Color.White.hashCode()
+                )
             }
         }
         bitmap

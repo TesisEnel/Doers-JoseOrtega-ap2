@@ -163,4 +163,51 @@ class HijoViewModel @Inject constructor(
             }
         }
     }
+
+    fun getHijosByPadre(padreId: String) {
+        viewModelScope.launch {
+            hijoRepository.getAll().collect { hijos ->
+                val hijosFiltrados = hijos.filter { it.padreId == padreId }
+                _uiState.update { it.copy(hijos = hijosFiltrados) }
+            }
+        }
+    }
+
+    fun agregarPuntos(hijo: HijoEntity, puntosAgregados: Int) {
+        if (puntosAgregados > 0) {
+            val updatedHijo = hijo.copy(saldoActual = hijo.saldoActual + puntosAgregados)
+            _uiState.update {
+                it.copy(
+                    hijos = it.hijos.map { existingHijo ->
+                        if (existingHijo.hijoId == hijo.hijoId) updatedHijo else existingHijo
+                    }
+                )
+            }
+            viewModelScope.launch {
+                hijoRepository.save(updatedHijo)
+            }
+        }
+    }
+
+    fun eliminarHijo(hijo: HijoEntity) {
+        viewModelScope.launch {
+            hijoRepository.delete(hijo)
+        }
+    }
+
+    fun actualizarNombre(nombre: String) {
+        viewModelScope.launch {
+            val updatedHijo = uiState.value.hijoId?.let { hijoRepository.find(it) }
+
+            if (updatedHijo != null) {
+                val updatedEntity = updatedHijo.copy(nombre = nombre)
+                hijoRepository.save(updatedEntity)
+                _uiState.update {
+                    it.copy(
+                        nombre = nombre
+                    )
+                }
+            }
+        }
+    }
 }
