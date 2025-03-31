@@ -8,6 +8,7 @@ data class HijoUiState(
     val nombre: String? = "",
     val codigoSala: String? = "",
     val hijos: List<HijoEntity> = emptyList(),
+    val fotoPerfil: String? = "",
     val isSuccess: Boolean = false,
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
@@ -21,6 +22,7 @@ fun HijoEntity.toUiState() = HijoUiState(
     hijoId = hijoId,
     padreId = padreId,
     nombre = nombre,
+    fotoPerfil = fotoPerfil
 )
 
 fun HijoUiState.toEntity() = hijoId?.let {
