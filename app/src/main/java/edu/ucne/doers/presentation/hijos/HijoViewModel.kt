@@ -221,7 +221,7 @@ class HijoViewModel @Inject constructor(
 
             if (currentHijo != null) {
                 val updatedHijo = currentHijo.copy(fotoPerfil = nuevaFoto)
-                hijoRepository.updateHijo(updatedHijo)
+                hijoRepository.save(updatedHijo)
                 _uiState.update { it.copy(fotoPerfil = nuevaFoto) }
             }
         }
