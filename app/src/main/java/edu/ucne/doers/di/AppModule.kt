@@ -14,14 +14,16 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import edu.ucne.doers.data.local.database.DoersDb
-import edu.ucne.doers.data.repository.AuthRepository
+import edu.ucne.doers.data.remote.DoersApi
 import edu.ucne.doers.presentation.sign_in.GoogleAuthUiClient
+import retrofit2.Retrofit
+import retrofit2.converter.moshi.MoshiConverterFactory
 import javax.inject.Singleton
 
 @InstallIn(SingletonComponent::class)
 @Module
 object AppModule {
-    const val BASE_URL = ""
+    const val BASE_URL = "http://doers-app-2025-f3aketd8gbhbggd6.eastus2-01.azurewebsites.net"
 
     //Moshi
     @Provides
@@ -89,5 +91,15 @@ object AppModule {
     @Singleton
     fun provideSharedPreferences(@ApplicationContext context: Context): SharedPreferences {
         return context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+    }
+
+    @Provides
+    @Singleton
+    fun provideDoersApi(moshi: Moshi): DoersApi {
+        return Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .build()
+            .create(DoersApi::class.java)
     }
 }
