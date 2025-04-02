@@ -14,7 +14,15 @@ class TareaHijoRepository @Inject constructor(
     private val tareaHijoDao: TareaHijoDao,
     private val remote: RemoteDataSource
 ) {
-    fun save(tareaHijo: TareaHijo): Flow<Resource<Unit>> = flow {
+    suspend fun save(tareaHijo: TareaHijo) = tareaHijoDao.save(tareaHijo)
+
+    suspend fun find(id: Int) = tareaHijoDao.find(id)
+
+    fun getAll(): Flow<List<TareaHijo>> = tareaHijoDao.getAll()
+
+    suspend fun delete(tareaHijo: TareaHijo) = tareaHijoDao.delete(tareaHijo)
+
+    /*fun save(tareaHijo: TareaHijo): Flow<Resource<Unit>> = flow {
         emit(Resource.Loading())
         try {
             tareaHijoDao.save(tareaHijo)
@@ -66,6 +74,8 @@ class TareaHijoRepository @Inject constructor(
             Resource.Error("Error al eliminar tarea hijo: ${e.localizedMessage}")
         }
     }
+
+     */
 }
 
 fun TareaHijo.toDto() = TareaHijoDto(

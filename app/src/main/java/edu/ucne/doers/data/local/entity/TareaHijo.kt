@@ -28,7 +28,7 @@ import java.util.Date
 data class TareaHijo(
     @PrimaryKey(autoGenerate = true) val tareaHijoId: Int = 0,
     val tareaId: Int,
-    val hijoId: Int,
+    val hijoId: Int? = null,
     val estado: EstadoTareaHijo = EstadoTareaHijo.PENDIENTE_VERIFICACION,
     val fechaVerificacion: Date? = null
 )

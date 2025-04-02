@@ -14,7 +14,18 @@ class RecompensaRepository @Inject constructor(
     private val recompensaDao: RecompensaDao,
     private val remote: RemoteDataSource
 ) {
-    fun save(recompensa: RecompensaEntity): Flow<Resource<Unit>> = flow {
+
+    suspend fun save(recompensa: RecompensaEntity) = recompensaDao.save(recompensa)
+
+    suspend fun find(id: Int) = recompensaDao.find(id)
+
+    fun getAll(): Flow<List<RecompensaEntity>> = recompensaDao.getAll()
+
+    fun getRecompensasByPadreId(padreId: String): Flow<List<RecompensaEntity>> = recompensaDao.getRecompensasByPadreId(padreId)
+
+    suspend fun delete(recompensa: RecompensaEntity) = recompensaDao.delete(recompensa)
+
+    /*fun save(recompensa: RecompensaEntity): Flow<Resource<Unit>> = flow {
         emit(Resource.Loading())
         try {
             recompensaDao.save(recompensa)
@@ -81,6 +92,8 @@ class RecompensaRepository @Inject constructor(
             Resource.Error("Error al eliminar recompensa: ${e.localizedMessage}")
         }
     }
+
+     */
 }
 
 fun RecompensaEntity.toDto() = RecompensaDto(

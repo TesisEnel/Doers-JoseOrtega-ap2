@@ -28,7 +28,7 @@ import androidx.compose.ui.window.DialogProperties
 fun WelcomeModal(
     showModal: Boolean,
     onDismiss: () -> Unit,
-    userName: String
+    userName: String?
 ) {
     if (showModal) {
         AlertDialog(
