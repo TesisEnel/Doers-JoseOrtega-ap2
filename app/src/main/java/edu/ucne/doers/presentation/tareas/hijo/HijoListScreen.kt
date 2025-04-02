@@ -187,8 +187,7 @@ fun HijoBodyListScreen(
                             items(tareasFiltradas, key = { it.tareaId }) { tarea ->
                                 TareaCardHijo(
                                     tarea = tarea,
-                                    onCompletar = { viewModel.completarTarea(tarea.tareaId) },
-                                    isLoading = uiState.isLoading && uiState.ultimaTareaProcesada == tarea.tareaId
+                                    onCompletar = { viewModel.completarTarea(tarea.tareaId) }
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                             }
