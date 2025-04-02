@@ -14,17 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Checklist
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -47,11 +40,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
-import androidx.navigation.NavHostController
 import edu.ucne.doers.AppReferences
 import edu.ucne.doers.R
 import edu.ucne.doers.presentation.navigation.Screen
+import edu.ucne.doers.presentation.recompensa.comp.HijoNavBar
 import edu.ucne.doers.presentation.tareas.components.HorizontalFilter
 import edu.ucne.doers.presentation.tareas.components.TareaCardHijo
 import edu.ucne.doers.presentation.tareas.components.WelcomeModal
@@ -59,13 +51,16 @@ import edu.ucne.doers.presentation.tareas.components.WelcomeModal
 @Composable
 fun HijoListScreen(
     viewModel: HijoViewModel = hiltViewModel(),
-    navController: NavHostController
+    onNavigateToRecompensas: () -> Unit,
+    onNavigateToPerfil: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     HijoBodyListScreen(
         uiState,
         viewModel,
-        navController
+        onNavigateToRecompensas = onNavigateToRecompensas,
+        onNavigateToPerfil = onNavigateToPerfil
+
     )
 }
 
@@ -74,7 +69,8 @@ fun HijoListScreen(
 fun HijoBodyListScreen(
     uiState: HijoUiState,
     viewModel: HijoViewModel,
-    navController: NavHostController
+    onNavigateToRecompensas: () -> Unit,
+    onNavigateToPerfil: () -> Unit
 ) {
     val periodicidades by viewModel.periodicidadesDisponibles.collectAsState()
     var filtroSeleccionado by remember { mutableStateOf("Todas") }
@@ -194,39 +190,14 @@ fun HijoBodyListScreen(
                         }
                     }
                 }
+
+                HijoNavBar(
+                    currentScreen = Screen.TareaHijo,
+                    onTareasClick = {},
+                    onRecompensasClick = onNavigateToRecompensas,
+                    onPerfilClick = onNavigateToPerfil
+                )
             }
-            BottomNavigationBar(navController, Screen.TareaHijo)
         }
-    }
-}
-
-
-@Composable
-fun BottomNavigationBar(
-    navController: NavController,
-    currentScreen: Screen
-) {
-    NavigationBar(
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface
-    ) {
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Checklist, contentDescription = "Tareas") },
-            label = { Text("Tareas") },
-            selected = currentScreen == Screen.TareaHijo,
-            onClick = {}
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Star, contentDescription = "Recompensas") },
-            label = { Text("Recompensas") },
-            selected = currentScreen == Screen.RecompensaHijo,
-            onClick = { navController.navigate(Screen.RecompensaHijo) }
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Person, contentDescription = "Perfil") },
-            label = { Text("Perfil") },
-            selected = currentScreen == Screen.Hijo,
-            onClick = { navController.navigate(Screen.Hijo) }
-        )
     }
 }

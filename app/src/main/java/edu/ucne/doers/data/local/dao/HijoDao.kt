@@ -3,6 +3,7 @@ package edu.ucne.doers.data.local.dao
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Query
+import androidx.room.Update
 import androidx.room.Upsert
 import edu.ucne.doers.data.local.entity.HijoEntity
 import kotlinx.coroutines.flow.Flow

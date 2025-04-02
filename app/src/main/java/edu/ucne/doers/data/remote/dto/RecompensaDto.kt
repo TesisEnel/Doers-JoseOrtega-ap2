@@ -1,0 +1,10 @@
+package edu.ucne.doers.data.remote.dto
+
+data class RecompensaDto(
+    val recompensaId: Int,
+    val padreId: String,
+    val descripcion: String,
+    val imagenURL: String,
+    val puntosNecesarios: Int,
+    val estado: String
+)

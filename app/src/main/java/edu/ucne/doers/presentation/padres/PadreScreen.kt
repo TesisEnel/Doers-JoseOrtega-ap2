@@ -18,10 +18,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Star
@@ -53,9 +51,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import edu.ucne.doers.data.local.entity.HijoEntity
+import edu.ucne.doers.presentation.componentes.PadreNavBar
+import edu.ucne.doers.presentation.componentes.generateQRCode
 import edu.ucne.doers.presentation.hijos.HijoViewModel
 import edu.ucne.doers.presentation.navigation.Screen
 import edu.ucne.doers.presentation.padres.components.AgregarPuntosDialog
@@ -67,7 +66,9 @@ import edu.ucne.doers.presentation.padres.components.QrDialog
 fun PadreScreen(
     padreViewModel: PadreViewModel,
     hijoViewModel: HijoViewModel,
-    navController: NavController
+    onNavigateToTareas: () -> Unit,
+    onNavigateToRecompensas: () -> Unit,
+    onNavigateToPerfil: () -> Unit
 ) {
     val padreUiState by padreViewModel.uiState.collectAsState()
     val hijoUiState by hijoViewModel.uiState.collectAsState()
@@ -89,7 +90,12 @@ fun PadreScreen(
     } else {
         Scaffold(
             bottomBar = {
-                BottomNavigationBar(navController, Screen.Padre)
+                PadreNavBar(
+                    currentScreen = Screen.Padre,
+                    onTareasClick = onNavigateToTareas,
+                    onRecompensasClick = onNavigateToRecompensas,
+                    onPerfilClick = {}
+                )
             }
         ) { innerPadding ->
             Box(modifier = Modifier.fillMaxSize()) {
@@ -359,8 +365,7 @@ fun PadreScreen(
                                             showDialogAgregarPuntos = true
                                         },
                                         modifier = Modifier.weight(1f),
-                                    )
-                                    {
+                                    ) {
                                         Icon(
                                             imageVector = Icons.Filled.Add,
                                             contentDescription = "Agregar Puntos",
@@ -386,7 +391,6 @@ fun PadreScreen(
             }
         }
     }
-
 
 
     AgregarPuntosDialog(

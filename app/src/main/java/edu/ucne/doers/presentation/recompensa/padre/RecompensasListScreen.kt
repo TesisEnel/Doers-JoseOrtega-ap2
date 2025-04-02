@@ -17,22 +17,17 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -54,10 +49,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
 import coil.compose.rememberImagePainter
 import edu.ucne.doers.R
 import edu.ucne.doers.data.local.model.EstadoRecompensa
+import edu.ucne.doers.presentation.componentes.PadreNavBar
 import edu.ucne.doers.presentation.navigation.Screen
 import edu.ucne.doers.presentation.recompensa.RecompensaUiState
 import edu.ucne.doers.presentation.recompensa.RecompensaViewModel
@@ -70,7 +65,8 @@ fun RecompensasListScreen(
     viewModel: RecompensaViewModel = hiltViewModel(),
     createRecompensa: () -> Unit,
     goToRecompensa: (Int) -> Unit,
-    navController: NavController
+    onNavigateToTareas: () -> Unit,
+    onNavigateToPerfil: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -89,6 +85,16 @@ fun RecompensasListScreen(
                             fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center,
                             color = Color.White,
+                            modifier = Modifier.padding(start = 11.dp)
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = createRecompensa) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Agregar Recompensa",
+                            tint = Color.White
                         )
                     }
                 },
@@ -96,18 +102,15 @@ fun RecompensasListScreen(
                     containerColor = azulMar
                 )
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = createRecompensa,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Crear Recompensa")
-            }
+
         },
         bottomBar = {
-            BottomNavigationBar(navController = navController, currentScreen = Screen.RecompensaList)
+            PadreNavBar(
+                currentScreen = Screen.RecompensaList,
+                onTareasClick = onNavigateToTareas,
+                onRecompensasClick = {},
+                onPerfilClick = onNavigateToPerfil
+            )
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
@@ -304,47 +307,5 @@ fun RecompensaRow(
                 }
             }
         }
-    }
-}
-
-@Composable
-fun BottomNavigationBar(navController: NavController, currentScreen: Screen) {
-    NavigationBar(
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface
-    ) {
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Checklist, contentDescription = "Tarea") },
-            label = { Text("Tarea") },
-            selected = currentScreen == Screen.TareaList,
-            onClick = {
-                navController.navigate(Screen.TareaList) {
-                    popUpTo(navController.graph.startDestinationId) { inclusive = false }
-                    launchSingleTop = true
-                }
-            }
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Star, contentDescription = "Recompensas") },
-            label = { Text("Recompensas") },
-            selected = currentScreen == Screen.RecompensaList,
-            onClick = {
-                navController.navigate(Screen.RecompensaList) {
-                    popUpTo(navController.graph.startDestinationId) { inclusive = false }
-                    launchSingleTop = true
-                }
-            }
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Person, contentDescription = "Perfil") },
-            label = { Text("Perfil") },
-            selected = currentScreen == Screen.Padre,
-            onClick = {
-                navController.navigate(Screen.Padre) {
-                    popUpTo(navController.graph.startDestinationId) { inclusive = false }
-                    launchSingleTop = true
-                }
-            }
-        )
     }
 }

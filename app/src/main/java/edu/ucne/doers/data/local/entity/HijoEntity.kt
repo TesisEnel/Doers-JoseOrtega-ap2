@@ -20,5 +20,6 @@ data class HijoEntity(
     val padreId: String,
     val nombre: String,
     val saldoActual: Int = 0,
-    val balance: Int = 0
+    val balance: Int = 0,
+    val fotoPerfil: String? = null
 )

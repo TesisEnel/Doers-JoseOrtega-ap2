@@ -1,6 +1,8 @@
 package edu.ucne.doers.presentation.hijos
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,11 +15,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -25,12 +24,10 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -41,31 +38,33 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import coil.compose.AsyncImage
-import edu.ucne.doers.R
 import edu.ucne.doers.presentation.navigation.Screen
 import edu.ucne.doers.presentation.padres.PadreViewModel
+import edu.ucne.doers.presentation.recompensa.comp.HijoNavBar
 
 @Composable
 fun HijoScreen(
     hijoViewModel: HijoViewModel,
     padreViewModel: PadreViewModel,
-    navController: NavController
+    onNavigateToTareas: () -> Unit,
+    onNavigateToRecompensas: () -> Unit
 ) {
     val hijoUiState by hijoViewModel.uiState.collectAsState()
     val padreUiState by padreViewModel.uiState.collectAsState()
     val colors = MaterialTheme.colorScheme
-    var showEditNameDialog by remember { mutableStateOf(false) }
     var editedName by remember { mutableStateOf(hijoUiState.nombre ?: "Hijo") }
+    var selectedPhoto by remember { mutableStateOf(hijoUiState.fotoPerfil) }
+    var showEditProfileDialog by remember { mutableStateOf(false) }
+    var tempSelectedPhoto by remember { mutableStateOf(hijoUiState.fotoPerfil) }
 
     if (hijoUiState.isLoading) {
         Box(
@@ -77,7 +76,12 @@ fun HijoScreen(
     } else {
         Scaffold(
             bottomBar = {
-                BottomNavigationBar(navController, Screen.Hijo)
+                HijoNavBar(
+                    currentScreen = Screen.Hijo,
+                    onTareasClick = onNavigateToTareas,
+                    onRecompensasClick = onNavigateToRecompensas,
+                    onPerfilClick = {}
+                )
             }
         ) { innerPadding ->
             Box(modifier = Modifier.fillMaxSize()) {
@@ -89,6 +93,7 @@ fun HijoScreen(
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    val fotos = listOf("personaje_1", "personaje_2", "personaje_3", "personaje_4", "personaje_5")
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -100,7 +105,7 @@ fun HijoScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             AsyncImage(
-                                model = R.drawable.icono_hijo,
+                                model = "android.resource://edu.ucne.doers/drawable/${hijoUiState.fotoPerfil}",
                                 contentDescription = "Foto de perfil",
                                 modifier = Modifier
                                     .size(60.dp)
@@ -126,7 +131,7 @@ fun HijoScreen(
                                 IconButton(
                                     onClick = {
                                         editedName = hijoUiState.nombre ?: "Hijo"
-                                        showEditNameDialog = true
+                                        showEditProfileDialog = true
                                     }
                                 ) {
                                     Icon(
@@ -159,45 +164,79 @@ fun HijoScreen(
                             }
                         }
                     }
-                    if (showEditNameDialog) {
+                    if (showEditProfileDialog) {
                         AlertDialog(
-                            onDismissRequest = { showEditNameDialog = false },
+                            onDismissRequest = { showEditProfileDialog = false },
                             title = {
-                                Box(
+                                Text(
+                                    text = "Editar Perfil",
+                                    fontWeight = FontWeight.Bold,
+                                    color = colors.primary,
                                     modifier = Modifier.fillMaxWidth(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text("Editar Nombre")
-                                }
+                                    textAlign = TextAlign.Center
+                                )
                             },
                             text = {
-                                TextField(
-                                    value = editedName,
-                                    onValueChange = { editedName = it },
-                                    label = { Text("Tu nombre") },
-                                    singleLine = true
-                                )
+                                Column {
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        fotos.forEach { photoName ->
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(50.dp)
+                                                    .clickable {
+                                                        tempSelectedPhoto = photoName
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                AsyncImage(
+                                                    model = "android.resource://edu.ucne.doers/drawable/$photoName",
+                                                    contentDescription = "Foto $photoName",
+                                                    modifier = Modifier
+                                                        .fillMaxSize()
+                                                        .clip(CircleShape)
+                                                        .background(
+                                                            if (tempSelectedPhoto == photoName) colors.surfaceVariant.copy(alpha = 0.5f)
+                                                            else colors.background
+                                                        )
+                                                )
+                                            }
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    OutlinedTextField(
+                                        value = editedName,
+                                        onValueChange = { editedName = it },
+                                        label = { Text("Nombre") },
+                                        singleLine = true,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
                             },
                             confirmButton = {
                                 TextButton(
                                     onClick = {
+                                        selectedPhoto = tempSelectedPhoto
+                                        selectedPhoto?.let { hijoViewModel.actualizarFotoPerfil(it) }
                                         hijoViewModel.actualizarNombre(editedName)
-                                        showEditNameDialog = false
+                                        showEditProfileDialog = false
                                     }
                                 ) {
-                                    Text("Aceptar")
+                                    Text("Guardar")
                                 }
                             },
                             dismissButton = {
                                 TextButton(
-                                    onClick = { showEditNameDialog = false }
+                                    onClick = { showEditProfileDialog = false }
                                 ) {
                                     Text("Cancelar")
                                 }
                             }
                         )
                     }
-
                     Spacer(modifier = Modifier.height(20.dp))
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -206,7 +245,6 @@ fun HijoScreen(
                         elevation = CardDefaults.cardElevation(4.dp)
                     ) {
                         val clipboardManager = LocalClipboardManager.current
-                        val context = LocalContext.current
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -267,36 +305,5 @@ fun HijoScreen(
                 }
             }
         }
-    }
-}
-
-@Composable
-fun BottomNavigationBar(
-    navController: NavController,
-    currentScreen: Screen
-) {
-    val colors = MaterialTheme.colorScheme
-    NavigationBar(
-        containerColor = colors.surface,
-        contentColor = colors.onSurface
-    ) {
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Checklist, contentDescription = "Tareas") },
-            label = { Text("Tareas") },
-            selected = currentScreen == Screen.TareaHijo,
-            onClick = { navController.navigate(Screen.TareaHijo) }
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Star, contentDescription = "Recompensas") },
-            label = { Text("Recompensas") },
-            selected = currentScreen == Screen.RecompensaHijo,
-            onClick = { navController.navigate(Screen.RecompensaHijo) }
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Person, contentDescription = "Perfil") },
-            label = { Text("Perfil") },
-            selected = currentScreen == Screen.Hijo,
-            onClick = { }
-        )
     }
 }
