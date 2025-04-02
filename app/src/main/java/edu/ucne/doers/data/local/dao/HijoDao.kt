@@ -32,6 +32,9 @@ interface HijoDao {
     @Query("SELECT * FROM Hijos WHERE nombre = :nombre AND padreId = :padreId LIMIT 1")
     suspend fun findByNombreAndPadreId(nombre: String, padreId: String): HijoEntity?
 
+    @Query("SELECT * FROM Hijos WHERE padreId = :padreId")
+    fun getByPadreId(padreId: String): Flow<List<HijoEntity>>
+
     @Query("SELECT * FROM Hijos")
     fun getAll(): Flow<List<HijoEntity>>
 }
