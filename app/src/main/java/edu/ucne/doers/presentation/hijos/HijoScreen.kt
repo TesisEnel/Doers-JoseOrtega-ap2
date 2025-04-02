@@ -15,11 +15,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -27,8 +24,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -43,7 +38,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -52,16 +46,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import edu.ucne.doers.presentation.navigation.Screen
 import edu.ucne.doers.presentation.padres.PadreViewModel
+import edu.ucne.doers.presentation.recompensa.comp.HijoNavBar
 
 @Composable
 fun HijoScreen(
     hijoViewModel: HijoViewModel,
     padreViewModel: PadreViewModel,
-    navController: NavController
+    onNavigateToTareas: () -> Unit,
+    onNavigateToRecompensas: () -> Unit
 ) {
     val hijoUiState by hijoViewModel.uiState.collectAsState()
     val padreUiState by padreViewModel.uiState.collectAsState()
@@ -81,7 +76,12 @@ fun HijoScreen(
     } else {
         Scaffold(
             bottomBar = {
-                BottomNavigationBar(navController, Screen.Hijo)
+                HijoNavBar(
+                    currentScreen = Screen.Hijo,
+                    onTareasClick = onNavigateToTareas,
+                    onRecompensasClick = onNavigateToRecompensas,
+                    onPerfilClick = {}
+                )
             }
         ) { innerPadding ->
             Box(modifier = Modifier.fillMaxSize()) {
@@ -166,9 +166,7 @@ fun HijoScreen(
                     }
                     if (showEditProfileDialog) {
                         AlertDialog(
-                            onDismissRequest = {
-                                showEditProfileDialog = false
-                            },
+                            onDismissRequest = { showEditProfileDialog = false },
                             title = {
                                 Text(
                                     text = "Editar Perfil",
@@ -247,7 +245,6 @@ fun HijoScreen(
                         elevation = CardDefaults.cardElevation(4.dp)
                     ) {
                         val clipboardManager = LocalClipboardManager.current
-                        val context = LocalContext.current
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -308,36 +305,5 @@ fun HijoScreen(
                 }
             }
         }
-    }
-}
-
-@Composable
-fun BottomNavigationBar(
-    navController: NavController,
-    currentScreen: Screen
-) {
-    val colors = MaterialTheme.colorScheme
-    NavigationBar(
-        containerColor = colors.surface,
-        contentColor = colors.onSurface
-    ) {
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Checklist, contentDescription = "Tareas") },
-            label = { Text("Tareas") },
-            selected = currentScreen == Screen.TareaHijo,
-            onClick = { navController.navigate(Screen.TareaHijo) }
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Star, contentDescription = "Recompensas") },
-            label = { Text("Recompensas") },
-            selected = currentScreen == Screen.RecompensaHijo,
-            onClick = { navController.navigate(Screen.RecompensaHijo) }
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Person, contentDescription = "Perfil") },
-            label = { Text("Perfil") },
-            selected = currentScreen == Screen.Hijo,
-            onClick = { }
-        )
     }
 }

@@ -134,14 +134,17 @@ fun DoersNavHost(
                 PadreScreen(
                     padreViewModel = padreViewModel,
                     hijoViewModel = hijoViewModel,
-                    navController = navHostController
+                    onNavigateToTareas = { navHostController.navigate(Screen.TareaList) },
+                    onNavigateToRecompensas = { navHostController.navigate(Screen.RecompensaList) },
+                    onNavigateToPerfil = { navHostController.navigate(Screen.Home) }
                 )
             }
             composable<Screen.Hijo> {
                 HijoScreen(
                     hijoViewModel = hijoViewModel,
                     padreViewModel = padreViewModel,
-                    navController = navHostController
+                    onNavigateToTareas = { navHostController.navigate(Screen.TareaHijo) },
+                    onNavigateToRecompensas = { navHostController.navigate(Screen.RecompensaHijo) }
                 )
             }
             composable<Screen.HijoLogin> {
@@ -164,20 +167,27 @@ fun DoersNavHost(
                 RecompensasListScreen(
                     createRecompensa = { navHostController.navigate(Screen.Recompensa(0)) },
                     goToRecompensa = { navHostController.navigate(Screen.Recompensa(it)) },
-                    navController = navHostController
+                    onNavigateToPerfil = { navHostController.navigate(Screen.Padre) },
+                    onNavigateToTareas = { navHostController.navigate(Screen.TareaList) }
                 )
             }
             composable<Screen.RecompensaHijo> {
                 RecompensasHijoScreen(
-                    navController = navHostController,
-                    padreId = padreState.padreId ?: ""
+                    padreId = padreState.padreId ?: "",
+                    onNavigateToPerfil = { navHostController.navigate(Screen.Hijo) },
+                    onNavigateToTareas = { navHostController.navigate(Screen.TareaHijo) }
                 )
             }
             composable<Screen.TareaList> {
                 TareasListScreen(
                     goToAgregarTarea = { navHostController.navigate(Screen.Tarea(0)) },
-                    navController = navHostController
-                )
+                    onNavigateToPerfil = { navHostController.navigate(Screen.Padre) },
+                    onNavigateToRecompensas = { navHostController.navigate(Screen.RecompensaList) }
+                    ,
+                    goToEditarTarea = { tareaId ->
+                        navHostController.navigate(Screen.Tarea(tareaId))
+                    }
+                    )
             }
             composable<Screen.Tarea> {
                 val tareaId = it.toRoute<Screen.Tarea>().tareaId
@@ -187,7 +197,10 @@ fun DoersNavHost(
                 )
             }
             composable<Screen.TareaHijo> {
-                HijoListScreen(navController = navHostController)
+                HijoListScreen(
+                    onNavigateToPerfil = { navHostController.navigate(Screen.Hijo) },
+                    onNavigateToRecompensas = { navHostController.navigate(Screen.RecompensaHijo) }
+                )
             }
         }
     }
