@@ -187,13 +187,13 @@ class HijoViewModel @Inject constructor(
 
             try {
                 val tareasHijo = tareaHijoRepository.getAll().first()
-                val existePendiente = tareasHijo.any {
+                val existePendiente = tareasHijo.data?.any {
                     it.tareaId == tareaId &&
                             it.hijoId == hijoId &&
                             it.estado == EstadoTareaHijo.PENDIENTE_VERIFICACION
                 }
 
-                if (existePendiente) {
+                if (existePendiente == true) {
                     throw Exception("Ya tienes esta tarea pendiente de verificación")
                 }
 
@@ -233,19 +233,18 @@ class HijoViewModel @Inject constructor(
             try {
                 val tareasActivas = tareaRepository.getActiveTasks().first()
                 val tareasCompletadas = tareaHijoRepository.getAll().first()
-                    .filter { it.hijoId == _uiState.value.hijoId }
+                    .data?.filter { it.hijoId == _uiState.value.hijoId }
 
-                val tareasDisponibles = tareasActivas.filter { tarea ->
-                    !tareasCompletadas.any {
-                        it.tareaId == tarea.tareaId &&
-                                it.estado == EstadoTareaHijo.APROBADA
-                    }
+                val tareasDisponibles = tareasActivas.data?.filter { tarea ->
+                    !tareasCompletadas?.any {
+                        it.tareaId == tarea.tareaId && it.estado == EstadoTareaHijo.APROBADA
+                    }!!
                 }
 
                 _uiState.update {
                     it.copy(
-                        listaTareas = tareasDisponibles,
-                        listaTareasFiltradas = tareasDisponibles,
+                        listaTareas = tareasDisponibles ?: emptyList(),
+                        listaTareasFiltradas = tareasDisponibles ?: emptyList(),
                         isLoading = false
                     )
                 }
