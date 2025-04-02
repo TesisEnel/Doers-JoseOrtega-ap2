@@ -1,6 +1,5 @@
 package edu.ucne.doers.data.repository
 
-import android.util.Log
 import edu.ucne.doers.data.local.dao.CanjeoDao
 import edu.ucne.doers.data.local.entity.CanjeoEntity
 import edu.ucne.doers.data.remote.RemoteDataSource
@@ -43,20 +42,13 @@ class CanjeoRepository @Inject constructor(
 
     fun getAll(): Flow<Resource<List<CanjeoEntity>>> = flow {
         emit(Resource.Loading())
-
-        // Emitir primero los datos locales (para mostrar algo rápido)
         val localData = canjeoDao.getAll().firstOrNull()
         emit(Resource.Success(localData ?: emptyList()))
 
         try {
-            // Consultar la API aunque haya datos locales
             val remoteData = remoteDataSource.getCanjeos()
             val entities = remoteData.map { it.toEntity() }
-
-            // Actualizar Room con los datos más recientes
             canjeoDao.save(entities)
-
-            // Emitir nuevamente los datos actualizados desde Room
             val updatedLocal = canjeoDao.getAll().firstOrNull()
             emit(Resource.Success(updatedLocal ?: emptyList()))
         } catch (e: Exception) {
@@ -66,13 +58,9 @@ class CanjeoRepository @Inject constructor(
 
     suspend fun delete(canjeo: CanjeoEntity) {
         try {
-            // Eliminar primero en local
             canjeoDao.delete(canjeo)
-
-            // Luego intentar eliminar en el API
             remoteDataSource.deleteCanjeo(canjeo.canjeoId)
         } catch (e: Exception) {
-            // Puedes guardar un "log de eliminación pendiente" para sincronizar más tarde
             println("Error al eliminar en el API: ${e.message}")
         }
     }

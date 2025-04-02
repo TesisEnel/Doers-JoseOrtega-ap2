@@ -14,7 +14,6 @@ import edu.ucne.doers.data.remote.Resource
 import edu.ucne.doers.data.repository.HijoRepository
 import edu.ucne.doers.data.repository.TareaHijoRepository
 import edu.ucne.doers.data.repository.TareaRepository
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -55,7 +54,6 @@ class HijoViewModel @Inject constructor(
         loadTareas()
         actualizarPeriodicidades()
         cargarHijoId()
-
     }
 
     private fun cargarHijoId() {
@@ -230,7 +228,6 @@ class HijoViewModel @Inject constructor(
         }
     }
 
-
     private fun loadTareas() {
         viewModelScope.launch {
             try {
@@ -299,5 +296,3 @@ class HijoViewModel @Inject constructor(
         }
     }
 }
-
-

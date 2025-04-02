@@ -44,20 +44,13 @@ class PadreRepository @Inject constructor(
 
     fun getAll(): Flow<Resource<List<PadreEntity>>> = flow {
         emit(Resource.Loading())
-
-        // Emitir primero lo que haya en Room
         val localData = padreDao.getAll().firstOrNull()
         emit(Resource.Success(localData ?: emptyList()))
 
         try {
-            // Consultar API siempre si hay internet
             val remoteData = remote.getPadres()
             val localEntities = remoteData.map { it.toEntity() }
-
-            // Guardar datos actualizados en Room
             padreDao.save(localEntities)
-
-            // Emitir nuevamente los datos actualizados
             val updatedLocal = padreDao.getAll().firstOrNull()
             emit(Resource.Success(updatedLocal ?: emptyList()))
         } catch (e: Exception) {

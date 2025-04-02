@@ -17,10 +17,7 @@ class RecompensaRepository @Inject constructor(
     fun save(recompensa: RecompensaEntity): Flow<Resource<Unit>> = flow {
         emit(Resource.Loading())
         try {
-            // Guardar local
             recompensaDao.save(recompensa)
-
-            // Enviar al API
             val dto = recompensa.toDto()
             remote.saveRecompensa(dto)
 
@@ -32,47 +29,31 @@ class RecompensaRepository @Inject constructor(
 
     fun getAll(): Flow<Resource<List<RecompensaEntity>>> = flow {
         emit(Resource.Loading())
-
-        // Emitimos primero lo local para mostrar algo al instante
         val localData = recompensaDao.getAll().firstOrNull()
         emit(Resource.Success(localData ?: emptyList()))
 
         try {
-            // Siempre intentar actualizar desde el API
             val remoteList = remote.getRecompensas()
             val entities = remoteList.map { it.toEntity() }
-
-            // Guardamos lo más reciente en Room
             recompensaDao.save(entities)
-
-            // Volvemos a emitir lo más actualizado
             val updatedLocal = recompensaDao.getAll().firstOrNull()
             emit(Resource.Success(updatedLocal ?: emptyList()))
         } catch (e: Exception) {
-            // Si falla la conexión, se mantiene lo local emitido antes
             emit(Resource.Error("Error al cargar recompensas: ${e.localizedMessage}", localData))
         }
     }
 
     fun getRecompensasByPadreId(padreId: String): Flow<Resource<List<RecompensaEntity>>> = flow {
         emit(Resource.Loading())
-
-        // Emitimos primero lo que haya en local (aunque esté desactualizado)
         val local = recompensaDao.getRecompensasByPadreId(padreId).firstOrNull()
         emit(Resource.Success(local ?: emptyList()))
         try {
-            // Siempre consulta al API si hay conexión
             val remoteList = remote.getRecompensas().filter { it.padreId == padreId }
             val entities = remoteList.map { it.toEntity() }
-
-            // Actualizamos Room con los datos del API
             recompensaDao.save(entities)
-
-            // Emitimos lo más reciente desde Room
             val updated = recompensaDao.getRecompensasByPadreId(padreId).firstOrNull()
             emit(Resource.Success(updated ?: emptyList()))
         } catch (e: Exception) {
-            // Solo mostramos error si falló el fetch remoto
             emit(Resource.Error("No se pudo actualizar recompensas: ${e.localizedMessage}", local))
         }
     }

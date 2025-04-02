@@ -68,7 +68,6 @@ interface DoersApi {
     @GET("api/Padres/by-codigo-sala/{codigoSala}")
     suspend fun getPadreByCodigoSala(@Path("codigoSala") codigoSala: String): PadreDto
 
-
     @GET("api/Recompensas")
     suspend fun getRecompensas(): List<RecompensaDto>
 

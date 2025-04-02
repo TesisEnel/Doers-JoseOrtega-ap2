@@ -70,20 +70,13 @@ class TareaRepository @Inject constructor(
 
     fun getActiveTasks(): Flow<Resource<List<TareaEntity>>> = flow {
         emit(Resource.Loading())
-
-        // Emitir tareas activas desde Room primero
         val local = tareaDao.getByCondition(CondicionTarea.ACTIVA).firstOrNull()
         emit(Resource.Success(local ?: emptyList()))
 
         try {
-            // Obtener tareas desde el API
             val remoteData = remote.getTareas()
             val entities = remoteData.map { it.toEntity() }
-
-            // Guardar todas las tareas (incluyendo activas e inactivas)
             tareaDao.save(entities)
-
-            // Emitir nuevamente solo las activas
             val updated = tareaDao.getByCondition(CondicionTarea.ACTIVA).firstOrNull()
             emit(Resource.Success(updated ?: emptyList()))
         } catch (e: Exception) {
