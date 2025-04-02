@@ -167,7 +167,6 @@ class HijoViewModel @Inject constructor(
             if (_uiState.value.hijoId == 0) {
                 Log.d("DEBUG", "hijoId no está inicializado, intentando cargarlo...")
                 cargarHijoId()
-                delay(500) // Esperamos para asegurar que se actualice
             }
 
             val hijoId = _uiState.value.hijoId
@@ -189,6 +188,17 @@ class HijoViewModel @Inject constructor(
             }
 
             try {
+                val tareasHijo = tareaHijoRepository.getAll().first()
+                val existePendiente = tareasHijo.any {
+                    it.tareaId == tareaId &&
+                            it.hijoId == hijoId &&
+                            it.estado == EstadoTareaHijo.PENDIENTE_VERIFICACION
+                }
+
+                if (existePendiente) {
+                    throw Exception("Ya tienes esta tarea pendiente de verificación")
+                }
+
                 tareaHijoRepository.save(
                     TareaHijo(
                         tareaId = tareaId,
@@ -204,9 +214,11 @@ class HijoViewModel @Inject constructor(
                         ultimaTareaProcesada = null
                     )
                 }
+
                 loadTareas()
 
             } catch (e: Exception) {
+                Log.e("ERROR", "Error al completar tarea: ${e.message}")
                 _uiState.update {
                     it.copy(
                         isLoading = false,
