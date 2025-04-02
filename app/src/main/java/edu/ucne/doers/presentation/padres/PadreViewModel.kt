@@ -168,6 +168,16 @@ class PadreViewModel @Inject constructor(
 
     private suspend fun generateUniqueRoomCode(): String {
         var code: String
+        do {
+            code = UUID.randomUUID().toString().substring(0, 6).uppercase()
+            val padres = padreRepository.getAll().collectFirstOrNull() ?: emptyList()
+            val existingPadre = padres.find { it.codigoSala == code }
+        } while (existingPadre != null)
+        return code
+    }
+
+    /*private suspend fun generateUniqueRoomCode(): String {
+        var code: String
         var existingPadre: PadreEntity?
 
         do {
@@ -183,6 +193,8 @@ class PadreViewModel @Inject constructor(
 
         return code
     }
+
+     */
 
 
     private suspend fun guardarPadre() {

@@ -1,6 +1,7 @@
 package edu.ucne.doers.presentation.hijos
 
 import edu.ucne.doers.data.local.entity.HijoEntity
+import edu.ucne.doers.data.local.entity.TareaEntity
 
 data class HijoUiState(
     val hijoId: Int? = null,
@@ -15,7 +16,16 @@ data class HijoUiState(
     val isSignInSuccessful: Boolean = false,
     val signInError: String? = null,
     val errorMessage: String? = null,
-    val isAuthenticated: Boolean = false
+    val isAuthenticated: Boolean = false,
+
+    // Parte de DjMarte HijoViewModel
+    val saldoActual: Int = 0,
+    val balance: Int = 0,
+    val listaTareas: List<TareaEntity> = emptyList(),
+    val listaTareasFiltradas: List<TareaEntity> = emptyList(),
+    val successMessage: String? = null,
+    val ultimaTareaProcesada: Int? = null,
+
 )
 
 fun HijoEntity.toUiState() = HijoUiState(

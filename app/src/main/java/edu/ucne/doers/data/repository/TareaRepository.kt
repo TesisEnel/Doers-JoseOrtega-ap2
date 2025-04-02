@@ -15,7 +15,18 @@ class TareaRepository @Inject constructor(
     private val tareaDao: TareaDao,
     private val remote: RemoteDataSource
 ) {
-    fun save(tarea: TareaEntity): Flow<Resource<Unit>> = flow {
+    suspend fun save(tarea: TareaEntity) = tareaDao.save(tarea)
+
+    suspend fun find(id: Int) = tareaDao.find(id)
+
+    fun getAll(): Flow<List<TareaEntity>> = tareaDao.getAll()
+
+    suspend fun delete(tarea: TareaEntity) = tareaDao.delete(tarea)
+
+    fun getActiveTasks(): Flow<List<TareaEntity>> =
+        tareaDao.getByCondition(CondicionTarea.ACTIVA)
+
+    /*fun save(tarea: TareaEntity): Flow<Resource<Unit>> = flow {
         emit(Resource.Loading())
         try {
             tareaDao.save(tarea)
@@ -83,6 +94,8 @@ class TareaRepository @Inject constructor(
             emit(Resource.Error("Error al obtener tareas activas: ${e.localizedMessage}", local))
         }
     }
+
+     */
 }
 
 fun TareaEntity.toDto() = TareaDto(

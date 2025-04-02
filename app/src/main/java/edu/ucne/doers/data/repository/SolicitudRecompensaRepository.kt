@@ -14,7 +14,16 @@ class SolicitudRecompensaRepository @Inject constructor(
     private val solicitudRecomensaDao: SolicitudRecompensaDao,
     private val remote: RemoteDataSource
 ) {
-    fun save(solicitudRecompensa: SolicitudRecompensa): Flow<Resource<Unit>> = flow {
+
+    suspend fun save(solicitudRecompensa: SolicitudRecompensa) = solicitudRecomensaDao.save(solicitudRecompensa)
+
+    suspend fun find(id: Int) = solicitudRecomensaDao.find(id)
+
+    fun getAll(): Flow<List<SolicitudRecompensa>> = solicitudRecomensaDao.getAll()
+
+    suspend fun delete(solicitudRecompensa: SolicitudRecompensa) = solicitudRecomensaDao.delete(solicitudRecompensa)
+
+    /*fun save(solicitudRecompensa: SolicitudRecompensa): Flow<Resource<Unit>> = flow {
         emit(Resource.Loading())
         try {
             solicitudRecomensaDao.save(solicitudRecompensa)
@@ -66,6 +75,8 @@ class SolicitudRecompensaRepository @Inject constructor(
             Resource.Error("Error al eliminar solicitud: ${e.localizedMessage}")
         }
     }
+
+     */
 }
 
 fun SolicitudRecompensa.toDto() = SolicitudRecompensaDto(

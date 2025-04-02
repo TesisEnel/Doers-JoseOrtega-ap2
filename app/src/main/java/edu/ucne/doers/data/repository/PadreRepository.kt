@@ -17,7 +17,33 @@ class PadreRepository @Inject constructor(
     private val remote: RemoteDataSource,
     private val authRepository: AuthRepository
 ) {
-    fun save(padre: PadreEntity): Flow<Resource<Unit>> = flow {
+    suspend fun save(padre: PadreEntity) = padreDao.save(padre)
+
+    suspend fun find(id: String) = padreDao.find(id)
+
+    fun getAll(): Flow<List<PadreEntity>> = padreDao.getAll()
+
+    suspend fun delete(padre: PadreEntity) = padreDao.delete(padre)
+
+    suspend fun getCurrentUser(): PadreEntity? {
+        val userData = authRepository.getUser()
+        val userId = userData?.userId
+        return if (userId != null) {
+            val padre = padreDao.find(userId)
+            if (padre == null) {
+                Log.w("PadreRepository", "No se encontró PadreEntity para userId: $userId")
+                null
+            } else {
+                Log.d("PadreRepository", "PadreEntity encontrado: $padre")
+                padre
+            }
+        } else {
+            Log.e("PadreRepository", "No se pudo obtener el userId del usuario autenticado")
+            null
+        }
+    }
+
+    /*fun save(padre: PadreEntity): Flow<Resource<Unit>> = flow {
         emit(Resource.Loading())
         try {
             padreDao.save(padre)
@@ -90,6 +116,8 @@ class PadreRepository @Inject constructor(
             null
         }
     }
+
+     */
 }
 
 fun PadreDto.toEntity() = PadreEntity(

@@ -56,6 +56,16 @@ class TareaViewModel @Inject constructor(
 
     fun getAllTareas() {
         viewModelScope.launch {
+            tareaRepository.getAll().collect { listaTareas ->
+                _uiState.update {
+                    it.copy(listaTareas = listaTareas)
+
+                }
+            }
+        }
+    }
+    /*fun getAllTareas() {
+        viewModelScope.launch {
             tareaRepository.getAll().collect { result ->
                 when (result) {
                     is Resource.Loading -> {
@@ -82,6 +92,8 @@ class TareaViewModel @Inject constructor(
             }
         }
     }
+
+     */
 
 
     fun save() {

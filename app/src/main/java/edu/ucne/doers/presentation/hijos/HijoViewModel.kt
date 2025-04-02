@@ -1,15 +1,22 @@
 package edu.ucne.doers.presentation.hijos
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import edu.ucne.doers.data.local.entity.HijoEntity
+import edu.ucne.doers.data.local.entity.TareaHijo
+import edu.ucne.doers.data.local.model.EstadoTareaHijo
+import edu.ucne.doers.data.local.model.PeriodicidadTarea
 import edu.ucne.doers.data.remote.Resource
 import edu.ucne.doers.data.repository.HijoRepository
+import edu.ucne.doers.data.repository.TareaHijoRepository
+import edu.ucne.doers.data.repository.TareaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -17,6 +24,8 @@ import javax.inject.Inject
 @HiltViewModel
 class HijoViewModel @Inject constructor(
     private val hijoRepository: HijoRepository,
+    private val tareaRepository: TareaRepository,
+    private val tareaHijoRepository: TareaHijoRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -24,9 +33,12 @@ class HijoViewModel @Inject constructor(
     val uiState = _uiState.asStateFlow()
 
     private val sharedPreferences = context.getSharedPreferences("HijoPrefs", Context.MODE_PRIVATE)
+    private val _periodicidadesDisponibles = MutableStateFlow<List<String>>(emptyList())
+    val periodicidadesDisponibles = _periodicidadesDisponibles.asStateFlow()
 
     init {
         checkAuthenticatedHijo()
+        actualizarPeriodicidades()
     }
 
     private fun checkAuthenticatedHijo() {
@@ -45,6 +57,7 @@ class HijoViewModel @Inject constructor(
                             isAuthenticated = true
                         )
                     }
+                    loadTareas()
                 } else {
                     sharedPreferences.edit().remove("hijoId").apply()
                     _uiState.update {
@@ -170,6 +183,14 @@ class HijoViewModel @Inject constructor(
 
     fun getHijosByPadre(padreId: String) {
         viewModelScope.launch {
+            hijoRepository.getAll().collect { hijos ->
+                val hijosFiltrados = hijos.filter { it.padreId == padreId }
+                _uiState.update { it.copy(hijos = hijosFiltrados) }
+            }
+        }
+    }
+    /*fun getHijosByPadre(padreId: String) {
+        viewModelScope.launch {
             hijoRepository.getAll().collect { result ->
                 when (result) {
                     is Resource.Loading -> {
@@ -197,6 +218,7 @@ class HijoViewModel @Inject constructor(
             }
         }
     }
+     */
 
 
     fun agregarPuntos(hijo: HijoEntity, puntosAgregados: Int) {
@@ -246,6 +268,146 @@ class HijoViewModel @Inject constructor(
                 hijoRepository.save(updatedHijo)
                 _uiState.update { it.copy(fotoPerfil = nuevaFoto) }
             }
+        }
+    }
+
+
+    // Funciones en el ViewModel de DjMarte
+    fun completarTarea(tareaId: Int) {
+        viewModelScope.launch {
+
+            val hijoId = _uiState.value.hijoId
+            if (hijoId == 0) {
+                Log.e("ERROR", "El hijoId sigue sin estar inicializado")
+                _uiState.update { it.copy(errorMessage = "Error: No se encontró el ID del hijo") }
+                return@launch
+            }
+
+            Log.d("DEBUG", "Hijo ID en completarTarea: $hijoId")
+
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    ultimaTareaProcesada = tareaId,
+                    errorMessage = null,
+                    successMessage = null
+                )
+            }
+
+            try {
+                val tareasHijo = tareaHijoRepository.getAll().first()
+                val existePendiente = tareasHijo.any {
+                    it.tareaId == tareaId &&
+                            it.hijoId == hijoId &&
+                            it.estado == EstadoTareaHijo.PENDIENTE_VERIFICACION
+                }
+
+                if (existePendiente) {
+                    throw Exception("Ya tienes esta tarea pendiente de verificación")
+                }
+
+                tareaHijoRepository.save(
+                    TareaHijo(
+                        tareaId = tareaId,
+                        hijoId = hijoId,
+                        estado = EstadoTareaHijo.PENDIENTE_VERIFICACION
+                    )
+                )
+
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "Tarea enviada para revisión",
+                        ultimaTareaProcesada = null
+                    )
+                }
+
+                loadTareas()
+
+            } catch (e: Exception) {
+                Log.e("ERROR", "Error al completar tarea: ${e.message}")
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = e.message ?: "Error al completar tarea",
+                        ultimaTareaProcesada = null
+                    )
+                }
+            }
+        }
+    }
+
+    private fun loadTareas() {
+        viewModelScope.launch {
+            try {
+                val tareasActivas = tareaRepository.getActiveTasks().first()
+                Log.d("DEBUG", "Tareas activas: $tareasActivas")
+
+                val tareasCompletadas = tareaHijoRepository.getAll().first()
+                    .filter { it.hijoId == _uiState.value.hijoId }
+                Log.d("DEBUG", "Tareas completadas del hijo: $tareasCompletadas")
+
+                val tareasDisponibles = tareasActivas.filter { tarea ->
+                    !tareasCompletadas.any {
+                        it.tareaId == tarea.tareaId &&
+                                it.estado == EstadoTareaHijo.APROBADA
+                    }
+                }
+
+                Log.d("DEBUG", "Tareas disponibles después de filtro: $tareasDisponibles")
+
+                _uiState.update {
+                    it.copy(
+                        listaTareas = tareasDisponibles,
+                        listaTareasFiltradas = tareasDisponibles,
+                        isLoading = false
+                    )
+                }
+
+            } catch (e: Exception) {
+                Log.e("ERROR", "Error cargando tareas: ${e.message}")
+                _uiState.update {
+                    it.copy(
+                        errorMessage = "Error cargando tareas: ${e.message}",
+                        isLoading = false
+                    )
+                }
+            }
+        }
+    }
+
+    fun filtrarTareas(periodicidad: String) {
+        viewModelScope.launch {
+            val todasTareas = _uiState.value.listaTareas
+
+            val filtradas = if (periodicidad == "Todas") {
+                todasTareas
+            } else {
+                todasTareas.filter {
+                    it.periodicidad?.nombreMostrable == periodicidad
+                }
+            }
+
+            _uiState.update {
+                it.copy(listaTareasFiltradas = filtradas)
+            }
+        }
+    }
+
+    private fun actualizarPeriodicidades() {
+        viewModelScope.launch {
+            val periodicidades =
+                listOf("Todas") + PeriodicidadTarea.entries.map { it.nombreMostrable }
+            _periodicidadesDisponibles.value = periodicidades
+        }
+    }
+
+    fun clearMessages() {
+        _uiState.update {
+            it.copy(
+                errorMessage = null,
+                successMessage = null
+            )
         }
     }
 }

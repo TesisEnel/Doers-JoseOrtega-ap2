@@ -91,6 +91,7 @@ fun DoersNavHost(
                             val isAuthenticated = padreViewModel.isAuthenticated()
                             if (isAuthenticated) {
                                 padreViewModel.setLoading(true)
+                                delay(100)
                                 padreViewModel.getCurrentUser()
                                 delay(100)
                                 if (padreState.isSignInSuccessful) {

@@ -14,7 +14,16 @@ class TransaccionHijoRepository @Inject constructor(
     private val transaccionHijoDao: TransaccionHijoDao,
     private val remote: RemoteDataSource
 ) {
-    fun save(transaccionHijo: TransaccionHijo): Flow<Resource<Unit>> = flow {
+    suspend fun save(transaccionHijo: TransaccionHijo) = transaccionHijoDao.save(transaccionHijo)
+
+    suspend fun find(id: Int) = transaccionHijoDao.find(id)
+
+    fun getAll(): Flow<List<TransaccionHijo>> = transaccionHijoDao.getAll()
+
+    suspend fun delete(transaccionHijo: TransaccionHijo) = transaccionHijoDao.delete(transaccionHijo)
+
+
+    /*fun save(transaccionHijo: TransaccionHijo): Flow<Resource<Unit>> = flow {
         emit(Resource.Loading())
 
         try {
@@ -67,6 +76,8 @@ class TransaccionHijoRepository @Inject constructor(
             Resource.Error("Error al eliminar transacción: ${e.localizedMessage}")
         }
     }
+
+     */
 }
 
 fun TransaccionHijo.toDto() = TransaccionHijoDto(

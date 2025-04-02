@@ -70,6 +70,21 @@ class RecompensaViewModel @Inject constructor(
     fun loadRecompensas() {
         viewModelScope.launch {
             val padreId = uiState.value.padreId
+            if (padreId.isNullOrEmpty()) {
+                _uiState.update {
+                    it.copy(errorMessage = "No se pudo cargar el usuario. Por favor, inicia sesión nuevamente.")
+                }
+                return@launch
+            }
+            recompensaRepository.getRecompensasByPadreId(padreId).collect { recompensas ->
+                _uiState.update { it.copy(recompensas = recompensas.map { it.toUiState() }) }
+            }
+        }
+    }
+
+    /*fun loadRecompensas() {
+        viewModelScope.launch {
+            val padreId = uiState.value.padreId
             if (padreId.isBlank()) {
                 _uiState.update {
                     it.copy(errorMessage = "No se pudo cargar el usuario. Por favor, inicia sesión nuevamente.")
@@ -105,6 +120,8 @@ class RecompensaViewModel @Inject constructor(
             }
         }
     }
+
+     */
 
     fun save() {
         viewModelScope.launch {

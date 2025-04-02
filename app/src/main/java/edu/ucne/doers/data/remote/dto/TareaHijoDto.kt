@@ -6,7 +6,7 @@ import java.util.Date
 data class TareaHijoDto(
     val tareaHijoId: Int,
     val tareaId: Int,
-    val hijoId: Int,
+    val hijoId: Int? = null,
     val estado: EstadoTareaHijo,
     val fechaVerificacion: Date?
 )
