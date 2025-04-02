@@ -1,5 +1,6 @@
 package edu.ucne.doers.presentation.tareas.hijo
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -77,103 +79,118 @@ fun HijoBodyListScreen(
     val appReferences = remember { AppReferences(context) }
     var showModal by rememberSaveable { mutableStateOf(appReferences.isFirstTime()) }
 
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val boxConstraints = this.constraints
+    // Manejo de mensajes
+    LaunchedEffect(uiState.errorMessage, uiState.successMessage) {
+        uiState.errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.clearMessages()
+        }
 
-        Box(modifier = Modifier.fillMaxSize()) {
-            WelcomeModal(
-                showModal = showModal,
-                onDismiss = {
-                    showModal = false
-                    appReferences.setFirstTimeCompleted()
-                },
-                userName = uiState.nombre
+        uiState.successMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearMessages()
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        WelcomeModal(
+            showModal = showModal,
+            onDismiss = {
+                showModal = false
+                appReferences.setFirstTimeCompleted()
+            },
+            userName = uiState.nombre
+        )
+
+        Column(modifier = Modifier.fillMaxSize()) {
+            CenterAlignedTopAppBar(
+                title = { Text("Doers", color = Color.White, fontWeight = FontWeight.Bold) },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color(0xFF1976D2)
+                ),
+                modifier = Modifier.shadow(elevation = 8.dp)
             )
 
-            Column(modifier = Modifier.fillMaxSize()) {
-                CenterAlignedTopAppBar(
-                    title = { Text("Doers", color = Color.White, fontWeight = FontWeight.Bold) },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = Color(0xFF1976D2)
-                    ),
-                    modifier = Modifier.shadow(elevation = 8.dp)
-                )
+            if (uiState.isLoading && uiState.ultimaTareaProcesada == null) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(48.dp),
+                        color = Color(0xFF1976D2)
+                    )
+                }
+            } else {
+                Column(modifier = Modifier.weight(1f)) {
+                    HorizontalFilter(
+                        options = periodicidades,
+                        selectedOption = filtroSeleccionado,
+                        onOptionSelected = {
+                            filtroSeleccionado = it
+                            viewModel.filtrarTareas(it)
+                        },
+                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                    )
 
-                if (uiState.isLoading) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(48.dp),
-                            color = Color(0xFF1976D2)
-                        )
-                    }
-                } else {
-                    Column(modifier = Modifier.weight(1f)) {
-                        HorizontalFilter(
-                            options = periodicidades,
-                            selectedOption = filtroSeleccionado,
-                            onOptionSelected = {
-                                filtroSeleccionado = it
-                                viewModel.filtrarTareas(it)
-                            },
-                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-                        )
+                    Text(
+                        if (uiState.listaTareas.isEmpty()) "Tu padre o tutor no te ha asignado tareas"
+                        else "Tareas asignadas por tu padre o tutor",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            color = Color(0xFF1976D2),
+                            fontWeight = FontWeight.Bold
+                        ),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    )
 
-                        Text(
-                            "Tareas asignadas por tu padre o tutor",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                color = Color(0xFF1976D2),
-                                fontWeight = FontWeight.Bold
-                            ),
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp)
-                        )
+                    val tareasFiltradas = uiState.listaTareasFiltradas
 
-                        val tareasFiltradas = uiState.listaTareasFiltradas
-
-                        if (tareasFiltradas.isEmpty()) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
+                    if (tareasFiltradas.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
                             ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.pantalla_de_espera),
-                                        contentDescription = "No se encontró tarea",
-                                        contentScale = ContentScale.Fit,
-                                        modifier = Modifier.size(250.dp)
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        "No se han encontrado tareas con este estado",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = Color.Gray,
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.padding(horizontal = 16.dp)
-                                    )
-                                }
+                                Image(
+                                    painter = painterResource(id = R.drawable.pantalla_de_espera),
+                                    contentDescription = "No se encontró tarea",
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier.size(250.dp)
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    when {
+                                        uiState.listaTareas.isEmpty() -> "No tienes tareas asignadas"
+                                        filtroSeleccionado != "Todas" -> "No hay tareas con esta periodicidad"
+                                        else -> "No hay tareas disponibles"
+                                    },
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = Color.Gray,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
                             }
-                        } else {
-                            LazyColumn(
-                                modifier = Modifier
-                                    .padding(horizontal = 8.dp)
-                                    .weight(1f)
-                            ) {
-                                items(tareasFiltradas, key = { it.tareaId }) { tarea ->
-                                    TareaCardHijo(
-                                        tarea = tarea,
-                                        onCompletar = { viewModel.completarTarea(tarea.tareaId) }
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                }
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp)
+                                .weight(1f)
+                        ) {
+                            items(tareasFiltradas, key = { it.tareaId }) { tarea ->
+                                TareaCardHijo(
+                                    tarea = tarea,
+                                    onCompletar = { viewModel.completarTarea(tarea.tareaId) }
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
                             }
                         }
                     }
                 }
+
                 HijoNavBar(
                     currentScreen = Screen.TareaHijo,
                     onTareasClick = {},
