@@ -14,5 +14,10 @@ data class HijoUiState (
     val listaTareasFiltradas: List<TareaEntity> = emptyList(),
     val errorMessage: String? = null,
     val successMessage: String? = null,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val ultimaTareaProcesada: Int? = null,
+    val isAuthenticated: Boolean = false,
+    val isSignInSuccessful: Boolean = false,
+    val signInError: String? = null,
+    val isSuccess: Boolean = false
 )
