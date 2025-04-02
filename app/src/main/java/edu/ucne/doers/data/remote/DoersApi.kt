@@ -65,6 +65,10 @@ interface DoersApi {
     @DELETE("api/Padres/{id}")
     suspend fun deletePadre(@Path("id") id: String): Response<Unit>
 
+    @GET("api/Padres/by-codigo-sala/{codigoSala}")
+    suspend fun getPadreByCodigoSala(@Path("codigoSala") codigoSala: String): PadreDto
+
+
     @GET("api/Recompensas")
     suspend fun getRecompensas(): List<RecompensaDto>
 
