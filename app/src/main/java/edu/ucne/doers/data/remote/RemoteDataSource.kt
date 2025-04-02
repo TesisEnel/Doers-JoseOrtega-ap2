@@ -14,6 +14,7 @@ class RemoteDataSource @Inject constructor(
     private val doersApi: DoersApi
 ) {
     suspend fun getCanjeos() = doersApi.getCanjeos()
+    suspend fun getCanjeo(id: Int) = doersApi.getCanjeo(id)
     suspend fun saveCanjeo(canjeoDto: CanjeoDto) = doersApi.saveCanjeo(canjeoDto)
     suspend fun updateCanjeo(id: Int, canjeoDto: CanjeoDto) = doersApi.updateCanjeo(id, canjeoDto)
     suspend fun deleteCanjeo(id: Int) = doersApi.deleteCanjeo(id)
@@ -29,6 +30,7 @@ class RemoteDataSource @Inject constructor(
     suspend fun savePadre(padreDto: PadreDto) = doersApi.savePadre(padreDto)
     suspend fun updatePadre(id: String, padreDto: PadreDto) = doersApi.updatePadre(id, padreDto)
     suspend fun deletePadre(id: String) = doersApi.deletePadre(id)
+    suspend fun getPadreByCodigoSala(codigoSala: String): PadreDto = doersApi.getPadreByCodigoSala(codigoSala)
 
     suspend fun getRecompensas() = doersApi.getRecompensas()
     suspend fun getRecompensa(id: Int) = doersApi.getRecompensa(id)
