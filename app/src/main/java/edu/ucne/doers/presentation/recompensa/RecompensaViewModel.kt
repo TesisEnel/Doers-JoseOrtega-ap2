@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import edu.ucne.doers.data.local.entity.RecompensaEntity
 import edu.ucne.doers.data.local.model.EstadoRecompensa
+import edu.ucne.doers.data.remote.Resource
 import edu.ucne.doers.data.repository.PadreRepository
 import edu.ucne.doers.data.repository.RecompensaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -69,14 +70,38 @@ class RecompensaViewModel @Inject constructor(
     fun loadRecompensas() {
         viewModelScope.launch {
             val padreId = uiState.value.padreId
-            if (padreId.isNullOrEmpty()) {
+            if (padreId.isBlank()) {
                 _uiState.update {
                     it.copy(errorMessage = "No se pudo cargar el usuario. Por favor, inicia sesión nuevamente.")
                 }
                 return@launch
             }
-            recompensaRepository.getRecompensasByPadreId(padreId).collect { recompensas ->
-                _uiState.update { it.copy(recompensas = recompensas.map { it.toUiState() }) }
+
+            recompensaRepository.getRecompensasByPadreId(padreId).collect { result ->
+                when (result) {
+                    is Resource.Loading -> {
+                        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+                    }
+
+                    is Resource.Success -> {
+                        _uiState.update {
+                            it.copy(
+                                recompensas = result.data?.map { it.toUiState() } ?: emptyList(),
+                                isLoading = false,
+                                errorMessage = null
+                            )
+                        }
+                    }
+
+                    is Resource.Error -> {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMessage = result.message ?: "Error al cargar recompensas"
+                            )
+                        }
+                    }
+                }
             }
         }
     }

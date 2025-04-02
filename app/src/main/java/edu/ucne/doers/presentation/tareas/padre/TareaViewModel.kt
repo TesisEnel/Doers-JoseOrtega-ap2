@@ -7,6 +7,7 @@ import edu.ucne.doers.data.local.entity.TareaEntity
 import edu.ucne.doers.data.local.model.CondicionTarea
 import edu.ucne.doers.data.local.model.EstadoTarea
 import edu.ucne.doers.data.local.model.PeriodicidadTarea
+import edu.ucne.doers.data.remote.Resource
 import edu.ucne.doers.data.repository.PadreRepository
 import edu.ucne.doers.data.repository.TareaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,20 +56,41 @@ class TareaViewModel @Inject constructor(
 
     fun getAllTareas() {
         viewModelScope.launch {
-            tareaRepository.getAll().collect { listaTareas ->
-                _uiState.update {
-                    it.copy(listaTareas = listaTareas)
-
+            tareaRepository.getAll().collect { result ->
+                when (result) {
+                    is Resource.Loading -> {
+                        _uiState.update { it.copy(isLoanding = true) }
+                    }
+                    is Resource.Success -> {
+                        _uiState.update {
+                            it.copy(
+                                listaTareas = result.data ?: emptyList(),
+                                isLoanding = false,
+                                errorMessage = null
+                            )
+                        }
+                    }
+                    is Resource.Error -> {
+                        _uiState.update {
+                            it.copy(
+                                isLoanding = false,
+                                errorMessage = result.message ?: "Error desconocido al cargar tareas"
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 
+
     fun save() {
         viewModelScope.launch {
             if (isValid()) {
                 tareaRepository.save(_uiState.value.toEntity())
-                _uiState.update { it.copy(errorMessage = null) }
+                _uiState.update {
+                    it.copy(errorMessage = null)
+                }
                 new()
             }
         }
@@ -77,7 +99,6 @@ class TareaViewModel @Inject constructor(
     fun find(tareaId: Int) {
         viewModelScope.launch {
             val tarea = tareaRepository.find(tareaId)
-
             if (tarea != null) {
                 _uiState.update {
                     it.copy(
@@ -95,6 +116,7 @@ class TareaViewModel @Inject constructor(
     fun delete(tarea: TareaEntity) {
         viewModelScope.launch {
             tareaRepository.delete(tarea)
+            getAllTareas()
         }
     }
 
@@ -115,6 +137,9 @@ class TareaViewModel @Inject constructor(
                 descripcion = "",
                 puntos = 0,
                 periodicidad = null,
+                condicion = CondicionTarea.INACTIVA,
+                imagenURL = "",
+                estado = EstadoTarea.PENDIENTE,
                 errorMessage = null
             )
         }

@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import edu.ucne.doers.data.local.entity.HijoEntity
 import edu.ucne.doers.data.local.entity.TareaHijo
 import edu.ucne.doers.data.local.model.EstadoTareaHijo
+import edu.ucne.doers.data.remote.Resource
 import edu.ucne.doers.data.repository.HijoRepository
 import edu.ucne.doers.data.repository.TareaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -61,21 +62,44 @@ class HijoViewModel @Inject constructor(
 
     private fun loadTareas() {
         viewModelScope.launch {
-            val tareasActivas = tareaRepository.getActiveTasks().first()
-            val tareasCompletadas = hijoRepository.getTareasHijo(_uiState.value.hijoId).first()
-            val tareasFiltradas = tareasActivas.filter { tarea ->
-                tareasCompletadas.none { it.tareaId == tarea.tareaId }
-            }
+            tareaRepository.getActiveTasks().collect { resource ->
+                when (resource) {
+                    is Resource.Loading -> {
+                        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+                    }
 
-            _uiState.update {
-                it.copy(
-                    listaTareas = tareasFiltradas,
-                    listaTareasFiltradas = tareasFiltradas
-                )
+                    is Resource.Success -> {
+                        val tareasActivas = resource.data ?: emptyList()
+                        val tareasCompletadas = hijoRepository.getTareasHijo(_uiState.value.hijoId).first()
+                        val tareasFiltradas = tareasActivas.filter { tarea ->
+                            tareasCompletadas.none { it.tareaId == tarea.tareaId }
+                        }
+
+                        _uiState.update {
+                            it.copy(
+                                listaTareas = tareasFiltradas,
+                                listaTareasFiltradas = tareasFiltradas,
+                                isLoading = false,
+                                errorMessage = null
+                            )
+                        }
+
+                        actualizarPeriodicidades()
+                    }
+
+                    is Resource.Error -> {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMessage = resource.message ?: "Error al cargar tareas"
+                            )
+                        }
+                    }
+                }
             }
-            actualizarPeriodicidades()
         }
     }
+
 
     private fun actualizarPeriodicidades() {
         viewModelScope.launch {

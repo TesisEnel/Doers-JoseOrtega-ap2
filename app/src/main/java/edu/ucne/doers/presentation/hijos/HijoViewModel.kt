@@ -170,12 +170,34 @@ class HijoViewModel @Inject constructor(
 
     fun getHijosByPadre(padreId: String) {
         viewModelScope.launch {
-            hijoRepository.getAll().collect { hijos ->
-                val hijosFiltrados = hijos.filter { it.padreId == padreId }
-                _uiState.update { it.copy(hijos = hijosFiltrados) }
+            hijoRepository.getAll().collect { result ->
+                when (result) {
+                    is Resource.Loading -> {
+                        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+                    }
+                    is Resource.Success -> {
+                        val hijosFiltrados = result.data?.filter { it.padreId == padreId } ?: emptyList()
+                        _uiState.update {
+                            it.copy(
+                                hijos = hijosFiltrados,
+                                isLoading = false,
+                                errorMessage = null
+                            )
+                        }
+                    }
+                    is Resource.Error -> {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMessage = result.message ?: "Error al cargar hijos"
+                            )
+                        }
+                    }
+                }
             }
         }
     }
+
 
     fun agregarPuntos(hijo: HijoEntity, puntosAgregados: Int) {
         if (puntosAgregados > 0) {
