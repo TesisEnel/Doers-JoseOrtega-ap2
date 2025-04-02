@@ -71,7 +71,8 @@ fun PadreScreen(
     hijoViewModel: HijoViewModel,
     onNavigateToTareas: () -> Unit,
     onNavigateToRecompensas: () -> Unit,
-    onNavigateToPerfil: () -> Unit
+    onNavigateToPerfil: () -> Unit,
+    onSignOut: () -> Unit
 ) {
     val padreUiState by padreViewModel.uiState.collectAsState()
     val hijoUiState by hijoViewModel.uiState.collectAsState()
@@ -413,9 +414,7 @@ fun PadreScreen(
         onDismiss = { showDialogCerrarSesion = false },
         onConfirm = {
             padreViewModel.signOut()
-            navController.navigate(Screen.Home) {
-                popUpTo(Screen.Padre) { inclusive = true }
-            }
+            onSignOut()
         },
         padreUiState = padreUiState
     )

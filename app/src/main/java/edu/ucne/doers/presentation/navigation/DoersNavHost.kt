@@ -136,7 +136,12 @@ fun DoersNavHost(
                     hijoViewModel = hijoViewModel,
                     onNavigateToTareas = { navHostController.navigate(Screen.TareaList) },
                     onNavigateToRecompensas = { navHostController.navigate(Screen.RecompensaList) },
-                    onNavigateToPerfil = { navHostController.navigate(Screen.Home) }
+                    onNavigateToPerfil = { navHostController.navigate(Screen.Home) },
+                    onSignOut = {
+                        navHostController.navigate(Screen.Home) {
+                            popUpTo(Screen.Padre) { inclusive = true }
+                        }
+                    }
                 )
             }
             composable<Screen.Hijo> {
@@ -182,12 +187,11 @@ fun DoersNavHost(
                 TareasListScreen(
                     goToAgregarTarea = { navHostController.navigate(Screen.Tarea(0)) },
                     onNavigateToPerfil = { navHostController.navigate(Screen.Padre) },
-                    onNavigateToRecompensas = { navHostController.navigate(Screen.RecompensaList) }
-                    ,
+                    onNavigateToRecompensas = { navHostController.navigate(Screen.RecompensaList) },
                     goToEditarTarea = { tareaId ->
                         navHostController.navigate(Screen.Tarea(tareaId))
                     }
-                    )
+                )
             }
             composable<Screen.Tarea> {
                 val tareaId = it.toRoute<Screen.Tarea>().tareaId
