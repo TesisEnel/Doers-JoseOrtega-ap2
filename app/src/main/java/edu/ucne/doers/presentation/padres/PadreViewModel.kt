@@ -11,6 +11,7 @@ import edu.ucne.doers.presentation.sign_in.GoogleAuthUiClient
 import edu.ucne.doers.presentation.sign_in.SignInResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -167,13 +168,22 @@ class PadreViewModel @Inject constructor(
 
     private suspend fun generateUniqueRoomCode(): String {
         var code: String
+        var existingPadre: PadreEntity?
+
         do {
             code = UUID.randomUUID().toString().substring(0, 6).uppercase()
-            val padres = padreRepository.getAll().collectFirstOrNull() ?: emptyList()
-            val existingPadre = padres.find { it.codigoSala == code }
+
+            // Usar firstOrNull y emptyList con tipo explícito
+            val result = padreRepository.getAll().firstOrNull()
+            val padres = result?.data ?: emptyList<PadreEntity>()
+
+            existingPadre = padres.find { it.codigoSala == code }
+
         } while (existingPadre != null)
+
         return code
     }
+
 
     private suspend fun guardarPadre() {
         padreRepository.save(_uiState.value.toEntity())
