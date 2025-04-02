@@ -2,37 +2,116 @@ package edu.ucne.doers.data.repository
 
 import android.util.Log
 import edu.ucne.doers.data.local.dao.PadreDao
+import edu.ucne.doers.data.local.entity.CanjeoEntity
 import edu.ucne.doers.data.local.entity.PadreEntity
+import edu.ucne.doers.data.remote.RemoteDataSource
+import edu.ucne.doers.data.remote.Resource
+import edu.ucne.doers.data.remote.dto.PadreDto
 import javax.inject.Inject
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flow
 
 class PadreRepository @Inject constructor(
     private val padreDao: PadreDao,
+    private val remote: RemoteDataSource,
     private val authRepository: AuthRepository
 ) {
-    suspend fun save(padre: PadreEntity) = padreDao.save(padre)
+    fun save(padre: PadreEntity): Flow<Resource<Unit>> = flow {
+        emit(Resource.Loading())
+        try {
+            padreDao.save(padre)
+            remote.savePadre(padre.toDto())
+            emit(Resource.Success(Unit))
+        } catch (e: Exception) {
+            emit(Resource.Error("Error al guardar padre: ${e.localizedMessage}"))
+        }
+    }
 
-    suspend fun find(id: String) = padreDao.find(id)
+    suspend fun find(id: String): PadreEntity? {
+        return try {
+            val local = padreDao.find(id)
+            if (local != null) return local
 
-    fun getAll(): Flow<List<PadreEntity>> = padreDao.getAll()
+            val remotePadre = remote.getPadre(id)
+            val entity = remotePadre.toEntity()
+            padreDao.save(entity)
+            entity
+        } catch (e: Exception) {
+            null
+        }
+    }
 
-    suspend fun delete(padre: PadreEntity) = padreDao.delete(padre)
+    fun getAll(): Flow<Resource<List<PadreEntity>>> = flow {
+        emit(Resource.Loading())
+
+        // Emitir primero lo que haya en Room
+        val localData = padreDao.getAll().firstOrNull()
+        emit(Resource.Success(localData ?: emptyList()))
+
+        try {
+            // Consultar API siempre si hay internet
+            val remoteData = remote.getPadres()
+            val localEntities = remoteData.map { it.toEntity() }
+
+            // Guardar datos actualizados en Room
+            padreDao.save(localEntities)
+
+            // Emitir nuevamente los datos actualizados
+            val updatedLocal = padreDao.getAll().firstOrNull()
+            emit(Resource.Success(updatedLocal ?: emptyList()))
+        } catch (e: Exception) {
+            emit(Resource.Error("Error al obtener padres: ${e.localizedMessage}", localData))
+        }
+    }
+
+    suspend fun delete(padre: PadreEntity): Resource<Unit> {
+        return try {
+            padreDao.delete(padre)
+            remote.deletePadre(padre.padreId)
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error("Error al eliminar padre: ${e.localizedMessage}")
+        }
+    }
 
     suspend fun getCurrentUser(): PadreEntity? {
-        val userData = authRepository.getUser()
-        val userId = userData?.userId
-        return if (userId != null) {
-            val padre = padreDao.find(userId)
-            if (padre == null) {
-                Log.w("PadreRepository", "No se encontró PadreEntity para userId: $userId")
-                null
-            } else {
-                Log.d("PadreRepository", "PadreEntity encontrado: $padre")
-                padre
+        return try {
+            val userData = authRepository.getUser()
+            val userId = userData?.userId
+
+            if (userId.isNullOrBlank()) {
+                Log.e("PadreRepository", "No se pudo obtener el userId del usuario autenticado")
+                return null
             }
-        } else {
-            Log.e("PadreRepository", "No se pudo obtener el userId del usuario autenticado")
+
+            val localPadre = padreDao.find(userId)
+            if (localPadre != null) return localPadre
+
+            val remotePadre = remote.getPadre(userId)
+            val entity = remotePadre.toEntity()
+            padreDao.save(entity)
+            entity
+        } catch (e: Exception) {
+            Log.e("PadreRepository", "Error en getCurrentUser: ${e.localizedMessage}")
             null
         }
     }
 }
+
+fun PadreDto.toEntity() = PadreEntity(
+    padreId = this.padreId,
+    nombre = this.nombre,
+    profilePictureUrl = this.profilePictureUrl,
+    email = this.email,
+    codigoSala = this.codigoSala
+)
+
+fun PadreEntity.toDto() = PadreDto(
+    padreId = padreId,
+    nombre = nombre,
+    profilePictureUrl = this.profilePictureUrl,
+    email = this.email,
+    codigoSala = this.codigoSala
+)
+
