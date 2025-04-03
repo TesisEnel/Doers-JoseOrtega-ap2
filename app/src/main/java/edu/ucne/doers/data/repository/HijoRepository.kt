@@ -22,35 +22,35 @@ class HijoRepository @Inject constructor(
     private val remote: RemoteDataSource
 ) {
 
-    suspend fun save(hijo: HijoEntity) = hijoDao.save(hijo)
+//    suspend fun save(hijo: HijoEntity) = hijoDao.save(hijo)
+//
+//    suspend fun find(id: Int) = hijoDao.find(id)
+//
+//    fun getAll(): Flow<List<HijoEntity>> = hijoDao.getAll()
+//
+//    suspend fun delete(hijo: HijoEntity) = hijoDao.delete(hijo)
+//
+//    suspend fun findByNombreAndPadreId(nombre: String, padreId: String): HijoEntity? {
+//        return hijoDao.findByNombreAndPadreId(nombre, padreId)
+//    }
+//
+//    suspend fun getPadreIdByCodigoSala(codigoSala: String): String? {
+//        val padre = padreRepository.getAll().collectFirstOrNull()?.data?.find { it.codigoSala == codigoSala }
+//        return padre?.padreId
+//    }
+//
+//    suspend fun loginHijo(nombre: String, codigoSala: String): Resource<Boolean> {
+//        val padre = padreDao.findByCodigoSala(codigoSala)
+//        return if (padre != null) {
+//            val hijo = HijoEntity(padreId = padre.padreId, nombre = nombre)
+//            hijoDao.save(hijo)
+//            Resource.Success(true)
+//        } else {
+//            Resource.Error("El código de sala no existe")
+//        }
+//    }
 
-    suspend fun find(id: Int) = hijoDao.find(id)
-
-    fun getAll(): Flow<List<HijoEntity>> = hijoDao.getAll()
-
-    suspend fun delete(hijo: HijoEntity) = hijoDao.delete(hijo)
-
-    suspend fun findByNombreAndPadreId(nombre: String, padreId: String): HijoEntity? {
-        return hijoDao.findByNombreAndPadreId(nombre, padreId)
-    }
-
-    suspend fun getPadreIdByCodigoSala(codigoSala: String): String? {
-        val padre = padreRepository.getAll().collectFirstOrNull()?.find { it.codigoSala == codigoSala }
-        return padre?.padreId
-    }
-
-    suspend fun loginHijo(nombre: String, codigoSala: String): Resource<Boolean> {
-        val padre = padreDao.findByCodigoSala(codigoSala)
-        return if (padre != null) {
-            val hijo = HijoEntity(padreId = padre.padreId, nombre = nombre)
-            hijoDao.save(hijo)
-            Resource.Success(true)
-        } else {
-            Resource.Error("El código de sala no existe")
-        }
-    }
-
-    /*fun save(hijo: HijoEntity): Flow<Resource<Unit>> = flow {
+    fun save(hijo: HijoEntity): Flow<Resource<Unit>> = flow {
         emit(Resource.Loading())
         try {
             hijoDao.save(hijo)
@@ -108,9 +108,6 @@ class HijoRepository @Inject constructor(
     }
 
     suspend fun getPadreIdByCodigoSala(codigoSala: String): String? {
-        val local = padreDao.findByCodigoSala(codigoSala)
-        if (local != null) return local.padreId
-
         return try {
             val padreDto = remote.getPadreByCodigoSala(codigoSala)
             val padre = padreDto.toEntity()
@@ -141,15 +138,17 @@ class HijoRepository @Inject constructor(
             padreDao.save(padre)
 
             val hijo = HijoEntity(padreId = padre.padreId, nombre = nombre)
-            hijoDao.save(hijo)
+
+            val hijoDto = remote.saveHijo(hijo.toDto())
+
+            val hijoGuardado = hijoDto.toEntity()
+            hijoDao.save(hijoGuardado)
 
             Resource.Success(true)
         } catch (e: Exception) {
             Resource.Error("El código de sala no existe o no hay conexión: ${e.localizedMessage}")
         }
     }
-
-     */
 }
 
 fun HijoEntity.toDto() = HijoDto(
