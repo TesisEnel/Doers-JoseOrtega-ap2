@@ -17,33 +17,33 @@ class PadreRepository @Inject constructor(
     private val remote: RemoteDataSource,
     private val authRepository: AuthRepository
 ) {
-    suspend fun save(padre: PadreEntity) = padreDao.save(padre)
+//    suspend fun save(padre: PadreEntity) = padreDao.save(padre)
+//
+//    suspend fun find(id: String) = padreDao.find(id)
+//
+//    fun getAll(): Flow<List<PadreEntity>> = padreDao.getAll()
+//
+//    suspend fun delete(padre: PadreEntity) = padreDao.delete(padre)
+//
+//    suspend fun getCurrentUser(): PadreEntity? {
+//        val userData = authRepository.getUser()
+//        val userId = userData?.userId
+//        return if (userId != null) {
+//            val padre = padreDao.find(userId)
+//            if (padre == null) {
+//                Log.w("PadreRepository", "No se encontró PadreEntity para userId: $userId")
+//                null
+//            } else {
+//                Log.d("PadreRepository", "PadreEntity encontrado: $padre")
+//                padre
+//            }
+//        } else {
+//            Log.e("PadreRepository", "No se pudo obtener el userId del usuario autenticado")
+//            null
+//        }
+//    }
 
-    suspend fun find(id: String) = padreDao.find(id)
-
-    fun getAll(): Flow<List<PadreEntity>> = padreDao.getAll()
-
-    suspend fun delete(padre: PadreEntity) = padreDao.delete(padre)
-
-    suspend fun getCurrentUser(): PadreEntity? {
-        val userData = authRepository.getUser()
-        val userId = userData?.userId
-        return if (userId != null) {
-            val padre = padreDao.find(userId)
-            if (padre == null) {
-                Log.w("PadreRepository", "No se encontró PadreEntity para userId: $userId")
-                null
-            } else {
-                Log.d("PadreRepository", "PadreEntity encontrado: $padre")
-                padre
-            }
-        } else {
-            Log.e("PadreRepository", "No se pudo obtener el userId del usuario autenticado")
-            null
-        }
-    }
-
-    /*fun save(padre: PadreEntity): Flow<Resource<Unit>> = flow {
+    fun save(padre: PadreEntity): Flow<Resource<Unit>> = flow {
         emit(Resource.Loading())
         try {
             padreDao.save(padre)
@@ -117,7 +117,13 @@ class PadreRepository @Inject constructor(
         }
     }
 
-     */
+    suspend fun getByCodigoSala(codigoSala: String): PadreEntity? {
+        return try {
+            remote.getPadreByCodigoSala(codigoSala).toEntity()
+        } catch (e: Exception) {
+            null
+        }
+    }
 }
 
 fun PadreDto.toEntity() = PadreEntity(
@@ -129,8 +135,8 @@ fun PadreDto.toEntity() = PadreEntity(
 )
 
 fun PadreEntity.toDto() = PadreDto(
-    padreId = padreId,
-    nombre = nombre,
+    padreId = this.padreId,
+    nombre = this.nombre,
     profilePictureUrl = this.profilePictureUrl,
     email = this.email,
     codigoSala = this.codigoSala
