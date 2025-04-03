@@ -4,9 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import edu.ucne.doers.data.local.entity.PadreEntity
+import edu.ucne.doers.data.remote.Resource
 import edu.ucne.doers.data.repository.AuthRepository
 import edu.ucne.doers.data.repository.PadreRepository
-import edu.ucne.doers.presentation.extension.collectFirstOrNull
 import edu.ucne.doers.presentation.sign_in.GoogleAuthUiClient
 import edu.ucne.doers.presentation.sign_in.SignInResult
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -168,11 +168,24 @@ class PadreViewModel @Inject constructor(
 
     private suspend fun generateUniqueRoomCode(): String {
         var code: String
+        var existsRemotely: Boolean
+        var existingPadreLocal: PadreEntity?
+
         do {
             code = UUID.randomUUID().toString().substring(0, 6).uppercase()
-            val padres = padreRepository.getAll().collectFirstOrNull() ?: emptyList()
-            val existingPadre = padres.find { it.codigoSala == code }
-        } while (existingPadre != null)
+
+            val localResource = padreRepository.getAll().firstOrNull()
+            val padres = if (localResource is Resource.Success) localResource.data else emptyList()
+            existingPadreLocal = padres?.find { it.codigoSala == code }
+
+            existsRemotely = try {
+                padreRepository.getByCodigoSala(code) != null
+            } catch (e: Exception) {
+                false
+            }
+
+        } while (existingPadreLocal != null || existsRemotely)
+
         return code
     }
 
@@ -196,10 +209,22 @@ class PadreViewModel @Inject constructor(
 
      */
 
-
     private suspend fun guardarPadre() {
-        padreRepository.save(_uiState.value.toEntity())
+        padreRepository.save(_uiState.value.toEntity()).collect { result ->
+            when (result) {
+                is Resource.Loading -> setLoading(true)
+                is Resource.Success -> {
+                    setLoading(false)
+                    _uiState.update { it.copy(isSuccess = true) }
+                }
+                is Resource.Error -> {
+                    setLoading(false)
+                    setSignInError(result.message ?: "Error al guardar")
+                }
+            }
+        }
     }
+
 }
 
 fun PadreUiState.toEntity() = PadreEntity(
