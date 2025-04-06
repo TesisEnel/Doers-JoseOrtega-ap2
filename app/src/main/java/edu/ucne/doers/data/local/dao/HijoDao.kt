@@ -3,8 +3,9 @@ package edu.ucne.doers.data.local.dao
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Query
-import androidx.room.Update
+import androidx.room.Transaction
 import androidx.room.Upsert
+import edu.ucne.doers.data.local.entity.HijoConRecompensas
 import edu.ucne.doers.data.local.entity.HijoEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -33,8 +34,12 @@ interface HijoDao {
     suspend fun findByNombreAndPadreId(nombre: String, padreId: String): HijoEntity?
 
     @Query("SELECT * FROM Hijos WHERE padreId = :padreId")
-    fun getByPadreId(padreId: String): Flow<List<HijoEntity>>
+    fun getByPadreId(padreId: String): List<HijoEntity>
 
     @Query("SELECT * FROM Hijos")
     fun getAll(): Flow<List<HijoEntity>>
+
+    @Transaction
+    @Query("SELECT * FROM Hijos WHERE padreId = :padreId")
+    suspend fun getHijosConRecompensasByPadreId(padreId: String): List<HijoConRecompensas>
 }
