@@ -6,5 +6,6 @@ import kotlinx.serialization.Serializable
 enum class EstadoRecompensa(val nombreMostrable: String) {
     DISPONIBLE("Disponible"),
     CADUCADA("Caducada"),
-    AGOTADA("Agotada")
+    AGOTADA("Agotada"),
+    PENDIENTE("Pendiente"),
 }

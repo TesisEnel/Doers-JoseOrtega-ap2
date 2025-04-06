@@ -2,6 +2,7 @@ package edu.ucne.doers.data.repository
 
 import edu.ucne.doers.data.local.dao.TareaHijoDao
 import edu.ucne.doers.data.local.entity.TareaHijo
+import edu.ucne.doers.data.local.model.EstadoTareaHijo
 import edu.ucne.doers.data.remote.RemoteDataSource
 import edu.ucne.doers.data.remote.Resource
 import edu.ucne.doers.data.remote.dto.TareaHijoDto
@@ -21,6 +22,10 @@ class TareaHijoRepository @Inject constructor(
     fun getAll(): Flow<List<TareaHijo>> = tareaHijoDao.getAll()
 
     suspend fun delete(tareaHijo: TareaHijo) = tareaHijoDao.delete(tareaHijo)
+
+    suspend fun countPendingTasks(tareaId: Int, hijoId: Int, estado: EstadoTareaHijo): Int {
+        return tareaHijoDao.countPendingTasks(tareaId, hijoId, estado)
+    }
 
     /*fun save(tareaHijo: TareaHijo): Flow<Resource<Unit>> = flow {
         emit(Resource.Loading())

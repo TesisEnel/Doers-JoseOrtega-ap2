@@ -9,17 +9,29 @@ import edu.ucne.doers.presentation.recompensa.RecompensaUiState
 
 @Entity(
     tableName = "Recompensas",
-    foreignKeys = [ForeignKey(
-        entity = PadreEntity::class,
-        parentColumns = ["padreId"],
-        childColumns = ["padreId"],
-        onDelete = ForeignKey.CASCADE
-    )],
-    indices = [Index(value = ["padreId"])]
+    foreignKeys = [
+        ForeignKey(
+            entity = PadreEntity::class,
+            parentColumns = ["padreId"],
+            childColumns = ["padreId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = HijoEntity::class,
+            parentColumns = ["hijoId"],
+            childColumns = ["hijoId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [
+        Index(value = ["padreId"]),
+        Index(value = ["hijoId"])
+    ]
 )
 data class RecompensaEntity(
     @PrimaryKey(autoGenerate = true) val recompensaId: Int = 0,
     val padreId: String,
+    val hijoId: Int,
     val descripcion: String,
     val imagenURL: String,
     val puntosNecesarios: Int,

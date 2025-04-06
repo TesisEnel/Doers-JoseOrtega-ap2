@@ -422,7 +422,7 @@ class HijoViewModel @Inject constructor(
         }
     }
 
-    private fun loadTareas() {
+    fun loadTareas() {
         viewModelScope.launch {
             try {
                 val tareasActivas = tareaRepository.getActiveTasks().first()
