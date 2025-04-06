@@ -233,6 +233,7 @@ class RecompensaViewModel @Inject constructor(
 fun RecompensaUiState.toEntity() = RecompensaEntity(
     recompensaId = recompensaId,
     padreId = padreId,
+    hijoId = hijoId,
     descripcion = descripcion,
     imagenURL = imagenURL,
     puntosNecesarios = puntosNecesarios,
