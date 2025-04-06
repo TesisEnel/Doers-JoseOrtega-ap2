@@ -1,5 +1,6 @@
 package edu.ucne.doers.presentation.tareas.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -47,23 +48,28 @@ fun TaskOverview(
                     fontFamily = FontFamily.SansSerif,
                     modifier = Modifier.padding(bottom = 16.dp, top = 22.dp)
                 )
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    TaskCounter(
-                        "Tareas completadas",
-                        tareas.count { it.estado == EstadoTarea.COMPLETADA },
-                        EstadoTarea.COMPLETADA
-                    )
-                    TaskCounter(
-                        "Tareas pendientes",
-                        tareas.count { it.estado == EstadoTarea.PENDIENTE },
-                        EstadoTarea.PENDIENTE
-                    )
+
+                AnimatedVisibility(visible = !isHorizontal) {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        TaskCounter(
+                            "Tareas completadas",
+                            tareas.count { it.estado == EstadoTarea.COMPLETADA },
+                            EstadoTarea.COMPLETADA
+                        )
+                        TaskCounter(
+                            "Tareas pendientes",
+                            tareas.count { it.estado == EstadoTarea.PENDIENTE },
+                            EstadoTarea.PENDIENTE
+                        )
+                    }
                 }
+
                 Spacer(modifier = Modifier.height(16.dp))
             }
+
             Text(
                 text = if (tareas.isEmpty()) "No se han creado tareas" else "Listado de pendientes",
                 fontSize = 22.sp,
@@ -88,3 +94,4 @@ fun TaskOverview(
         }
     }
 }
+

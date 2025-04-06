@@ -105,11 +105,3 @@ fun RecompensaEntity.toDto() = RecompensaDto(
     estado = estado
 )
 
-fun RecompensaDto.toEntity() = RecompensaEntity(
-    recompensaId = recompensaId,
-    padreId = padreId,
-    descripcion = descripcion,
-    imagenURL = imagenURL,
-    puntosNecesarios = puntosNecesarios,
-    estado = estado
-)

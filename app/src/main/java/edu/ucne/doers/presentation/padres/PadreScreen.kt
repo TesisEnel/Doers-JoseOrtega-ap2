@@ -83,11 +83,14 @@ fun PadreScreen(
     var selectedHijo by remember { mutableStateOf<HijoEntity?>(null) }
     var puntosAgregar by remember { mutableStateOf("") }
 
+    val context = LocalContext.current
+    val toastMessage by padreViewModel.toastMessage.collectAsState()
 
-
-    LaunchedEffect(Unit) {
-        Log.d("DEBUG", "Tareas recibidas: ${tareasHijo.size}")
-        Log.d("DEBUG", "Hijos recibidos: ${hijos.size}")
+    LaunchedEffect(toastMessage) {
+        toastMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            padreViewModel.clearToast()
+        }
     }
 
     if (padreUiState.isLoading) {
@@ -296,8 +299,12 @@ fun PadreScreen(
                         recompensasPendientesMap = recompensasMap,
                         tareas = padreViewModel.tareas.collectAsState().value,
                         onCardClick = {tipo -> Log.d("PadreScreen", "Card $tipo clickeado")},
-                        onValidarTarea = { tarea -> padreViewModel.validarTarea(tarea) },
-                        onNoValidarTarea = { tarea -> padreViewModel.rechazarTarea(tarea) }
+                        onValidarTarea = { tarea ->
+                            padreViewModel.validarTarea(tarea)
+                        },
+                        onNoValidarTarea = { tarea ->
+                            padreViewModel.rechazarTarea(tarea)
+                        }
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))

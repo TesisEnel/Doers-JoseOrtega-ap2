@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import edu.ucne.doers.R
 import edu.ucne.doers.data.local.entity.TareaEntity
 import edu.ucne.doers.data.local.model.CondicionTarea
+import edu.ucne.doers.data.local.model.EstadoTarea
 
 @Composable
 fun TaskCard(
@@ -61,6 +62,9 @@ fun TaskCard(
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    val isTareaCompletada = tarea.estado == EstadoTarea.COMPLETADA
+    val isSwitchChecked = if (isTareaCompletada) false else tarea.condicion == CondicionTarea.ACTIVA
+
     val context = LocalContext.current
 
     Column(
@@ -140,7 +144,7 @@ fun TaskCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Switch(
-                            checked = tarea.condicion == CondicionTarea.ACTIVA,
+                            checked = isSwitchChecked,
                             onCheckedChange = { isChecked ->
                                 val nuevaCondicion = if (isChecked) CondicionTarea.ACTIVA else CondicionTarea.INACTIVA
                                 onCondicionChange(nuevaCondicion)
@@ -148,11 +152,16 @@ fun TaskCard(
                                 val mensaje = if (isChecked) "Tarea activada" else "Tarea desactivada"
                                 Toast.makeText(context, mensaje, Toast.LENGTH_SHORT).show()
                             },
+                            enabled = !isTareaCompletada,
                             colors = SwitchDefaults.colors(
                                 checkedThumbColor = Color.White,
                                 checkedTrackColor = Color(0xFF1976D2),
-                                uncheckedThumbColor = Color.White,
-                                uncheckedTrackColor = Color.Gray
+                                uncheckedThumbColor = Color.LightGray,
+                                uncheckedTrackColor = Color(0xFFBDBDBD), // gris más fuerte que el gris por defecto
+                                disabledCheckedTrackColor = Color(0xFFBDBDBD),
+                                disabledUncheckedTrackColor = Color(0xFFBDBDBD),
+                                disabledCheckedThumbColor = Color.White,
+                                disabledUncheckedThumbColor = Color.LightGray
                             ),
                             modifier = Modifier.padding(end = 8.dp)
                         )
