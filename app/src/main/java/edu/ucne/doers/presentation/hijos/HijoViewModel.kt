@@ -11,6 +11,7 @@ import edu.ucne.doers.data.local.entity.TareaHijo
 import edu.ucne.doers.data.local.model.EstadoTareaHijo
 import edu.ucne.doers.data.local.model.PeriodicidadTarea
 import edu.ucne.doers.data.remote.Resource
+import edu.ucne.doers.data.repository.AuthRepository
 import edu.ucne.doers.data.repository.HijoRepository
 import edu.ucne.doers.data.repository.TareaHijoRepository
 import edu.ucne.doers.data.repository.TareaRepository
@@ -26,6 +27,7 @@ class HijoViewModel @Inject constructor(
     private val hijoRepository: HijoRepository,
     private val tareaRepository: TareaRepository,
     private val tareaHijoRepository: TareaHijoRepository,
+    private val authRepository: AuthRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -93,9 +95,15 @@ class HijoViewModel @Inject constructor(
             }
 
             _uiState.update { it.copy(isLoading = true, signInError = null) }
+
             when (val resource = hijoRepository.loginHijo(nombre, codigoSala)) {
                 is Resource.Success -> {
-                    val padreId = hijoRepository.getPadreIdByCodigoSala(codigoSala)
+                    // 🔐 Obtener el padreId real desde Firebase
+                    val firebaseUserId = authRepository.getUser()?.userId
+
+                    // ⛔ Si no lo obtuvo, usar API como respaldo
+                    val padreId = firebaseUserId ?: hijoRepository.getPadreIdByCodigoSala(codigoSala)
+
                     if (padreId == null) {
                         _uiState.update {
                             it.copy(
@@ -109,7 +117,9 @@ class HijoViewModel @Inject constructor(
                         return@launch
                     }
 
+                    // 🔍 Buscar si ya existe
                     val existingHijo = hijoRepository.findByNombreAndPadreId(nombre, padreId)
+
                     if (existingHijo != null) {
                         _uiState.update {
                             it.copy(
@@ -126,43 +136,67 @@ class HijoViewModel @Inject constructor(
                             )
                         }
                         sharedPreferences.edit().putInt("hijoId", existingHijo.hijoId).apply()
+
                     } else {
                         val newHijo = HijoEntity(
                             hijoId = 0,
                             padreId = padreId,
                             nombre = nombre
                         )
-                        hijoRepository.save(newHijo)
-                        val savedHijo = hijoRepository.findByNombreAndPadreId(nombre, padreId)
-                        if (savedHijo != null) {
-                            _uiState.update {
-                                it.copy(
-                                    hijoId = savedHijo.hijoId,
-                                    padreId = savedHijo.padreId,
-                                    nombre = savedHijo.nombre,
-                                    fotoPerfil = savedHijo.fotoPerfil,
-                                    codigoSala = codigoSala,
-                                    isSuccess = true,
-                                    isSignInSuccessful = true,
-                                    isLoading = false,
-                                    signInError = null,
-                                    isAuthenticated = true
-                                )
-                            }
-                            sharedPreferences.edit().putInt("hijoId", savedHijo.hijoId).apply()
-                        } else {
-                            _uiState.update {
-                                it.copy(
-                                    isSuccess = false,
-                                    isSignInSuccessful = false,
-                                    isLoading = false,
-                                    signInError = "Error al crear el hijo",
-                                    isAuthenticated = false
-                                )
+
+                        hijoRepository.save(newHijo).collect { result ->
+                            when (result) {
+                                is Resource.Success -> {
+                                    val savedHijo = hijoRepository.findByNombreAndPadreId(nombre, padreId)
+                                    if (savedHijo != null) {
+                                        _uiState.update {
+                                            it.copy(
+                                                hijoId = savedHijo.hijoId,
+                                                padreId = savedHijo.padreId,
+                                                nombre = savedHijo.nombre,
+                                                fotoPerfil = savedHijo.fotoPerfil,
+                                                codigoSala = codigoSala,
+                                                isSuccess = true,
+                                                isSignInSuccessful = true,
+                                                isLoading = false,
+                                                signInError = null,
+                                                isAuthenticated = true
+                                            )
+                                        }
+                                        sharedPreferences.edit().putInt("hijoId", savedHijo.hijoId).apply()
+                                    } else {
+                                        _uiState.update {
+                                            it.copy(
+                                                isSuccess = false,
+                                                isSignInSuccessful = false,
+                                                isLoading = false,
+                                                signInError = "Error al guardar el hijo",
+                                                isAuthenticated = false
+                                            )
+                                        }
+                                    }
+                                }
+
+                                is Resource.Error -> {
+                                    _uiState.update {
+                                        it.copy(
+                                            isSuccess = false,
+                                            isSignInSuccessful = false,
+                                            isLoading = false,
+                                            signInError = result.message,
+                                            isAuthenticated = false
+                                        )
+                                    }
+                                }
+
+                                is Resource.Loading -> {
+                                    _uiState.update { it.copy(isLoading = true) }
+                                }
                             }
                         }
                     }
                 }
+
                 is Resource.Error -> {
                     _uiState.update {
                         it.copy(
@@ -174,6 +208,7 @@ class HijoViewModel @Inject constructor(
                         )
                     }
                 }
+
                 is Resource.Loading -> {
                     _uiState.update { it.copy(isLoading = true) }
                 }
@@ -181,36 +216,36 @@ class HijoViewModel @Inject constructor(
         }
     }
 
+    //    fun getHijosByPadre(padreId: String) {
+//        viewModelScope.launch {
+//            hijoRepository.getAll().collect { hijos ->
+//                val hijosFiltrados = hijos.filter { it.padreId == padreId }
+//                _uiState.update { it.copy(hijos = hijosFiltrados) }
+//            }
+//        }
+//    }
     fun getHijosByPadre(padreId: String) {
-        viewModelScope.launch {
-            hijoRepository.getAll().collect { hijos ->
-                val hijosFiltrados = hijos.filter { it.padreId == padreId }
-                _uiState.update { it.copy(hijos = hijosFiltrados) }
-            }
-        }
-    }
-    /*fun getHijosByPadre(padreId: String) {
         viewModelScope.launch {
             hijoRepository.getAll().collect { result ->
                 when (result) {
                     is Resource.Loading -> {
-                        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+                        _uiState.update { it.copy(isLoading = true) }
                     }
                     is Resource.Success -> {
                         val hijosFiltrados = result.data?.filter { it.padreId == padreId } ?: emptyList()
                         _uiState.update {
                             it.copy(
-                                hijos = hijosFiltrados,
                                 isLoading = false,
-                                errorMessage = null
+                                hijos = hijosFiltrados
                             )
                         }
+                        Log.d("HijosDebug", "Recibidos: ${result.data}")
                     }
                     is Resource.Error -> {
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                errorMessage = result.message ?: "Error al cargar hijos"
+                                errorMessage = result.message ?: "Error al obtener hijos"
                             )
                         }
                     }
@@ -218,7 +253,6 @@ class HijoViewModel @Inject constructor(
             }
         }
     }
-     */
 
 
     fun agregarPuntos(hijo: HijoEntity, puntosAgregados: Int) {
@@ -232,14 +266,44 @@ class HijoViewModel @Inject constructor(
                 )
             }
             viewModelScope.launch {
-                hijoRepository.save(updatedHijo)
+                hijoRepository.save(updatedHijo).collect { result ->
+                    when (result) {
+                        is Resource.Success -> {
+                            Log.d("HijoViewModel", "✅ Puntos guardados local y API")
+                            getHijosByPadre(updatedHijo.padreId) // 🔁 Recarga desde servidor
+                        }
+
+                        is Resource.Error -> {
+                            Log.e("HijoViewModel", "❌ Error al guardar puntos: ${result.message}")
+                            _uiState.update { it.copy(errorMessage = result.message) }
+                        }
+
+                        else -> {}
+                    }
+                }
             }
         }
     }
 
     fun eliminarHijo(hijo: HijoEntity) {
         viewModelScope.launch {
-            hijoRepository.delete(hijo)
+            when (val result = hijoRepository.delete(hijo)) {
+                is Resource.Success -> {
+                    Log.d("HijoViewModel", "✅ Hijo eliminado local y API")
+                    getHijosByPadre(hijo.padreId)
+                }
+
+                is Resource.Error -> {
+                    Log.e("HijoViewModel", "❌ Error al eliminar hijo: ${result.message}")
+                    _uiState.update {
+                        it.copy(errorMessage = result.message)
+                    }
+                }
+
+                is Resource.Loading -> {
+                    _uiState.update { it.copy(isLoading = true) }
+                }
+            }
         }
     }
 
@@ -249,11 +313,32 @@ class HijoViewModel @Inject constructor(
 
             if (updatedHijo != null) {
                 val updatedEntity = updatedHijo.copy(nombre = nombre)
-                hijoRepository.save(updatedEntity)
-                _uiState.update {
-                    it.copy(
-                        nombre = nombre
-                    )
+
+                hijoRepository.save(updatedEntity).collect { result ->
+                    when (result) {
+                        is Resource.Success -> {
+                            Log.d("HijoViewModel", "✅ Nombre actualizado correctamente")
+                            _uiState.update {
+                                it.copy(nombre = nombre)
+                            }
+                        }
+
+                        is Resource.Error -> {
+                            Log.e(
+                                "HijoViewModel",
+                                "❌ Error al actualizar nombre: ${result.message}"
+                            )
+                            _uiState.update {
+                                it.copy(
+                                    errorMessage = "Error al actualizar nombre: ${result.message}"
+                                )
+                            }
+                        }
+
+                        is Resource.Loading -> {
+                            _uiState.update { it.copy(isLoading = true) }
+                        }
+                    }
                 }
             }
         }

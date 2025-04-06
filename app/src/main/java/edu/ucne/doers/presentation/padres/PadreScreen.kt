@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.QrCode
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -82,6 +83,7 @@ fun PadreScreen(
 
     var selectedHijo by remember { mutableStateOf<HijoEntity?>(null) }
     var puntosAgregar by remember { mutableStateOf("") }
+
 
     val context = LocalContext.current
     val toastMessage by padreViewModel.toastMessage.collectAsState()
@@ -326,6 +328,23 @@ fun PadreScreen(
                                     .align(Alignment.CenterHorizontally),
                                 textAlign = TextAlign.Center
                             )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 4.dp, bottom = 8.dp),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                IconButton(onClick = {
+                                    padreUiState.padreId?.let { hijoViewModel.getHijosByPadre(it)
+                                    Log.d("Hijos", hijoUiState.hijos.toString())}
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Refresh,
+                                        contentDescription = "Recargar Hijos",
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
                             Spacer(modifier = Modifier.height(8.dp))
                             Row(
                                 modifier = Modifier
