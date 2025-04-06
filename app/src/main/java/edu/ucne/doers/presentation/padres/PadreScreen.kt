@@ -1,6 +1,7 @@
 package edu.ucne.doers.presentation.padres
 
 import android.content.Intent
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -18,13 +19,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Checklist
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCode
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -32,8 +30,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,17 +49,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import edu.ucne.doers.data.local.entity.HijoEntity
 import edu.ucne.doers.presentation.componentes.PadreNavBar
-import edu.ucne.doers.presentation.componentes.generateQRCode
 import edu.ucne.doers.presentation.hijos.HijoViewModel
 import edu.ucne.doers.presentation.navigation.Screen
 import edu.ucne.doers.presentation.padres.components.AgregarPuntosDialog
 import edu.ucne.doers.presentation.padres.components.CerrarSesionDialog
 import edu.ucne.doers.presentation.padres.components.EliminarHijoDialog
 import edu.ucne.doers.presentation.padres.components.QrDialog
+import edu.ucne.doers.presentation.padres.tareas.ResumenPadreCards
 
 @Composable
 fun PadreScreen(
@@ -75,16 +70,24 @@ fun PadreScreen(
     onSignOut: () -> Unit
 ) {
     val padreUiState by padreViewModel.uiState.collectAsState()
-    val hijoUiState by hijoViewModel.uiState.collectAsState()
+
+    val hijos by padreViewModel.hijos.collectAsState()
+    val tareasHijo by padreViewModel.tareasHijo.collectAsState()
+    val recompensasMap by padreViewModel.recompensasPendientesMap.collectAsState()
+
     var showDialogAgregarPuntos by remember { mutableStateOf(false) }
     var showDialogEliminarHijo by remember { mutableStateOf(false) }
     var showDialogCerrarSesion by remember { mutableStateOf(false) }
     var showQrDialog by remember { mutableStateOf(false) }
+
     var selectedHijo by remember { mutableStateOf<HijoEntity?>(null) }
     var puntosAgregar by remember { mutableStateOf("") }
 
+
+
     LaunchedEffect(Unit) {
-        padreUiState.padreId?.let { hijoViewModel.getHijosByPadre(it) }
+        Log.d("DEBUG", "Tareas recibidas: ${tareasHijo.size}")
+        Log.d("DEBUG", "Hijos recibidos: ${hijos.size}")
     }
 
     if (padreUiState.isLoading) {
@@ -286,6 +289,18 @@ fun PadreScreen(
                         }
                     }
                     Spacer(modifier = Modifier.height(20.dp))
+
+                    ResumenPadreCards(
+                        hijos = hijos,
+                        tareasHijo = tareasHijo,
+                        recompensasPendientesMap = recompensasMap,
+                        tareas = padreViewModel.tareas.collectAsState().value,
+                        onCardClick = {tipo -> Log.d("PadreScreen", "Card $tipo clickeado")},
+                        onValidarTarea = { tarea -> padreViewModel.validarTarea(tarea) },
+                        onNoValidarTarea = { tarea -> padreViewModel.rechazarTarea(tarea) }
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = MaterialTheme.shapes.medium,
@@ -341,7 +356,7 @@ fun PadreScreen(
                                 )
                             }
                             HorizontalDivider()
-                            hijoUiState.hijos.forEach { hijo ->
+                            hijos.forEach { hijo ->
                                 Row(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -350,7 +365,7 @@ fun PadreScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = hijo.nombre,
+                                        text = hijo.nombre.ifEmpty { "Desconocido" },
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurface,
                                         modifier = Modifier.weight(1f),
@@ -434,34 +449,4 @@ fun PadreScreen(
         },
         selectedHijo = selectedHijo
     )
-}
-
-@Composable
-fun BottomNavigationBar(
-    navController: NavController,
-    currentScreen: Screen
-) {
-    NavigationBar(
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface
-    ) {
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Checklist, contentDescription = "Tarea") },
-            label = { Text("Tarea") },
-            selected = currentScreen == Screen.TareaList,
-            onClick = { navController.navigate(Screen.TareaList) }
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Star, contentDescription = "Recompensas") },
-            label = { Text("Recompensas") },
-            selected = currentScreen == Screen.RecompensaList,
-            onClick = { navController.navigate(Screen.RecompensaList) }
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Person, contentDescription = "Perfil") },
-            label = { Text("Perfil") },
-            selected = currentScreen == Screen.Padre,
-            onClick = { }
-        )
-    }
 }
