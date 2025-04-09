@@ -31,6 +31,7 @@ import edu.ucne.doers.presentation.sign_in.GoogleAuthUiClient
 import edu.ucne.doers.presentation.tareas.hijo.HijoListScreen
 import edu.ucne.doers.presentation.tareas.padre.TareaScreen
 import edu.ucne.doers.presentation.tareas.padre.TareasListScreen
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -139,8 +140,10 @@ fun DoersNavHost(
             composable<Screen.HijoLogin> {
                 HijoLoginScreen(
                     onChildLoggedIn = {
-                        navHostController.navigate(Screen.Hijo) {
-                            popUpTo(Screen.Home) { inclusive = true }
+                        scope.launch {
+                            navHostController.navigate(Screen.Hijo) {
+                                popUpTo(Screen.Home) { inclusive = true }
+                            }
                         }
                     },
                     navController = navHostController
