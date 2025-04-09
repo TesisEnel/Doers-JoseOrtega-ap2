@@ -67,7 +67,7 @@ fun TaskCounter(
                         painter = painterResource(id = R.drawable.check),
                         contentDescription = "Completado",
                         modifier = Modifier.size(30.dp).padding(top = 4.dp),
-                        tint = estado.color,
+                        tint = estado.color(),
 
                     )
                 }
@@ -76,7 +76,7 @@ fun TaskCounter(
                         painter = painterResource(id = R.drawable.exclamation_mark),
                         contentDescription = "Pendiente",
                         modifier = Modifier.size(30.dp).padding(top = 4.dp),
-                        tint = estado.color
+                        tint = estado.color()
                     )
                 }
                 else -> {
