@@ -142,7 +142,8 @@ fun DoersNavHost(
                         navHostController.navigate(Screen.Hijo) {
                             popUpTo(Screen.Home) { inclusive = true }
                         }
-                    }
+                    },
+                    navController = navHostController
                 )
             }
             composable<Screen.Recompensa> { arg ->
