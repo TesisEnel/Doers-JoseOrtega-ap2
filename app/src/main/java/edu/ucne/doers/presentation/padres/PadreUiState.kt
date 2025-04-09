@@ -14,5 +14,6 @@ data class PadreUiState (
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
     val isSignInSuccessful: Boolean = false,
-    val signInError: String? = null
+    val signInError: String? = null,
+    val errorMessage: String? = null
 )
