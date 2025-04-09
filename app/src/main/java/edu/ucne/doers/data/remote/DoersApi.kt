@@ -131,18 +131,18 @@ interface DoersApi {
     @DELETE("api/TareasHijos/{id}")
     suspend fun deleteTareaHijo(@Path("id") id: Int): Response<Unit>
 
-    @GET("api/TransaccionesHijo")
+    @GET("api/TransaccionesHijos")
     suspend fun getTransaccionesHijo(): List<TransaccionHijoDto>
 
-    @GET("api/TransaccionesHijo/{id}")
+    @GET("api/TransaccionesHijos/{id}")
     suspend fun getTransaccionHijo(@Path("id") id: Int): TransaccionHijoDto
 
-    @POST("api/TransaccionesHijo")
+    @POST("api/TransaccionesHijos")
     suspend fun saveTransaccionHijo(@Body transaccionHijoDto: TransaccionHijoDto): TransaccionHijoDto
 
-    @PUT("api/TransaccionesHijo/{id}")
+    @PUT("api/TransaccionesHijos/{id}")
     suspend fun updateTransaccionHijo(@Path("id") transaccionID: Int, @Body transaccionHijoDto: TransaccionHijoDto): Response<TransaccionHijoDto>
 
-    @DELETE("api/TransaccionesHijo/{id}")
+    @DELETE("api/TransaccionesHijos/{id}")
     suspend fun deleteTransaccionHijo(@Path("id") id: Int): Response<Unit>
 }
