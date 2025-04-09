@@ -19,7 +19,7 @@ interface TransaccionHijoDao {
         """
             SELECT *
             FROM "TransaccionesHijo"
-            WHERE transaccionID=:id
+            WHERE transaccionId=:id
             LIMIT 1
         """
     )
