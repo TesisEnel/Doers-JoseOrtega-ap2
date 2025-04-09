@@ -27,7 +27,14 @@ class RemoteDataSource @Inject constructor(
 
     suspend fun getPadres() = doersApi.getPadres()
     suspend fun getPadre(id: String) = doersApi.getPadre(id)
-    suspend fun savePadre(padreDto: PadreDto) = doersApi.savePadre(padreDto)
+    suspend fun savePadre(padreDto: PadreDto) {
+        try {
+            val existing = doersApi.getPadre(padreDto.padreId)
+            doersApi.updatePadre(padreDto.padreId, padreDto)
+        } catch (e: Exception) {
+            doersApi.savePadre(padreDto)
+        }
+    }
     suspend fun updatePadre(id: String, padreDto: PadreDto) = doersApi.updatePadre(id, padreDto)
     suspend fun deletePadre(id: String) = doersApi.deletePadre(id)
     suspend fun getPadreByCodigoSala(codigoSala: String): PadreDto = doersApi.getPadreByCodigoSala(codigoSala)
@@ -49,6 +56,7 @@ class RemoteDataSource @Inject constructor(
     suspend fun saveTarea(tareaDto: TareaDto) = doersApi.saveTarea(tareaDto)
     suspend fun updateTarea(id: Int, tareaDto: TareaDto) = doersApi.updateTarea(id, tareaDto)
     suspend fun deleteTarea(id: Int) = doersApi.deleteTarea(id)
+    suspend fun getTareasActivas() = doersApi.getTareasActivas()
 
     suspend fun getTareasHijos() = doersApi.getTareasHijos()
     suspend fun getTareaHijo(id: Int) = doersApi.getTareaHijo(id)
