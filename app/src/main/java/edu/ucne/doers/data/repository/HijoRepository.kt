@@ -5,10 +5,12 @@ import edu.ucne.doers.data.local.dao.PadreDao
 import edu.ucne.doers.data.local.dao.TareaHijoDao
 import edu.ucne.doers.data.local.entity.HijoConRecompensas
 import edu.ucne.doers.data.local.entity.HijoEntity
+import edu.ucne.doers.data.local.entity.PadreEntity
 import edu.ucne.doers.data.local.entity.TareaHijo
 import edu.ucne.doers.data.remote.RemoteDataSource
 import edu.ucne.doers.data.remote.Resource
 import edu.ucne.doers.data.remote.dto.HijoDto
+import edu.ucne.doers.data.remote.dto.PadreDto
 import edu.ucne.doers.presentation.extension.collectFirstOrNull
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
@@ -25,9 +27,25 @@ class HijoRepository @Inject constructor(
 
     fun save(hijo: HijoEntity): Flow<Resource<Unit>> = flow {
         emit(Resource.Loading())
+
         try {
+            val existing = hijoDao.findByNombreAndPadreId(hijo.nombre, hijo.padreId)
+
+            if (existing != null) {
+                val actualizado = existing.copy(
+                    saldoActual = hijo.saldoActual,
+                    balance = hijo.balance,
+                    fotoPerfil = hijo.fotoPerfil
+                )
+                hijoDao.save(actualizado)
+                remote.updateHijo(actualizado.hijoId, actualizado.toDto())
+                emit(Resource.Success(Unit))
+                return@flow
+            }
+
             hijoDao.save(hijo)
             remote.saveHijo(hijo.toDto())
+
             emit(Resource.Success(Unit))
         } catch (e: Exception) {
             emit(Resource.Error("Error al guardar hijo: ${e.localizedMessage}"))
@@ -91,21 +109,48 @@ class HijoRepository @Inject constructor(
         }
     }
 
-    suspend fun loginHijo(nombre: String, codigoSala: String): Resource<Boolean> {
+    suspend fun savePadreLocalSiNoExiste(padre: PadreEntity) {
+        val exists = padreDao.find(padre.padreId)
+        if (exists == null) {
+            padreDao.save(padre)
+        }
+    }
+
+    suspend fun saveLocal(hijo: HijoEntity) {
+        hijoDao.save(hijo)
+    }
+
+    suspend fun loginHijo(nombre: String, codigoSala: String): Resource<HijoEntity> {
         return try {
             val padreDto = remote.getPadreByCodigoSala(codigoSala)
             val padre = padreDto.toEntity()
 
-            padreDao.save(padre)
+            val padreLocal = padreDao.find(padre.padreId)
+            if (padreLocal == null) {
+                padreDao.save(padre)
+            }
 
-            val hijo = HijoEntity(padreId = padre.padreId, nombre = nombre)
+            val existingHijo = hijoDao.findByNombreAndPadreId(nombre, padre.padreId)
+            if (existingHijo != null) {
+                return Resource.Success(existingHijo)
+            }
 
+            val hijo = HijoEntity(
+                padreId = padre.padreId,
+                nombre = nombre,
+                fotoPerfil = "personaje_1"
+            )
             val hijoDto = remote.saveHijo(hijo.toDto())
+            val hijoConFoto = if (hijoDto.fotoPerfil.isNullOrBlank()) {
+                hijoDto.copy(fotoPerfil = "personaje_1").toEntity()
+            } else {
+                hijoDto.toEntity()
+            }
 
-            val hijoGuardado = hijoDto.toEntity()
-            hijoDao.save(hijoGuardado)
+            hijoDao.save(hijoConFoto)
 
-            Resource.Success(true)
+            Resource.Success(hijoConFoto)
+
         } catch (e: Exception) {
             Resource.Error("El código de sala no existe o no hay conexión: ${e.localizedMessage}")
         }
@@ -126,9 +171,11 @@ class HijoRepository @Inject constructor(
     }
 
     fun getTareasHijo(hijoId: Int): Flow<List<TareaHijo>> = tareaHijoDao.getByHijoId(hijoId)
-}
 
-// Extensiones
+    suspend fun getPadreByCodigoSala(codigoSala: String): PadreDto {
+        return remote.getPadreByCodigoSala(codigoSala)
+    }
+}
 
 fun HijoEntity.toDto() = HijoDto(
     hijoId = hijoId,
