@@ -1,5 +1,6 @@
 package edu.ucne.doers.data.repository
 
+import android.util.Log
 import edu.ucne.doers.data.local.dao.TareaDao
 import edu.ucne.doers.data.local.entity.TareaEntity
 import edu.ucne.doers.data.local.model.CondicionTarea
@@ -15,23 +16,22 @@ class TareaRepository @Inject constructor(
     private val tareaDao: TareaDao,
     private val remote: RemoteDataSource
 ) {
-    suspend fun save(tarea: TareaEntity) = tareaDao.save(tarea)
 
-    suspend fun find(id: Int) = tareaDao.find(id)
-
-    fun getAll(): Flow<List<TareaEntity>> = tareaDao.getAll()
-
-    suspend fun delete(tarea: TareaEntity) = tareaDao.delete(tarea)
-
-    fun getActiveTasks(): Flow<List<TareaEntity>> =
-        tareaDao.getByCondition(CondicionTarea.ACTIVA)
-
-    /*fun save(tarea: TareaEntity): Flow<Resource<Unit>> = flow {
+    fun save(tarea: TareaEntity): Flow<Resource<Unit>> = flow {
         emit(Resource.Loading())
+
         try {
-            tareaDao.save(tarea)
-            remote.saveTarea(tarea.toDto())
+            val tareaEntityConId = if (tarea.tareaId > 0) {
+                remote.updateTarea(tarea.tareaId, tarea.toDto())
+                tarea
+            } else {
+                val saved = remote.saveTarea(tarea.toDto())
+                saved.toEntity()
+            }
+
+            tareaDao.save(tareaEntityConId)
             emit(Resource.Success(Unit))
+
         } catch (e: Exception) {
             emit(Resource.Error("Error al guardar tarea: ${e.localizedMessage}"))
         }
@@ -85,7 +85,7 @@ class TareaRepository @Inject constructor(
         emit(Resource.Success(local ?: emptyList()))
 
         try {
-            val remoteData = remote.getTareas()
+            val remoteData = remote.getTareasActivas()
             val entities = remoteData.map { it.toEntity() }
             tareaDao.save(entities)
             val updated = tareaDao.getByCondition(CondicionTarea.ACTIVA).firstOrNull()
@@ -94,28 +94,24 @@ class TareaRepository @Inject constructor(
             emit(Resource.Error("Error al obtener tareas activas: ${e.localizedMessage}", local))
         }
     }
-
-     */
 }
 
 fun TareaEntity.toDto() = TareaDto(
-    tareaId = tareaId,
-    padreId = padreId,
-    descripcion = descripcion,
-    imagenURL = imagenURL,
-    puntos = puntos,
-    estado = estado,
-    periodicidad = periodicidad,
-    condicion = condicion
+    tareaId = this.tareaId,
+    padreId = this.padreId,
+    descripcion = this.descripcion,
+    puntos = this.puntos,
+    estado = this.estado,
+    periodicidad = this.periodicidad,
+    condicion = this.condicion
 )
 
 fun TareaDto.toEntity() = TareaEntity(
-    tareaId = tareaId,
-    padreId = padreId,
-    descripcion = descripcion,
-    imagenURL = imagenURL,
-    puntos = puntos,
-    estado = estado,
-    periodicidad = periodicidad,
-    condicion = condicion
+    tareaId = this.tareaId,
+    padreId = this.padreId,
+    descripcion = this.descripcion,
+    puntos = this.puntos,
+    estado = this.estado,
+    periodicidad = this.periodicidad,
+    condicion = this.condicion
 )
