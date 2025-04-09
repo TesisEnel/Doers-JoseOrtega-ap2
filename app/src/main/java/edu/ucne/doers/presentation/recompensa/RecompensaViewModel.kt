@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import edu.ucne.doers.data.local.entity.RecompensaEntity
+import edu.ucne.doers.data.local.model.CondicionRecompensa
 import edu.ucne.doers.data.local.model.EstadoRecompensa
 import edu.ucne.doers.data.remote.Resource
 import edu.ucne.doers.data.repository.PadreRepository
@@ -76,9 +77,11 @@ class RecompensaViewModel @Inject constructor(
                 }
                 return@launch
             }
-            recompensaRepository.getRecompensasByPadreId(padreId).collect { recompensas ->
+            /*recompensaRepository.getRecompensasByPadreId(padreId).collect { recompensas ->
                 _uiState.update { it.copy(recompensas = recompensas.map { it.toUiState() }) }
             }
+
+             */
         }
     }
 
@@ -179,7 +182,7 @@ class RecompensaViewModel @Inject constructor(
             if (recompensaId != null) {
                 val recompensa = recompensaRepository.find(recompensaId)
                 if (recompensa != null) {
-                    val updatedRecompensa = recompensa.copy(estado = estado.toString())
+                    val updatedRecompensa = recompensa.copy(estado = estado)
                     recompensaRepository.save(updatedRecompensa)
                     loadRecompensas()
                 }
@@ -189,7 +192,7 @@ class RecompensaViewModel @Inject constructor(
         }
     }
 
-    fun updateAvailability(recompensaId: Int, isAvailable: Boolean) {
+    /*fun updateAvailability(recompensaId: Int, isAvailable: Boolean) {
         viewModelScope.launch {
             val recompensa = recompensaRepository.find(recompensaId)
             if (recompensa != null) {
@@ -201,7 +204,9 @@ class RecompensaViewModel @Inject constructor(
         }
     }
 
-    fun find(recompensaId: Int) {
+     */
+
+    /*fun find(recompensaId: Int) {
         viewModelScope.launch {
             if (recompensaId > 0) {
                 val dto = recompensaRepository.find(recompensaId)
@@ -219,6 +224,8 @@ class RecompensaViewModel @Inject constructor(
             }
         }
     }
+
+     */
     private fun isValidate(): Boolean {
         val state = uiState.value
 
@@ -227,6 +234,10 @@ class RecompensaViewModel @Inject constructor(
             return false
         }
         return true
+    }
+
+    fun onCondicionChange(nuevaCondicion: CondicionRecompensa) {
+        TODO("Not yet implemented")
     }
 }
 
@@ -237,5 +248,6 @@ fun RecompensaUiState.toEntity() = RecompensaEntity(
     descripcion = descripcion,
     imagenURL = imagenURL,
     puntosNecesarios = puntosNecesarios,
-    estado = estado.toString()
+    estado = estado,
+    condicion = condicionRecompensa
 )

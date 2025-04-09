@@ -60,7 +60,7 @@ fun RecompensasHijoScreen(
         viewModel.loadRecompensas()
     }
 
-    Scaffold(
+    /*Scaffold(
         topBar = {
             TopAppBar(
                 title = {
@@ -189,4 +189,6 @@ fun RecompensaRow(
             }
         }
     }
+    
+     */
 }
