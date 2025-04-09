@@ -31,7 +31,7 @@ fun PeriodoDropdownMenu(
         onExpandedChange = { expanded = !expanded }
     ) {
         OutlinedTextField(
-            value = selectedPeriodo?.nombreMostrable ?: "Seleccione una duración",
+            value = selectedPeriodo?.nombreMostrable() ?: "Seleccione una duración",
             onValueChange = {},
             label = { Text("Duración") },
             modifier = Modifier
@@ -48,7 +48,7 @@ fun PeriodoDropdownMenu(
         ) {
             periocidadTarea.forEach { estado ->
                 DropdownMenuItem(
-                    text = { Text(estado.nombreMostrable) },
+                    text = { Text(estado.nombreMostrable()) },
                     onClick = {
                         onPeriodoSelected(estado)
                         expanded = false
