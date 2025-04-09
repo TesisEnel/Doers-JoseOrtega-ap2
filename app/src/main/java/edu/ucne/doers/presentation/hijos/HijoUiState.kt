@@ -26,23 +26,23 @@ data class HijoUiState(
 )
 
 fun HijoEntity.toUiState() = HijoUiState(
-    hijoId = hijoId,
-    padreId = padreId,
-    nombre = nombre,
-    fotoPerfil = fotoPerfil,
-    saldoActual = saldoActual,
-    balance = balance
+    hijoId = this.hijoId,
+    padreId = this.padreId,
+    nombre = this.nombre,
+    fotoPerfil = this.fotoPerfil,
+    saldoActual = this.saldoActual,
+    balance = this.balance
 )
 
 fun HijoUiState.toEntity(): HijoEntity? {
     return hijoId?.let {
         HijoEntity(
-            hijoId = it,
-            padreId = padreId ?: "",
-            nombre = nombre ?: "",
-            saldoActual = saldoActual,
-            balance = balance,
-            fotoPerfil = fotoPerfil
+            hijoId = hijoId,
+            padreId = this.padreId ?: "",
+            nombre = this.nombre ?: "",
+            saldoActual = this.saldoActual,
+            balance = this.balance,
+            fotoPerfil = this.fotoPerfil
         )
     }
 }
