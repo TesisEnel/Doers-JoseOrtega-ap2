@@ -1,5 +1,6 @@
 package edu.ucne.doers.data.repository
 
+import android.util.Log
 import edu.ucne.doers.data.local.dao.TareaHijoDao
 import edu.ucne.doers.data.local.entity.TareaHijo
 import edu.ucne.doers.data.local.model.EstadoTareaHijo
@@ -15,25 +16,29 @@ class TareaHijoRepository @Inject constructor(
     private val tareaHijoDao: TareaHijoDao,
     private val remote: RemoteDataSource
 ) {
-    suspend fun save(tareaHijo: TareaHijo) = tareaHijoDao.save(tareaHijo)
-
-    suspend fun find(id: Int) = tareaHijoDao.find(id)
-
-    fun getAll(): Flow<List<TareaHijo>> = tareaHijoDao.getAll()
-
-    suspend fun delete(tareaHijo: TareaHijo) = tareaHijoDao.delete(tareaHijo)
-
-    suspend fun countPendingTasks(tareaId: Int, hijoId: Int, estado: EstadoTareaHijo): Int {
-        return tareaHijoDao.countPendingTasks(tareaId, hijoId, estado)
-    }
-
-    /*fun save(tareaHijo: TareaHijo): Flow<Resource<Unit>> = flow {
+    fun save(tareaHijo: TareaHijo): Flow<Resource<Unit>> = flow {
         emit(Resource.Loading())
+
         try {
-            tareaHijoDao.save(tareaHijo)
-            remote.saveTareaHijo(tareaHijo.toDto())
+            Log.d("TareaHijoRepository", "Iniciando guardado de TareaHijo: $tareaHijo")
+            val tareaHijoEntityConId = if (tareaHijo.tareaHijoId > 0) {
+                val updated = remote.updateTareaHijo(tareaHijo.tareaHijoId, tareaHijo.toDto())
+                Log.d("TareaHijoRepository", "TareaHijo actualizada en API: $updated")
+                tareaHijo
+            } else {
+                val saved = remote.saveTareaHijo(tareaHijo.toDto())
+                Log.d("TareaHijoRepository", "TareaHijo guardada en API: $saved")
+                val entity = saved.toEntity()
+                Log.d("TareaHijoRepository", "Convertido a entidad: $entity")
+                entity
+            }
+
+            Log.d("TareaHijoRepository", "Guardando en Room: $tareaHijoEntityConId")
+            tareaHijoDao.save(tareaHijoEntityConId)
+            Log.d("TareaHijoRepository", "Guardado en.Concurrent Room completado")
             emit(Resource.Success(Unit))
         } catch (e: Exception) {
+            Log.e("TareaHijoRepository", "Error al guardar: ${e.localizedMessage}", e)
             emit(Resource.Error("Error al guardar tarea hijo: ${e.localizedMessage}"))
         }
     }
@@ -80,7 +85,9 @@ class TareaHijoRepository @Inject constructor(
         }
     }
 
-     */
+    suspend fun countPendingTasks(tareaId: Int, hijoId: Int, estado: EstadoTareaHijo): Int {
+        return tareaHijoDao.countPendingTasks(tareaId, hijoId, estado)
+    }
 }
 
 fun TareaHijo.toDto() = TareaHijoDto(
