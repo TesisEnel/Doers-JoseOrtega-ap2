@@ -176,23 +176,6 @@ fun CreateTaskForm(
             selectedPeriodo = uiState.periodicidad,
             onPeriodoSelected = viewModel::onPeriodicidadChange
         )
-        Spacer(modifier = Modifier.height(16.dp))
-        OutlinedTextField(
-            label = { Text("Estado") },
-            value = uiState.estado.name,
-            onValueChange = {},
-            readOnly = true,
-            modifier = Modifier.fillMaxWidth(),
-            enabled = false
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = if (uiState.padreId.isNotEmpty()) {"Padre ID: ${uiState.padreId}"}
-            else {"Padre ID: No encontrado"},
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 8.dp, top = 4.dp)
-        )
         Spacer(modifier = Modifier.height(24.dp))
         if (uiState.errorMessage != null && uiState.errorMessage.contains("requeridos")) {
             Text(
