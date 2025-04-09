@@ -75,8 +75,8 @@ fun HijoLoginScreen(
         }
     }
 
-    LaunchedEffect(uiState.isSignInSuccessful) {
-        if (uiState.isSignInSuccessful) {
+    LaunchedEffect(uiState.isSignInSuccessful, uiState.isLoading) {
+        if (uiState.isSignInSuccessful && !uiState.isLoading) {
             onChildLoggedIn()
         }
     }
