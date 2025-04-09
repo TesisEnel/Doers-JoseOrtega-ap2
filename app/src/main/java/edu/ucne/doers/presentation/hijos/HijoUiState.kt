@@ -17,28 +17,32 @@ data class HijoUiState(
     val signInError: String? = null,
     val errorMessage: String? = null,
     val isAuthenticated: Boolean = false,
-
-    // Parte de DjMarte HijoViewModel
     val saldoActual: Int = 0,
     val balance: Int = 0,
     val listaTareas: List<TareaEntity> = emptyList(),
     val listaTareasFiltradas: List<TareaEntity> = emptyList(),
     val successMessage: String? = null,
-    val ultimaTareaProcesada: Int? = null,
-
+    val ultimaTareaProcesada: Int? = null
 )
 
 fun HijoEntity.toUiState() = HijoUiState(
     hijoId = hijoId,
     padreId = padreId,
     nombre = nombre,
-    fotoPerfil = fotoPerfil
+    fotoPerfil = fotoPerfil,
+    saldoActual = saldoActual,
+    balance = balance
 )
 
-fun HijoUiState.toEntity() = hijoId?.let {
-    HijoEntity(
-        hijoId = it,
-        padreId = it.toString(),
-        nombre = it.toString(),
-    )
+fun HijoUiState.toEntity(): HijoEntity? {
+    return hijoId?.let {
+        HijoEntity(
+            hijoId = it,
+            padreId = padreId ?: "",
+            nombre = nombre ?: "",
+            saldoActual = saldoActual,
+            balance = balance,
+            fotoPerfil = fotoPerfil
+        )
+    }
 }
