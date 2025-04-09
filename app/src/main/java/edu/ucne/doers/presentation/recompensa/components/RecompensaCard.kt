@@ -5,8 +5,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -33,7 +35,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -45,7 +49,6 @@ import edu.ucne.doers.R
 import edu.ucne.doers.data.local.entity.RecompensaEntity
 import edu.ucne.doers.data.local.model.CondicionRecompensa
 import edu.ucne.doers.data.local.model.EstadoRecompensa
-import edu.ucne.doers.presentation.recompensa.RecompensaUiState
 import java.io.File
 
 @Composable
@@ -74,75 +77,79 @@ fun RecompensaCard(
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = recompensa.descripcion,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-
-                    Switch(
-                        checked = isSwitchChecked,
-                        onCheckedChange = { isChecked ->
-                            val nuevoEstado = if (isChecked) CondicionRecompensa.ACTIVA else CondicionRecompensa.INACTIVA
-                            onCondicionChange(nuevoEstado)
-
-                            Toast.makeText(
-                                context,
-                                if (isChecked) "Recompensa acivada" else "Recompensa desactivada",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    )
-                }
-
+            Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+                // 🖼️ Imagen a la izquierda
                 if (recompensa.imagenURL.isNotBlank()) {
                     Image(
                         painter = rememberAsyncImagePainter(File(recompensa.imagenURL)),
                         contentDescription = "Imagen recompensa",
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(150.dp)
-                            .padding(top = 8.dp)
+                            .width(100.dp)
+                            .fillMaxHeight()
+                            .clip(RoundedCornerShape(topStart = 12.dp, bottomStart = 12.dp)),
+                        contentScale = ContentScale.Crop
                     )
                 }
 
-                Text(
-                    text = "Puntos necesarios: ${recompensa.puntosNecesarios}",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-
-                if (isExpanded) {
+                // 📋 Parte derecha: contenido
+                Column(
+                    modifier = Modifier
+                        .padding(12.dp)
+                        .fillMaxWidth(),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        OutlinedButton(
-                            onClick = { onEdit(recompensa.recompensaId) }
+                        Text(
+                            text = recompensa.descripcion,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Switch(
+                            checked = isSwitchChecked,
+                            onCheckedChange = { isChecked ->
+                                val nuevoEstado = if (isChecked) CondicionRecompensa.ACTIVA else CondicionRecompensa.INACTIVA
+                                onCondicionChange(nuevoEstado)
+                                Toast.makeText(
+                                    context,
+                                    if (isChecked) "Recompensa activada" else "Recompensa desactivada",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        )
+                    }
+
+                    Spacer(Modifier.height(4.dp))
+
+                    Text(
+                        text = "Puntos necesarios: ${recompensa.puntosNecesarios}",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    if (isExpanded) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly
                         ) {
-                            Icon(
-                                Icons.Default.Edit, contentDescription = "Editar"
-                            )
-                            Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
-                            Text("Editar")
-                        }
-                        OutlinedButton(
-                            onClick = { showDeleteDialog = true }
-                        ) {
-                            Icon(Icons.Default.Delete, contentDescription = "Eliminar")
-                            Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
-                            Text("Eliminar")
+                            OutlinedButton(onClick = { onEdit(recompensa.recompensaId) }) {
+                                Icon(Icons.Default.Edit, contentDescription = "Editar")
+                                Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
+                                Text("Editar")
+                            }
+                            OutlinedButton(onClick = { showDeleteDialog = true }) {
+                                Icon(Icons.Default.Delete, contentDescription = "Eliminar")
+                                Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
+                                Text("Eliminar")
+                            }
                         }
                     }
                 }
