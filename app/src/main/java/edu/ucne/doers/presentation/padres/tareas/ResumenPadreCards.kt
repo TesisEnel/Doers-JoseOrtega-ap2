@@ -111,7 +111,7 @@ fun ResumenPadreCards(
                         )
                     }
                     val totalRecompensas = recompensasPendientesMap.values.flatten()
-                        .count { it.estado == EstadoRecompensa.PENDIENTE.toString() }
+                        .count { it.estado == EstadoRecompensa.PENDIENTE }
                     Text(text = "$totalRecompensas recompensas", style = MaterialTheme.typography.bodyMedium)
                 }
             }
@@ -171,7 +171,7 @@ fun ResumenPadreCards(
         if (expandedCard == "recompensas") {
             recompensasPendientesMap.forEach { (hijoId, recompensas) ->
                 val nombreHijo = hijos.find { it.hijoId.toString() == hijoId }?.nombre ?: "Desconocido"
-                recompensas.filter { it.estado == EstadoRecompensa.PENDIENTE.toString() }.forEach { recompensa ->
+                recompensas.filter { it.estado == EstadoRecompensa.PENDIENTE }.forEach { recompensa ->
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
