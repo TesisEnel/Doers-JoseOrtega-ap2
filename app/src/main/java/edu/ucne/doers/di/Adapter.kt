@@ -45,4 +45,18 @@ class Adapter {
 
     @FromJson
     fun fromJsonToEstadoRecompensa(value: String): EstadoRecompensa = EstadoRecompensa.valueOf(value)
+
+    @ToJson
+    fun fromCondicionTareaToJson(value: edu.ucne.doers.data.local.model.CondicionTarea): String = value.name
+
+    @FromJson
+    fun fromJsonToCondicionTarea(value: String): edu.ucne.doers.data.local.model.CondicionTarea =
+        edu.ucne.doers.data.local.model.CondicionTarea.valueOf(value.uppercase())
+
+    @ToJson
+    fun fromPeriodicidadTareaToJson(value: edu.ucne.doers.data.local.model.PeriodicidadTarea): String = value.name
+
+    @FromJson
+    fun fromJsonToPeriodicidadTarea(value: String): edu.ucne.doers.data.local.model.PeriodicidadTarea =
+        edu.ucne.doers.data.local.model.PeriodicidadTarea.valueOf(value.uppercase())
 }
