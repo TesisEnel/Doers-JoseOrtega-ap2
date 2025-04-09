@@ -22,7 +22,6 @@ data class TareaEntity(
     @PrimaryKey(autoGenerate = true) val tareaId: Int = 0,
     val padreId: String,
     val descripcion: String,
-    val imagenURL: String?,
     val puntos: Int,
     val estado: EstadoTarea = EstadoTarea.PENDIENTE,
     val periodicidad: PeriodicidadTarea? = null,
