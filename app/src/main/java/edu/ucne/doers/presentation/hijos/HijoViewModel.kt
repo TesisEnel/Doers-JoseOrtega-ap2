@@ -15,8 +15,11 @@ import edu.ucne.doers.data.repository.AuthRepository
 import edu.ucne.doers.data.repository.HijoRepository
 import edu.ucne.doers.data.repository.TareaHijoRepository
 import edu.ucne.doers.data.repository.TareaRepository
+import edu.ucne.doers.presentation.extension.ifNullOrBlank
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -41,6 +44,25 @@ class HijoViewModel @Inject constructor(
     init {
         checkAuthenticatedHijo()
         actualizarPeriodicidades()
+        observeTaskChanges()
+    }
+
+    private fun observeTaskChanges() {
+        viewModelScope.launch {
+            tareaHijoRepository.getAll().collect { resource ->
+                when (resource) {
+                    is Resource.Success -> {
+                        loadTareas()
+                    }
+                    is Resource.Error -> {
+                        _uiState.update { it.copy(errorMessage = resource.message ?: "Error al observar tareas hijo") }
+                    }
+                    is Resource.Loading -> {
+                        _uiState.update { it.copy(isLoading = true) }
+                    }
+                }
+            }
+        }
     }
 
     private fun checkAuthenticatedHijo() {
@@ -48,7 +70,6 @@ class HijoViewModel @Inject constructor(
             val hijoId = sharedPreferences.getInt("hijoId", 0)
             if (hijoId > 0) {
                 val hijo = hijoRepository.find(hijoId)
-                println("Imagen recuperada desde la BD: ${hijo?.fotoPerfil}")
                 if (hijo != null) {
                     _uiState.update {
                         it.copy(
@@ -75,9 +96,7 @@ class HijoViewModel @Inject constructor(
         }
     }
 
-    fun isAuthenticated(): Boolean {
-        return uiState.value.isAuthenticated
-    }
+    fun isAuthenticated(): Boolean = uiState.value.isAuthenticated
 
     fun loginChild(nombre: String, codigoSala: String) {
         viewModelScope.launch {
@@ -96,105 +115,48 @@ class HijoViewModel @Inject constructor(
 
             _uiState.update { it.copy(isLoading = true, signInError = null) }
 
-            when (val resource = hijoRepository.loginHijo(nombre, codigoSala)) {
+            when (val result = hijoRepository.loginHijo(nombre, codigoSala)) {
                 is Resource.Success -> {
-                    // 🔐 Obtener el padreId real desde Firebase
-                    val firebaseUserId = authRepository.getUser()?.userId
-
-                    // ⛔ Si no lo obtuvo, usar API como respaldo
-                    val padreId = firebaseUserId ?: hijoRepository.getPadreIdByCodigoSala(codigoSala)
-
-                    if (padreId == null) {
+                    val hijo = result.data ?: run {
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                signInError = "Código de sala inválido",
-                                isSignInSuccessful = false,
-                                isSuccess = false,
+                                signInError = "Error desconocido al guardar el hijo",
                                 isAuthenticated = false
                             )
                         }
                         return@launch
                     }
 
-                    // 🔍 Buscar si ya existe
-                    val existingHijo = hijoRepository.findByNombreAndPadreId(nombre, padreId)
+                    val padreDto = hijoRepository.getPadreByCodigoSala(codigoSala)
+                    val codigoSalaReal = padreDto.codigoSala ?: codigoSala
 
-                    if (existingHijo != null) {
+                    val fotoAsignada = hijo.fotoPerfil.ifNullOrBlank("personaje_1")
+                    val hijoConFoto = hijo.copy(fotoPerfil = fotoAsignada)
+
+                    hijoRepository.saveLocal(hijoConFoto)
+
+                    _uiState.update { it.copy(isLoading = true) }
+
+                    viewModelScope.launch {
+                        delay(150)
+
                         _uiState.update {
                             it.copy(
-                                hijoId = existingHijo.hijoId,
-                                padreId = existingHijo.padreId,
-                                nombre = existingHijo.nombre,
-                                fotoPerfil = existingHijo.fotoPerfil,
-                                codigoSala = codigoSala,
+                                hijoId = hijoConFoto.hijoId,
+                                padreId = hijoConFoto.padreId,
+                                nombre = hijoConFoto.nombre,
+                                fotoPerfil = hijoConFoto.fotoPerfil,
+                                codigoSala = codigoSalaReal,
                                 isSuccess = true,
                                 isSignInSuccessful = true,
                                 isLoading = false,
-                                signInError = null,
                                 isAuthenticated = true
                             )
                         }
-                        sharedPreferences.edit().putInt("hijoId", existingHijo.hijoId).apply()
-
-                    } else {
-                        val newHijo = HijoEntity(
-                            hijoId = 0,
-                            padreId = padreId,
-                            nombre = nombre
-                        )
-
-                        hijoRepository.save(newHijo).collect { result ->
-                            when (result) {
-                                is Resource.Success -> {
-                                    val savedHijo = hijoRepository.findByNombreAndPadreId(nombre, padreId)
-                                    if (savedHijo != null) {
-                                        _uiState.update {
-                                            it.copy(
-                                                hijoId = savedHijo.hijoId,
-                                                padreId = savedHijo.padreId,
-                                                nombre = savedHijo.nombre,
-                                                fotoPerfil = savedHijo.fotoPerfil,
-                                                codigoSala = codigoSala,
-                                                isSuccess = true,
-                                                isSignInSuccessful = true,
-                                                isLoading = false,
-                                                signInError = null,
-                                                isAuthenticated = true
-                                            )
-                                        }
-                                        sharedPreferences.edit().putInt("hijoId", savedHijo.hijoId).apply()
-                                    } else {
-                                        _uiState.update {
-                                            it.copy(
-                                                isSuccess = false,
-                                                isSignInSuccessful = false,
-                                                isLoading = false,
-                                                signInError = "Error al guardar el hijo",
-                                                isAuthenticated = false
-                                            )
-                                        }
-                                    }
-                                }
-
-                                is Resource.Error -> {
-                                    _uiState.update {
-                                        it.copy(
-                                            isSuccess = false,
-                                            isSignInSuccessful = false,
-                                            isLoading = false,
-                                            signInError = result.message,
-                                            isAuthenticated = false
-                                        )
-                                    }
-                                }
-
-                                is Resource.Loading -> {
-                                    _uiState.update { it.copy(isLoading = true) }
-                                }
-                            }
-                        }
                     }
+
+                    sharedPreferences.edit().putInt("hijoId", hijoConFoto.hijoId).apply()
                 }
 
                 is Resource.Error -> {
@@ -203,27 +165,17 @@ class HijoViewModel @Inject constructor(
                             isSuccess = false,
                             isSignInSuccessful = false,
                             isLoading = false,
-                            signInError = resource.message,
+                            signInError = result.message,
                             isAuthenticated = false
                         )
                     }
                 }
 
-                is Resource.Loading -> {
-                    _uiState.update { it.copy(isLoading = true) }
-                }
+                else -> {}
             }
         }
     }
 
-    //    fun getHijosByPadre(padreId: String) {
-//        viewModelScope.launch {
-//            hijoRepository.getAll().collect { hijos ->
-//                val hijosFiltrados = hijos.filter { it.padreId == padreId }
-//                _uiState.update { it.copy(hijos = hijosFiltrados) }
-//            }
-//        }
-//    }
     fun getHijosByPadre(padreId: String) {
         viewModelScope.launch {
             hijoRepository.getAll().collect { result ->
@@ -231,16 +183,18 @@ class HijoViewModel @Inject constructor(
                     is Resource.Loading -> {
                         _uiState.update { it.copy(isLoading = true) }
                     }
+
                     is Resource.Success -> {
-                        val hijosFiltrados = result.data?.filter { it.padreId == padreId } ?: emptyList()
+                        val hijosFiltrados =
+                            result.data?.filter { it.padreId == padreId } ?: emptyList()
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
                                 hijos = hijosFiltrados
                             )
                         }
-                        Log.d("HijosDebug", "Recibidos: ${result.data}")
                     }
+
                     is Resource.Error -> {
                         _uiState.update {
                             it.copy(
@@ -254,33 +208,24 @@ class HijoViewModel @Inject constructor(
         }
     }
 
+    fun agregarPuntos(hijo: HijoEntity, puntos: String) {
+        viewModelScope.launch {
+            try {
+                val puntosInt = puntos.toIntOrNull() ?: throw IllegalArgumentException("Ingrese un número válido de puntos")
+                if (puntosInt <= 0) throw IllegalArgumentException("Los puntos deben ser mayores a 0")
 
-    fun agregarPuntos(hijo: HijoEntity, puntosAgregados: Int) {
-        if (puntosAgregados > 0) {
-            val updatedHijo = hijo.copy(saldoActual = hijo.saldoActual + puntosAgregados)
-            _uiState.update {
-                it.copy(
-                    hijos = it.hijos.map { existingHijo ->
-                        if (existingHijo.hijoId == hijo.hijoId) updatedHijo else existingHijo
-                    }
-                )
-            }
-            viewModelScope.launch {
-                hijoRepository.save(updatedHijo).collect { result ->
+                val hijoActualizado = hijo.copy(saldoActual = hijo.saldoActual + puntosInt)
+                hijoRepository.save(hijoActualizado).collect { result ->
                     when (result) {
                         is Resource.Success -> {
-                            Log.d("HijoViewModel", "✅ Puntos guardados local y API")
-                            getHijosByPadre(updatedHijo.padreId) // 🔁 Recarga desde servidor
+                            _uiState.update { it.copy(successMessage = "Puntos agregados con éxito") }
                         }
-
-                        is Resource.Error -> {
-                            Log.e("HijoViewModel", "❌ Error al guardar puntos: ${result.message}")
-                            _uiState.update { it.copy(errorMessage = result.message) }
-                        }
-
-                        else -> {}
+                        is Resource.Error -> throw Exception("Error al agregar puntos: ${result.message}")
+                        is Resource.Loading -> Log.d("HijoViewModel", "Guardando puntos...")
                     }
                 }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = "Error al agregar puntos: ${e.message}") }
             }
         }
     }
@@ -288,21 +233,9 @@ class HijoViewModel @Inject constructor(
     fun eliminarHijo(hijo: HijoEntity) {
         viewModelScope.launch {
             when (val result = hijoRepository.delete(hijo)) {
-                is Resource.Success -> {
-                    Log.d("HijoViewModel", "✅ Hijo eliminado local y API")
-                    getHijosByPadre(hijo.padreId)
-                }
-
-                is Resource.Error -> {
-                    Log.e("HijoViewModel", "❌ Error al eliminar hijo: ${result.message}")
-                    _uiState.update {
-                        it.copy(errorMessage = result.message)
-                    }
-                }
-
-                is Resource.Loading -> {
-                    _uiState.update { it.copy(isLoading = true) }
-                }
+                is Resource.Success -> getHijosByPadre(hijo.padreId)
+                is Resource.Error -> _uiState.update { it.copy(errorMessage = result.message) }
+                is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
             }
         }
     }
@@ -316,28 +249,12 @@ class HijoViewModel @Inject constructor(
 
                 hijoRepository.save(updatedEntity).collect { result ->
                     when (result) {
-                        is Resource.Success -> {
-                            Log.d("HijoViewModel", "✅ Nombre actualizado correctamente")
-                            _uiState.update {
-                                it.copy(nombre = nombre)
-                            }
+                        is Resource.Success -> _uiState.update { it.copy(nombre = nombre) }
+                        is Resource.Error -> _uiState.update {
+                            it.copy(errorMessage = "Error al actualizar nombre: ${result.message}")
                         }
 
-                        is Resource.Error -> {
-                            Log.e(
-                                "HijoViewModel",
-                                "❌ Error al actualizar nombre: ${result.message}"
-                            )
-                            _uiState.update {
-                                it.copy(
-                                    errorMessage = "Error al actualizar nombre: ${result.message}"
-                                )
-                            }
-                        }
-
-                        is Resource.Loading -> {
-                            _uiState.update { it.copy(isLoading = true) }
-                        }
+                        is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
                     }
                 }
             }
@@ -350,25 +267,22 @@ class HijoViewModel @Inject constructor(
 
             if (currentHijo != null) {
                 val updatedHijo = currentHijo.copy(fotoPerfil = nuevaFoto)
-                hijoRepository.save(updatedHijo)
-                _uiState.update { it.copy(fotoPerfil = nuevaFoto) }
+                hijoRepository.save(updatedHijo).collect { result ->
+                    if (result is Resource.Success) {
+                        _uiState.update { it.copy(fotoPerfil = nuevaFoto) }
+                    }
+                }
             }
         }
     }
 
-
-    // Funciones en el ViewModel de DjMarte
     fun completarTarea(tareaId: Int) {
         viewModelScope.launch {
-
             val hijoId = _uiState.value.hijoId
-            if (hijoId == 0) {
-                Log.e("ERROR", "El hijoId sigue sin estar inicializado")
+            if (hijoId == 0 || hijoId == null) {
                 _uiState.update { it.copy(errorMessage = "Error: No se encontró el ID del hijo") }
                 return@launch
             }
-
-            Log.d("DEBUG", "Hijo ID en completarTarea: $hijoId")
 
             _uiState.update {
                 it.copy(
@@ -380,37 +294,48 @@ class HijoViewModel @Inject constructor(
             }
 
             try {
-                val tareasHijo = tareaHijoRepository.getAll().first()
-                val existePendiente = tareasHijo.any {
-                    it.tareaId == tareaId &&
-                            it.hijoId == hijoId &&
-                            it.estado == EstadoTareaHijo.PENDIENTE_VERIFICACION
-                }
-
-                if (existePendiente) {
-                    throw Exception("Ya tienes esta tarea pendiente de verificación")
-                }
-
-                tareaHijoRepository.save(
-                    TareaHijo(
-                        tareaId = tareaId,
-                        hijoId = hijoId,
-                        estado = EstadoTareaHijo.PENDIENTE_VERIFICACION
-                    )
+                val countPending = tareaHijoRepository.countPendingTasks(
+                    tareaId = tareaId,
+                    hijoId = hijoId,
+                    estado = EstadoTareaHijo.PENDIENTE_VERIFICACION
                 )
 
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        successMessage = "Tarea enviada para revisión",
-                        ultimaTareaProcesada = null
-                    )
+                if (countPending > 0) {
+                    throw Exception("Ya tienes esta tarea pendiente de verificación")
                 }
+                val nuevaTareaHijo = TareaHijo(
+                    tareaId = tareaId,
+                    hijoId = hijoId,
+                    estado = EstadoTareaHijo.PENDIENTE_VERIFICACION
+                )
 
-                loadTareas()
+                tareaHijoRepository.save(nuevaTareaHijo).collect { saveResult ->
+                    when (saveResult) {
+                        is Resource.Success -> {
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    successMessage = "Tarea enviada para revisión",
+                                    ultimaTareaProcesada = null
+                                )
+                            }
+                            loadTareas()
+                        }
 
+                        is Resource.Error -> {
+                            Log.e("HijoViewModel", "Error al guardar: ${saveResult.message}")
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    errorMessage = saveResult.message ?: "Error al guardar tarea",
+                                    ultimaTareaProcesada = null
+                                )
+                            }
+                        }
+                        is Resource.Loading -> {}
+                    }
+                }
             } catch (e: Exception) {
-                Log.e("ERROR", "Error al completar tarea: ${e.message}")
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -425,32 +350,53 @@ class HijoViewModel @Inject constructor(
     fun loadTareas() {
         viewModelScope.launch {
             try {
-                val tareasActivas = tareaRepository.getActiveTasks().first()
-                Log.d("DEBUG", "Tareas activas: $tareasActivas")
+                _uiState.update { it.copy(isLoading = true) }
+                combine(
+                    tareaRepository.getActiveTasks(),
+                    tareaHijoRepository.getAll()
+                ) { tareasActivasResource, tareasCompletadasResource ->
+                    when {
+                        tareasActivasResource is Resource.Success && tareasCompletadasResource is Resource.Success<*> -> {
+                            val tareasActivas = tareasActivasResource.data ?: emptyList()
+                            val tareasCompletadas = (tareasCompletadasResource.data as? List<TareaHijo>)
+                                ?.filter { it.hijoId == _uiState.value.hijoId } ?: emptyList()
 
-                val tareasCompletadas = tareaHijoRepository.getAll().first()
-                    .filter { it.hijoId == _uiState.value.hijoId }
-                Log.d("DEBUG", "Tareas completadas del hijo: $tareasCompletadas")
+                            val tareasDisponibles = tareasActivas.filter { tarea ->
+                                !tareasCompletadas.any {
+                                    it.tareaId == tarea.tareaId && it.estado == EstadoTareaHijo.APROBADA
+                                }
+                            }
 
-                val tareasDisponibles = tareasActivas.filter { tarea ->
-                    !tareasCompletadas.any {
-                        it.tareaId == tarea.tareaId &&
-                                it.estado == EstadoTareaHijo.APROBADA
+                            _uiState.update {
+                                it.copy(
+                                    listaTareas = tareasDisponibles,
+                                    listaTareasFiltradas = tareasDisponibles,
+                                    isLoading = false,
+                                    errorMessage = null
+                                )
+                            }
+                        }
+                        tareasActivasResource is Resource.Error<*> || tareasCompletadasResource is Resource.Error<*> -> {
+                            val mensajeError = buildString {
+                                if (tareasActivasResource is Resource.Error<*>)
+                                    append("Tareas activas: ${tareasActivasResource.message} ")
+                                if (tareasCompletadasResource is Resource.Error<*>)
+                                    append("Tareas completadas: ${tareasCompletadasResource.message}")
+                            }.ifBlank { "Error desconocido al cargar tareas" }
+
+                            _uiState.update {
+                                it.copy(
+                                    errorMessage = mensajeError,
+                                    isLoading = false
+                                )
+                            }
+                        }
+                        else -> {
+                            _uiState.update { it.copy(isLoading = true) }
+                        }
                     }
-                }
-
-                Log.d("DEBUG", "Tareas disponibles después de filtro: $tareasDisponibles")
-
-                _uiState.update {
-                    it.copy(
-                        listaTareas = tareasDisponibles,
-                        listaTareasFiltradas = tareasDisponibles,
-                        isLoading = false
-                    )
-                }
-
+                }.collect{}
             } catch (e: Exception) {
-                Log.e("ERROR", "Error cargando tareas: ${e.message}")
                 _uiState.update {
                     it.copy(
                         errorMessage = "Error cargando tareas: ${e.message}",
@@ -464,12 +410,11 @@ class HijoViewModel @Inject constructor(
     fun filtrarTareas(periodicidad: String) {
         viewModelScope.launch {
             val todasTareas = _uiState.value.listaTareas
-
             val filtradas = if (periodicidad == "Todas") {
                 todasTareas
             } else {
                 todasTareas.filter {
-                    it.periodicidad?.nombreMostrable == periodicidad
+                    it.periodicidad?.nombreMostrable() == periodicidad
                 }
             }
 
@@ -482,7 +427,7 @@ class HijoViewModel @Inject constructor(
     private fun actualizarPeriodicidades() {
         viewModelScope.launch {
             val periodicidades =
-                listOf("Todas") + PeriodicidadTarea.entries.map { it.nombreMostrable }
+                listOf("Todas") + PeriodicidadTarea.entries.map { it.nombreMostrable() }
             _periodicidadesDisponibles.value = periodicidades
         }
     }
@@ -492,6 +437,21 @@ class HijoViewModel @Inject constructor(
             it.copy(
                 errorMessage = null,
                 successMessage = null
+            )
+        }
+    }
+
+    fun cerrarSesion() {
+        sharedPreferences.edit().remove("hijoId").apply()
+        _uiState.update {
+            it.copy(
+                hijoId = null,
+                padreId = "",
+                nombre = "",
+                fotoPerfil = "",
+                isAuthenticated = false,
+                isSignInSuccessful = false,
+                isSuccess = false
             )
         }
     }
