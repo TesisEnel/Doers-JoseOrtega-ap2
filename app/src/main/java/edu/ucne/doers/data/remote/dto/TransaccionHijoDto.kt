@@ -4,7 +4,7 @@ import edu.ucne.doers.data.local.model.TipoTransaccion
 import java.util.Date
 
 data class TransaccionHijoDto(
-    val transaccionID: Int,
+    val transaccionId: Int,
     val hijoId: Int,
     val tipo: TipoTransaccion,
     val monto: Int,
