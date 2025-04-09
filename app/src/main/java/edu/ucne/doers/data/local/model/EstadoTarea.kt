@@ -1,31 +1,56 @@
 package edu.ucne.doers.data.local.model
 
 import androidx.compose.ui.graphics.Color
-import kotlinx.serialization.Serializable
+import com.squareup.moshi.Json
 
-@Serializable
-enum class EstadoTarea(val nombreMostrable: String, val color: Color) {
-    PENDIENTE("Pendiente", Color(0xFFFFA000)),
-    COMPLETADA("Completada", Color(0xFF388E3C)),
-    CANCELADA("Cancelada", Color(0xFFD32F2F))
+enum class EstadoTarea {
+    @Json(name = "PENDIENTE") PENDIENTE,
+    @Json(name = "COMPLETADA") COMPLETADA,
+    @Json(name = "CANCELADA") CANCELADA;
+
+    fun nombreMostrable(): String = when (this) {
+        PENDIENTE -> "Pendiente"
+        COMPLETADA -> "Completada"
+        CANCELADA -> "Cancelada"
+    }
+
+    fun color(): Color = when (this) {
+        PENDIENTE -> Color(0xFFFFA000)
+        COMPLETADA -> Color(0xFF388E3C)
+        CANCELADA -> Color(0xFFD32F2F)
+    }
 }
 
-@Serializable
-enum class CondicionTarea(val nombreMostrable: String) {
-    ACTIVA("Activa"),
-    INACTIVA("Inactiva")
+enum class CondicionTarea {
+    @Json(name = "ACTIVA") ACTIVA,
+    @Json(name = "INACTIVA") INACTIVA;
+
+    fun nombreMostrable(): String = when (this) {
+        ACTIVA -> "Activa"
+        INACTIVA -> "Inactiva"
+    }
 }
 
-@Serializable
-enum class PeriodicidadTarea(val nombreMostrable: String) {
-    DIARIA("Diaria"),
-    SEMANAL("Semanal"),
-    UNICA("Unica")
+enum class PeriodicidadTarea {
+    @Json(name = "DIARIA") DIARIA,
+    @Json(name = "SEMANAL") SEMANAL,
+    @Json(name = "UNICA") UNICA;
+
+    fun nombreMostrable(): String = when (this) {
+        DIARIA -> "Diaria"
+        SEMANAL -> "Semanal"
+        UNICA -> "Única"
+    }
 }
 
-@Serializable
-enum class EstadoTareaHijo(val nombreMostrable: String) {
-    PENDIENTE_VERIFICACION("Pendiente de verificación"),
-    APROBADA("Aprobada"),
-    RECHAZADA("Rechazada")
+enum class EstadoTareaHijo {
+    @Json(name = "PENDIENTE_VERIFICACION") PENDIENTE_VERIFICACION,
+    @Json(name = "APROBADA") APROBADA,
+    @Json(name = "RECHAZADA") RECHAZADA;
+
+    fun nombreMostrable(): String = when (this) {
+        PENDIENTE_VERIFICACION -> "Pendiente de verificación"
+        APROBADA -> "Aprobada"
+        RECHAZADA -> "Rechazada"
+    }
 }
