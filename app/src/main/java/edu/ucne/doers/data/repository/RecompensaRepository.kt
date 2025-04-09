@@ -2,6 +2,7 @@ package edu.ucne.doers.data.repository
 
 import edu.ucne.doers.data.local.dao.RecompensaDao
 import edu.ucne.doers.data.local.entity.RecompensaEntity
+import edu.ucne.doers.data.local.model.CondicionRecompensa
 import edu.ucne.doers.data.remote.RemoteDataSource
 import edu.ucne.doers.data.remote.Resource
 import edu.ucne.doers.data.remote.dto.RecompensaDto
@@ -14,18 +15,7 @@ class RecompensaRepository @Inject constructor(
     private val recompensaDao: RecompensaDao,
     private val remote: RemoteDataSource
 ) {
-
-    suspend fun save(recompensa: RecompensaEntity) = recompensaDao.save(recompensa)
-
-    suspend fun find(id: Int) = recompensaDao.find(id)
-
-    fun getAll(): Flow<List<RecompensaEntity>> = recompensaDao.getAll()
-
-    fun getRecompensasByPadreId(padreId: String): Flow<List<RecompensaEntity>> = recompensaDao.getRecompensasByPadreId(padreId)
-
-    suspend fun delete(recompensa: RecompensaEntity) = recompensaDao.delete(recompensa)
-
-    /*fun save(recompensa: RecompensaEntity): Flow<Resource<Unit>> = flow {
+    fun save(recompensa: RecompensaEntity): Flow<Resource<Unit>> = flow {
         emit(Resource.Loading())
         try {
             recompensaDao.save(recompensa)
@@ -56,16 +46,15 @@ class RecompensaRepository @Inject constructor(
 
     fun getRecompensasByPadreId(padreId: String): Flow<Resource<List<RecompensaEntity>>> = flow {
         emit(Resource.Loading())
-        val local = recompensaDao.getRecompensasByPadreId(padreId).firstOrNull()
-        emit(Resource.Success(local ?: emptyList()))
+        recompensaDao.getRecompensasByPadreId(padreId).collect { local ->
+            emit(Resource.Success(local ?: emptyList()))
+        }
         try {
             val remoteList = remote.getRecompensas().filter { it.padreId == padreId }
             val entities = remoteList.map { it.toEntity() }
             recompensaDao.save(entities)
-            val updated = recompensaDao.getRecompensasByPadreId(padreId).firstOrNull()
-            emit(Resource.Success(updated ?: emptyList()))
         } catch (e: Exception) {
-            emit(Resource.Error("No se pudo actualizar recompensas: ${e.localizedMessage}", local))
+            emit(Resource.Error("No se pudo actualizar recompensas: ${e.localizedMessage}", null))
         }
     }
 
@@ -92,16 +81,27 @@ class RecompensaRepository @Inject constructor(
             Resource.Error("Error al eliminar recompensa: ${e.localizedMessage}")
         }
     }
-
-     */
 }
 
 fun RecompensaEntity.toDto() = RecompensaDto(
     recompensaId = recompensaId,
     padreId = padreId,
+    hijoId = hijoId,
     descripcion = descripcion,
     imagenURL = imagenURL,
     puntosNecesarios = puntosNecesarios,
-    estado = estado
+    estado = estado,
+    condicion = condicion
+)
+
+fun RecompensaDto.toEntity() = RecompensaEntity(
+    recompensaId = recompensaId,
+    hijoId = hijoId,
+    padreId = padreId,
+    descripcion = descripcion,
+    imagenURL = imagenURL,
+    puntosNecesarios = puntosNecesarios,
+    estado = estado,
+    condicion = CondicionRecompensa.INACTIVA
 )
 

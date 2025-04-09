@@ -1,29 +1,26 @@
 package edu.ucne.doers.data.local.model
 
 import androidx.compose.ui.graphics.Color
-import kotlinx.serialization.Serializable
 import com.squareup.moshi.Json
+import kotlinx.serialization.Serializable
 
 @Serializable
 enum class EstadoRecompensa {
     @Json(name = "DISPONIBLE") DISPONIBLE,
-    @Json(name = "CADUCADA") CADUCADA,
-    @Json(name = "AGOTADA") AGOTADA,
+    @Json(name = "NO DISPONIBLE") NO_DISPONIBLE,
     @Json(name = "PENDIENTE") PENDIENTE,
     @Json(name = "RECLAMADA") RECLAMADA;
 
     fun nombreMostrable(): String = when (this) {
         DISPONIBLE -> "Disponible"
-        CADUCADA -> "Caducada"
-        AGOTADA -> "Agotada"
+        NO_DISPONIBLE -> "No Disponible"
         PENDIENTE -> "Pendiente"
         RECLAMADA -> "Reclamada"
     }
 
     fun color(): Color = when (this) {
         DISPONIBLE -> Color(0xFF4CAF50)
-        CADUCADA -> Color(0xFF9E9E9E)
-        AGOTADA -> Color(0xFFF44336)
+        NO_DISPONIBLE -> Color(0xFFF44336)
         PENDIENTE -> Color(0xFFFFA000)
         RECLAMADA -> Color(0xFF2196F3)
     }

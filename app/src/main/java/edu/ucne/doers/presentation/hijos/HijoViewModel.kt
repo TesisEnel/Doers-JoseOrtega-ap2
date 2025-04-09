@@ -6,14 +6,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import edu.ucne.doers.data.local.entity.CanjeoEntity
 import edu.ucne.doers.data.local.entity.HijoEntity
 import edu.ucne.doers.data.local.entity.TareaHijo
 import edu.ucne.doers.data.local.entity.TransaccionHijo
+import edu.ucne.doers.data.local.model.EstadoRecompensa
 import edu.ucne.doers.data.local.model.EstadoTareaHijo
 import edu.ucne.doers.data.local.model.PeriodicidadTarea
 import edu.ucne.doers.data.remote.Resource
-import edu.ucne.doers.data.repository.AuthRepository
+import edu.ucne.doers.data.repository.CanjeoRepository
 import edu.ucne.doers.data.repository.HijoRepository
+import edu.ucne.doers.data.repository.RecompensaRepository
 import edu.ucne.doers.data.repository.TareaHijoRepository
 import edu.ucne.doers.data.repository.TareaRepository
 import edu.ucne.doers.data.repository.TransaccionHijoRepository
@@ -23,9 +26,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.sql.Date
 import javax.inject.Inject
 
 @HiltViewModel
@@ -33,8 +37,9 @@ class HijoViewModel @Inject constructor(
     private val hijoRepository: HijoRepository,
     private val tareaRepository: TareaRepository,
     private val tareaHijoRepository: TareaHijoRepository,
-    private val authRepository: AuthRepository,
     private val transaccionHijoRepository: TransaccionHijoRepository,
+    private val recompensaRepository: RecompensaRepository,
+    private val canjeoRepository: CanjeoRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -53,6 +58,22 @@ class HijoViewModel @Inject constructor(
         actualizarPeriodicidades()
         observeTaskChanges()
         getTransacciones()
+        loadSaldoActual()
+    }
+
+    fun loadSaldoActual() {
+        viewModelScope.launch {
+            val hijoId = _uiState.value.hijoId
+
+            if (hijoId != null) {
+                val hijo = hijoRepository.find(hijoId)
+                if (hijo != null) {
+                    _uiState.update {
+                        it.copy(saldoActual = hijo.saldoActual)
+                    }
+                }
+            }
+        }
     }
 
     private fun observeTaskChanges() {
@@ -328,7 +349,99 @@ class HijoViewModel @Inject constructor(
         }
     }
 
-    fun loadTareas() {
+    fun reclamarRecompensa(recompensaId: Int) {
+        viewModelScope.launch {
+            val hijoId = _uiState.value.hijoId
+            if (hijoId == 0) {
+                _uiState.update { it.copy(errorMessage = "Error: No se encontró el ID del hijo") }
+                return@launch
+            }
+
+            _uiState.update {
+                it.copy(
+                    isLoading = true,
+                    errorMessage = null,
+                    successMessage = null
+                )
+            }
+
+            try {
+                val recompensa = recompensaRepository.find(recompensaId)
+                    ?: throw Exception("Recompensa no encontrada")
+
+                val hijo = hijoId?.let { hijoRepository.find(it) }
+                    ?: throw Exception("Hijo no encontrado")
+                if (hijo.saldoActual < recompensa.puntosNecesarios) {
+                    throw Exception("No tienes suficientes puntos para reclamar esta recompensa")
+                }
+
+                val canjeos = canjeoRepository.getAll().firstOrNull { it is Resource.Success }?.data ?: emptyList()
+                val countPending = canjeos.count {
+                    it.recompensaId == recompensaId &&
+                            it.hijoId == hijoId &&
+                            it.estado == EstadoRecompensa.PENDIENTE
+                }
+                if (countPending > 0) {
+                    throw Exception("Ya tienes esta recompensa pendiente de verificación")
+                }
+
+                val nuevoCanjeo = hijoId?.let {
+                    CanjeoEntity(
+                        canjeoId = 0,
+                        hijoId = it,
+                        recompensaId = recompensaId,
+                        fecha = Date(System.currentTimeMillis()),
+                        estado = EstadoRecompensa.PENDIENTE
+                    )
+                }
+
+                if (nuevoCanjeo != null) {
+                    canjeoRepository.save(nuevoCanjeo).collect { resource ->
+                        when (resource) {
+                            is Resource.Loading -> {
+                                _uiState.update { it.copy(isLoading = true) }
+                            }
+
+                            is Resource.Success -> {
+                                val nuevoSaldo = hijo.saldoActual - recompensa.puntosNecesarios
+                                val hijoActualizado = hijo.copy(saldoActual = nuevoSaldo)
+                                hijoRepository.save(hijoActualizado).collect { saveResult ->
+                                    when (saveResult) {
+                                        is Resource.Success -> {
+                                            _uiState.update {
+                                                it.copy(
+                                                    isLoading = false,
+                                                    saldoActual = nuevoSaldo,
+                                                    successMessage = "Recompensa reclamada, esperando verificación del padre"
+                                                )
+                                            }
+                                            getTransacciones()
+                                        }
+
+                                        is Resource.Error -> throw Exception("Error al actualizar saldo: ${saveResult.message}")
+                                        is Resource.Loading -> {}
+                                    }
+                                }
+                            }
+
+                            is Resource.Error -> {
+                                throw Exception("Error al guardar el canjeo: ${resource.message}")
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = e.message ?: "Error al reclamar recompensa"
+                    )
+                }
+            }
+        }
+    }
+
+    private fun loadTareas() {
         viewModelScope.launch {
             try {
                 _uiState.update { it.copy(isLoading = true) }

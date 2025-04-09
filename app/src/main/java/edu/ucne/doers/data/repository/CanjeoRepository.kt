@@ -14,15 +14,7 @@ class CanjeoRepository @Inject constructor(
     private val canjeoDao: CanjeoDao,
     private val remoteDataSource: RemoteDataSource
 ) {
-    suspend fun save(canjeo: CanjeoEntity) = canjeoDao.save(canjeo)
-
-    suspend fun find(id: Int) = canjeoDao.find(id)
-
-    fun getAll(): Flow<List<CanjeoEntity>> = canjeoDao.getAll()
-
-    suspend fun delete(canjeo: CanjeoEntity) = canjeoDao.delete(canjeo)
-
-    /*fun save(canjeo: CanjeoEntity): Flow<Resource<Unit>> = flow {
+    fun save(canjeo: CanjeoEntity): Flow<Resource<Unit>> = flow {
         emit(Resource.Loading())
 
         try {
@@ -73,7 +65,6 @@ class CanjeoRepository @Inject constructor(
         }
     }
 
-     */
 }
 
 fun CanjeoDto.toEntity() = CanjeoEntity(

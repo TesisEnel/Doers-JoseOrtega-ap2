@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import edu.ucne.doers.data.local.entity.RecompensaEntity
+import edu.ucne.doers.data.local.model.CondicionRecompensa
 import edu.ucne.doers.data.local.model.EstadoRecompensa
 import edu.ucne.doers.presentation.recompensa.RecompensaUiState
 import edu.ucne.doers.presentation.recompensa.RecompensaViewModel
@@ -27,9 +28,10 @@ import edu.ucne.doers.presentation.tareas.components.TaskCounterRecompensa
 @Composable
 fun RecompensasOverview(
     modifier: Modifier = Modifier,
-    recompensas: List<RecompensaEntity>,
+    recompensas: List<RecompensaUiState>,
     onEdit: (Int) -> Unit,
     onDelete: (RecompensaEntity) -> Unit,
+    onCondicionChange: (Int, CondicionRecompensa) -> Unit,
     viewModel: RecompensaViewModel = hiltViewModel(),
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
@@ -59,7 +61,7 @@ fun RecompensasOverview(
                     )
                     TaskCounterRecompensa(
                         label = "Recompensas pendientes",
-                        count = recompensas.count { it.estado == EstadoRecompensa.AGOTADA },
+                        count = recompensas.count { it.estado == EstadoRecompensa.NO_DISPONIBLE },
                         estado = EstadoRecompensa.PENDIENTE
                     )
                 }
@@ -82,9 +84,7 @@ fun RecompensasOverview(
                         recompensa = recompensa,
                         onEdit = onEdit,
                         onDelete = onDelete,
-                        onCondicionChange = { nuevaCondicion ->
-                            viewModel.onCondicionChange(nuevaCondicion)
-                        },
+                        onCondicionChange = onCondicionChange
                     )
                 }
             }

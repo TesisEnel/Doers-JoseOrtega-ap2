@@ -31,7 +31,6 @@ import edu.ucne.doers.presentation.sign_in.GoogleAuthUiClient
 import edu.ucne.doers.presentation.tareas.hijo.HijoListScreen
 import edu.ucne.doers.presentation.tareas.padre.TareaScreen
 import edu.ucne.doers.presentation.tareas.padre.TareasListScreen
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -168,7 +167,8 @@ fun DoersNavHost(
                 RecompensasHijoScreen(
                     padreId = padreState.padreId ?: "",
                     onNavigateToPerfil = { navHostController.navigate(Screen.Hijo) },
-                    onNavigateToTareas = { navHostController.navigate(Screen.TareaHijo) }
+                    onNavigateToTareas = { navHostController.navigate(Screen.TareaHijo) },
+                    hijoViewModel = hijoViewModel
                 )
             }
             composable<Screen.TareaList> {
