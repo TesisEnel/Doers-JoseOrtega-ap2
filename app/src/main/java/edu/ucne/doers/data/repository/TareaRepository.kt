@@ -1,6 +1,5 @@
 package edu.ucne.doers.data.repository
 
-import android.util.Log
 import edu.ucne.doers.data.local.dao.TareaDao
 import edu.ucne.doers.data.local.entity.TareaEntity
 import edu.ucne.doers.data.local.model.CondicionTarea
