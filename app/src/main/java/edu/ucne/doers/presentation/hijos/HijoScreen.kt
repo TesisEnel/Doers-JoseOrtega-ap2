@@ -1,5 +1,7 @@
 package edu.ucne.doers.presentation.hijos
 
+import android.annotation.SuppressLint
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +19,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -29,6 +33,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,19 +43,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import edu.ucne.doers.R
+import edu.ucne.doers.data.local.entity.TransaccionHijo
+import edu.ucne.doers.data.local.model.TipoTransaccion
 import edu.ucne.doers.presentation.navigation.Screen
 import edu.ucne.doers.presentation.padres.PadreViewModel
 import edu.ucne.doers.presentation.recompensa.comp.HijoNavBar
+import java.text.SimpleDateFormat
+import java.util.Date
 
+
+@SuppressLint("SimpleDateFormat")
 @Composable
 fun HijoScreen(
     hijoViewModel: HijoViewModel,
@@ -61,10 +75,15 @@ fun HijoScreen(
     val hijoUiState by hijoViewModel.uiState.collectAsState()
     val padreUiState by padreViewModel.uiState.collectAsState()
     val colors = MaterialTheme.colorScheme
-    var editedName by remember { mutableStateOf(hijoUiState.nombre ?: "Hijo") }
-    var selectedPhoto by remember { mutableStateOf(hijoUiState.fotoPerfil) }
-    var showEditProfileDialog by remember { mutableStateOf(false) }
-    var tempSelectedPhoto by remember { mutableStateOf(hijoUiState.fotoPerfil) }
+    val transacciones by hijoViewModel.transacciones.collectAsState()
+    var selectedTransaccion by remember { mutableStateOf<TransaccionHijo?>(null) }
+    var showDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+
+    LaunchedEffect(Unit) {
+        hijoViewModel.getTransacciones()
+    }
 
     if (hijoUiState.isLoading) {
         Box(
@@ -93,7 +112,6 @@ fun HijoScreen(
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    val fotos = listOf("personaje_1", "personaje_2", "personaje_3", "personaje_4", "personaje_5")
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -105,7 +123,7 @@ fun HijoScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             AsyncImage(
-                                model = "android.resource://edu.ucne.doers/drawable/${hijoUiState.fotoPerfil}",
+                                model = R.drawable.personaje_1,
                                 contentDescription = "Foto de perfil",
                                 modifier = Modifier
                                     .size(60.dp)
@@ -128,18 +146,6 @@ fun HijoScreen(
                                     ),
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
-                                IconButton(
-                                    onClick = {
-                                        editedName = hijoUiState.nombre ?: "Hijo"
-                                        showEditProfileDialog = true
-                                    }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Edit,
-                                        contentDescription = "Editar nombre",
-                                        tint = MaterialTheme.colorScheme.secondary
-                                    )
-                                }
                             }
                             Spacer(modifier = Modifier.height(8.dp))
                             Row(
@@ -163,79 +169,6 @@ fun HijoScreen(
                                 )
                             }
                         }
-                    }
-                    if (showEditProfileDialog) {
-                        AlertDialog(
-                            onDismissRequest = { showEditProfileDialog = false },
-                            title = {
-                                Text(
-                                    text = "Editar Perfil",
-                                    fontWeight = FontWeight.Bold,
-                                    color = colors.primary,
-                                    modifier = Modifier.fillMaxWidth(),
-                                    textAlign = TextAlign.Center
-                                )
-                            },
-                            text = {
-                                Column {
-                                    Row(
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        modifier = Modifier.fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        fotos.forEach { photoName ->
-                                            Box(
-                                                modifier = Modifier
-                                                    .size(50.dp)
-                                                    .clickable {
-                                                        tempSelectedPhoto = photoName
-                                                    },
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                AsyncImage(
-                                                    model = "android.resource://edu.ucne.doers/drawable/$photoName",
-                                                    contentDescription = "Foto $photoName",
-                                                    modifier = Modifier
-                                                        .fillMaxSize()
-                                                        .clip(CircleShape)
-                                                        .background(
-                                                            if (tempSelectedPhoto == photoName) colors.surfaceVariant.copy(alpha = 0.5f)
-                                                            else colors.background
-                                                        )
-                                                )
-                                            }
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    OutlinedTextField(
-                                        value = editedName,
-                                        onValueChange = { editedName = it },
-                                        label = { Text("Nombre") },
-                                        singleLine = true,
-                                        modifier = Modifier.fillMaxWidth()
-                                    )
-                                }
-                            },
-                            confirmButton = {
-                                TextButton(
-                                    onClick = {
-                                        selectedPhoto = tempSelectedPhoto
-                                        selectedPhoto?.let { hijoViewModel.actualizarFotoPerfil(it) }
-                                        hijoViewModel.actualizarNombre(editedName)
-                                        showEditProfileDialog = false
-                                    }
-                                ) {
-                                    Text("Guardar")
-                                }
-                            },
-                            dismissButton = {
-                                TextButton(
-                                    onClick = { showEditProfileDialog = false }
-                                ) {
-                                    Text("Cancelar")
-                                }
-                            }
-                        )
                     }
                     Spacer(modifier = Modifier.height(20.dp))
                     Card(
@@ -302,12 +235,171 @@ fun HijoScreen(
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(32.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.medium,
+                        colors = CardDefaults.cardColors(containerColor = colors.surfaceVariant),
+                        elevation = CardDefaults.cardElevation(4.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Últimas Transacciones",
+                                    style = MaterialTheme.typography.headlineSmall.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = colors.primary
+                                    ),
+                                    modifier = Modifier.weight(1f)
+                                )
+                                IconButton(onClick = {
+                                    hijoViewModel.getTransacciones()
+                                    Toast.makeText(
+                                        context,
+                                        "Transacciones actualizadas",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Refresh,
+                                        contentDescription = "Recargar transacciones",
+                                        tint = colors.primary
+                                    )
+                                }
+                            }
 
-                    TextButton(onClick = { hijoViewModel.cerrarSesion() }) {
-                        Text(
-                            text = "Cerrar sesión (TEMP)",
-                            color = MaterialTheme.colorScheme.error
+                            Spacer(modifier = Modifier.height(8.dp))
+                            if (transacciones.isEmpty()) {
+                                Text(
+                                    text = "No hay transacciones recientes",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = colors.onSurfaceVariant,
+                                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                                    textAlign = TextAlign.Center
+                                )
+                            } else {
+                                transacciones.take(5).forEach { transaccion ->
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                selectedTransaccion = transaccion
+                                                showDialog = true
+                                            }
+                                            .padding(vertical = 4.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Visibility,
+                                            contentDescription = "Ver detalles",
+                                            modifier = Modifier.size(16.dp),
+                                            tint = colors.primary
+                                        )
+                                        Text(
+                                            text = "${transaccion.tipo.nombreMostrable}: ${transaccion.monto} puntos",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = if (transaccion.tipo == TipoTransaccion.RECIBIDO) colors.primary else colors.error
+                                        )
+                                        Text(
+                                            text = SimpleDateFormat("dd/MM/yyyy hh:mm a").format(
+                                                transaccion.fecha
+                                            ),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = colors.onSurfaceVariant,
+                                            overflow = TextOverflow.Ellipsis,
+                                            maxLines = 1
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (showDialog && selectedTransaccion != null) {
+                        AlertDialog(
+                            onDismissRequest = { showDialog = false },
+                            confirmButton = {
+                                TextButton(onClick = { showDialog = false }) {
+                                    Text("Cerrar")
+                                }
+                            },
+                            title = {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Detalles de Transacción",
+                                        style = MaterialTheme.typography.titleLarge.copy(
+                                            fontWeight = FontWeight.Bold,
+                                            color = colors.primary
+                                        ),
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            },
+                            text = {
+                                Column(modifier = Modifier.padding(top = 8.dp)) {
+                                    Text(
+                                        buildAnnotatedString {
+                                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                                append("Tipo: ")
+                                            }
+                                            append(selectedTransaccion?.tipo?.nombreMostrable ?: "")
+                                        },
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = colors.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.height(12.dp)) // Mayor separación entre elementos
+                                    Text(
+                                        buildAnnotatedString {
+                                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                                append("Monto: ")
+                                            }
+                                            append("${selectedTransaccion?.monto ?: 0} puntos")
+                                        },
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = colors.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.height(12.dp)) // Mayor separación entre elementos
+                                    Text(
+                                        buildAnnotatedString {
+                                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                                append("Fecha: ")
+                                            }
+                                            append(
+                                                SimpleDateFormat("dd/MM/yyyy hh:mm a").format(
+                                                    selectedTransaccion?.fecha ?: Date()
+                                                )
+                                            )
+                                        },
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = colors.onSurface
+                                    )
+                                    selectedTransaccion?.descripcion?.let {
+                                        Spacer(modifier = Modifier.height(12.dp))
+                                        Text(
+                                            text = "Descripción:",
+                                            style = MaterialTheme.typography.bodyMedium.copy(
+                                                fontWeight = FontWeight.Bold
+                                            ),
+                                            color = colors.onSurface
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = it,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = colors.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            },
+                            shape = MaterialTheme.shapes.large,
+                            containerColor = colors.surface,
+                            tonalElevation = 8.dp
                         )
                     }
                 }
