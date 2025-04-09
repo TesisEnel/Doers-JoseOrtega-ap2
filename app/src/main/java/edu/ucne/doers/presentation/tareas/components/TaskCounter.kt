@@ -22,6 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import edu.ucne.doers.R
+import edu.ucne.doers.data.local.model.EstadoRecompensa
 import edu.ucne.doers.data.local.model.EstadoTarea
 import edu.ucne.doers.ui.theme.DoersTheme
 
@@ -86,6 +87,69 @@ fun TaskCounter(
         }
     }
 }
+
+@Composable
+fun TaskCounterRecompensa(
+    label: String,
+    count: Int,
+    estado: EstadoRecompensa
+) {
+    Card(
+        modifier = Modifier
+            .padding(8.dp)
+            .height(150.dp)
+            .width(150.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = count.toString(),
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 8.dp),
+                color = when (estado) {
+                    EstadoRecompensa.DISPONIBLE -> if(count > 0) Color(0xFF388E3C) else Color.Red
+                    EstadoRecompensa.PENDIENTE -> if(count > 0) Color(0xFFFFA000) else Color.Red
+                    else -> Color.Black
+                }
+            )
+            Text(
+                text = label,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+
+            when (estado) {
+                EstadoRecompensa.DISPONIBLE -> {
+                    Icon(
+                        painter = painterResource(id = R.drawable.check),
+                        contentDescription = "Completado",
+                        modifier = Modifier.size(30.dp).padding(top = 4.dp),
+                        tint = estado.color(),
+
+                        )
+                }
+                EstadoRecompensa.PENDIENTE -> {
+                    Icon(
+                        painter = painterResource(id = R.drawable.exclamation_mark),
+                        contentDescription = "Pendiente",
+                        modifier = Modifier.size(30.dp).padding(top = 4.dp),
+                        tint = estado.color()
+                    )
+                }
+                else -> {
+
+                }
+            }
+        }
+    }
+}
+
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable

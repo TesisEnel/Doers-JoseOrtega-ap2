@@ -91,13 +91,15 @@ fun RecompensaBodyScreen(
     onPickImage: () -> Unit,
     context: Context
 ) {
-    LaunchedEffect(recompensaId) {
+    /*LaunchedEffect(recompensaId) {
         if (recompensaId > 0) {
             viewModel.find(recompensaId)
         } else {
             viewModel.new()
         }
     }
+
+     */
 
     Scaffold(
         topBar = {

@@ -10,6 +10,7 @@ import edu.ucne.doers.data.local.entity.RecompensaEntity
 import edu.ucne.doers.data.local.entity.TareaEntity
 import edu.ucne.doers.data.local.entity.TareaHijo
 import edu.ucne.doers.data.local.model.CondicionTarea
+import edu.ucne.doers.data.local.model.EstadoRecompensa
 import edu.ucne.doers.data.local.model.EstadoTarea
 import edu.ucne.doers.data.local.model.EstadoTareaHijo
 import edu.ucne.doers.data.remote.Resource
@@ -339,7 +340,7 @@ class PadreViewModel @Inject constructor(
             val hijosConRecompensas = hijoRepository.getHijosConRecompensasByPadreId(padreId)
             val recompensasMap = hijosConRecompensas.associate { entry ->
                 entry.hijo.hijoId.toString() to entry.recompensas.filter {
-                    it.estado == EstadoTarea.PENDIENTE.toString()
+                    it.estado == EstadoRecompensa.PENDIENTE
                 }
             }
             _recompensasPendientesMap.value = recompensasMap

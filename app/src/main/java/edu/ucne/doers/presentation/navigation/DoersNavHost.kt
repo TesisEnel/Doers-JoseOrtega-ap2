@@ -154,8 +154,8 @@ fun DoersNavHost(
             }
             composable<Screen.RecompensaList> {
                 RecompensasListScreen(
-                    createRecompensa = { navHostController.navigate(Screen.Recompensa(0)) },
-                    goToRecompensa = { navHostController.navigate(Screen.Recompensa(it)) },
+                    goToAgregarRecompensa = { navHostController.navigate(Screen.Recompensa(0)) },
+                    goToEditarRecompensa = { navHostController.navigate(Screen.Recompensa(it)) },
                     onNavigateToPerfil = { navHostController.navigate(Screen.Padre) },
                     onNavigateToTareas = { navHostController.navigate(Screen.TareaList) }
                 )
