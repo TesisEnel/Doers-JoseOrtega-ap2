@@ -113,6 +113,9 @@ interface DoersApi {
     @DELETE("api/Tareas/{id}")
     suspend fun deleteTarea(@Path("id") id: Int): Response<Unit>
 
+    @GET("api/Tareas/activas")
+    suspend fun getTareasActivas(): List<TareaDto>
+
     @GET("api/TareasHijos")
     suspend fun getTareasHijos(): List<TareaHijoDto>
 
