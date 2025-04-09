@@ -9,15 +9,18 @@ import edu.ucne.doers.data.local.entity.PadreEntity
 import edu.ucne.doers.data.local.entity.RecompensaEntity
 import edu.ucne.doers.data.local.entity.TareaEntity
 import edu.ucne.doers.data.local.entity.TareaHijo
+import edu.ucne.doers.data.local.entity.TransaccionHijo
 import edu.ucne.doers.data.local.model.CondicionTarea
 import edu.ucne.doers.data.local.model.EstadoTarea
 import edu.ucne.doers.data.local.model.EstadoTareaHijo
+import edu.ucne.doers.data.local.model.TipoTransaccion
 import edu.ucne.doers.data.remote.Resource
 import edu.ucne.doers.data.repository.AuthRepository
 import edu.ucne.doers.data.repository.HijoRepository
 import edu.ucne.doers.data.repository.PadreRepository
 import edu.ucne.doers.data.repository.TareaHijoRepository
 import edu.ucne.doers.data.repository.TareaRepository
+import edu.ucne.doers.data.repository.TransaccionHijoRepository
 import edu.ucne.doers.presentation.hijos.HijoViewModel
 import edu.ucne.doers.presentation.sign_in.GoogleAuthUiClient
 import edu.ucne.doers.presentation.sign_in.SignInResult
@@ -38,7 +41,8 @@ class PadreViewModel @Inject constructor(
     private val tareaHijoRepository: TareaHijoRepository,
     private val tareaRepository: TareaRepository,
     private val authRepository: AuthRepository,
-    private val googleAuthUiClient: GoogleAuthUiClient
+    private val googleAuthUiClient: GoogleAuthUiClient,
+    private val transaccionHijoRepository: TransaccionHijoRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(PadreUiState())
@@ -92,14 +96,30 @@ class PadreViewModel @Inject constructor(
                 val hijo = hijoRepository.find(tarea.hijoId ?: 0)
                 val tareaOriginal = tareaRepository.find(tarea.tareaId)
                 if (hijo != null && tareaOriginal != null) {
-                    val actualizado = hijo.copy(saldoActual = hijo.saldoActual + tareaOriginal.puntos)
-                    hijoRepository.save(actualizado).collect { result ->
+                    val puntosGanados = tareaOriginal.puntos
+                    val hijoActualizado = hijo.copy(saldoActual = hijo.saldoActual + puntosGanados)
+                    hijoRepository.save(hijoActualizado).collect { result ->
                         when (result) {
                             is Resource.Success -> {
                                 getHijosByPadre(hijo.padreId)
                             }
                             is Resource.Error -> throw Exception("Error al actualizar hijo: ${result.message}")
                             is Resource.Loading -> Log.d("PadreViewModel", "Actualizando saldo...")
+                        }
+                    }
+                    val transaccion = TransaccionHijo(
+                        transaccionId = 0,
+                        hijoId = hijo.hijoId,
+                        tipo = TipoTransaccion.RECIBIDO,
+                        monto = puntosGanados,
+                        descripcion = "Puntos recibidos por tarea: ${tareaOriginal.descripcion}",
+                        fecha = Date()
+                    )
+                    transaccionHijoRepository.save(transaccion).collect { result ->
+                        when (result) {
+                            is Resource.Success -> Log.d("PadreViewModel", "Transacción guardada exitosamente")
+                            is Resource.Error -> Log.e("PadreViewModel", "Error al guardar transacción: ${result.message}")
+                            is Resource.Loading -> Log.d("PadreViewModel", "Guardando transacción...")
                         }
                     }
                 } else {
