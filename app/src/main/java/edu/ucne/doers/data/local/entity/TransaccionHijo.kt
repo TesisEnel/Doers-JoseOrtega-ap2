@@ -18,7 +18,7 @@ import java.util.Date
     indices = [Index(value = ["hijoId"])]
 )
 data class TransaccionHijo(
-    @PrimaryKey(autoGenerate = true) val transaccionID: Int = 0,
+    @PrimaryKey(autoGenerate = true) val transaccionId: Int = 0,
     val hijoId: Int,
     val tipo: TipoTransaccion,
     val monto: Int,
