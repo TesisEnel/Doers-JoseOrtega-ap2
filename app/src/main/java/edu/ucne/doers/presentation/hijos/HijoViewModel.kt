@@ -8,6 +8,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import edu.ucne.doers.data.local.entity.HijoEntity
 import edu.ucne.doers.data.local.entity.TareaHijo
+import edu.ucne.doers.data.local.entity.TransaccionHijo
 import edu.ucne.doers.data.local.model.EstadoTareaHijo
 import edu.ucne.doers.data.local.model.PeriodicidadTarea
 import edu.ucne.doers.data.remote.Resource
@@ -15,9 +16,11 @@ import edu.ucne.doers.data.repository.AuthRepository
 import edu.ucne.doers.data.repository.HijoRepository
 import edu.ucne.doers.data.repository.TareaHijoRepository
 import edu.ucne.doers.data.repository.TareaRepository
+import edu.ucne.doers.data.repository.TransaccionHijoRepository
 import edu.ucne.doers.presentation.extension.ifNullOrBlank
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
@@ -31,6 +34,7 @@ class HijoViewModel @Inject constructor(
     private val tareaRepository: TareaRepository,
     private val tareaHijoRepository: TareaHijoRepository,
     private val authRepository: AuthRepository,
+    private val transaccionHijoRepository: TransaccionHijoRepository,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -41,10 +45,14 @@ class HijoViewModel @Inject constructor(
     private val _periodicidadesDisponibles = MutableStateFlow<List<String>>(emptyList())
     val periodicidadesDisponibles = _periodicidadesDisponibles.asStateFlow()
 
+    private val _transacciones = MutableStateFlow<List<TransaccionHijo>>(emptyList())
+    val transacciones: StateFlow<List<TransaccionHijo>> = _transacciones.asStateFlow()
+
     init {
         checkAuthenticatedHijo()
         actualizarPeriodicidades()
         observeTaskChanges()
+        getTransacciones()
     }
 
     private fun observeTaskChanges() {
@@ -54,9 +62,15 @@ class HijoViewModel @Inject constructor(
                     is Resource.Success -> {
                         loadTareas()
                     }
+
                     is Resource.Error -> {
-                        _uiState.update { it.copy(errorMessage = resource.message ?: "Error al observar tareas hijo") }
+                        _uiState.update {
+                            it.copy(
+                                errorMessage = resource.message ?: "Error al observar tareas hijo"
+                            )
+                        }
                     }
+
                     is Resource.Loading -> {
                         _uiState.update { it.copy(isLoading = true) }
                     }
@@ -211,7 +225,8 @@ class HijoViewModel @Inject constructor(
     fun agregarPuntos(hijo: HijoEntity, puntos: String) {
         viewModelScope.launch {
             try {
-                val puntosInt = puntos.toIntOrNull() ?: throw IllegalArgumentException("Ingrese un número válido de puntos")
+                val puntosInt = puntos.toIntOrNull()
+                    ?: throw IllegalArgumentException("Ingrese un número válido de puntos")
                 if (puntosInt <= 0) throw IllegalArgumentException("Los puntos deben ser mayores a 0")
 
                 val hijoActualizado = hijo.copy(saldoActual = hijo.saldoActual + puntosInt)
@@ -220,6 +235,7 @@ class HijoViewModel @Inject constructor(
                         is Resource.Success -> {
                             _uiState.update { it.copy(successMessage = "Puntos agregados con éxito") }
                         }
+
                         is Resource.Error -> throw Exception("Error al agregar puntos: ${result.message}")
                         is Resource.Loading -> Log.d("HijoViewModel", "Guardando puntos...")
                     }
@@ -236,42 +252,6 @@ class HijoViewModel @Inject constructor(
                 is Resource.Success -> getHijosByPadre(hijo.padreId)
                 is Resource.Error -> _uiState.update { it.copy(errorMessage = result.message) }
                 is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
-            }
-        }
-    }
-
-    fun actualizarNombre(nombre: String) {
-        viewModelScope.launch {
-            val updatedHijo = uiState.value.hijoId?.let { hijoRepository.find(it) }
-
-            if (updatedHijo != null) {
-                val updatedEntity = updatedHijo.copy(nombre = nombre)
-
-                hijoRepository.save(updatedEntity).collect { result ->
-                    when (result) {
-                        is Resource.Success -> _uiState.update { it.copy(nombre = nombre) }
-                        is Resource.Error -> _uiState.update {
-                            it.copy(errorMessage = "Error al actualizar nombre: ${result.message}")
-                        }
-
-                        is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
-                    }
-                }
-            }
-        }
-    }
-
-    fun actualizarFotoPerfil(nuevaFoto: String) {
-        viewModelScope.launch {
-            val currentHijo = uiState.value.hijoId?.let { hijoRepository.find(it) }
-
-            if (currentHijo != null) {
-                val updatedHijo = currentHijo.copy(fotoPerfil = nuevaFoto)
-                hijoRepository.save(updatedHijo).collect { result ->
-                    if (result is Resource.Success) {
-                        _uiState.update { it.copy(fotoPerfil = nuevaFoto) }
-                    }
-                }
             }
         }
     }
@@ -332,6 +312,7 @@ class HijoViewModel @Inject constructor(
                                 )
                             }
                         }
+
                         is Resource.Loading -> {}
                     }
                 }
@@ -358,8 +339,9 @@ class HijoViewModel @Inject constructor(
                     when {
                         tareasActivasResource is Resource.Success && tareasCompletadasResource is Resource.Success<*> -> {
                             val tareasActivas = tareasActivasResource.data ?: emptyList()
-                            val tareasCompletadas = (tareasCompletadasResource.data as? List<TareaHijo>)
-                                ?.filter { it.hijoId == _uiState.value.hijoId } ?: emptyList()
+                            val tareasCompletadas =
+                                (tareasCompletadasResource.data as? List<TareaHijo>)
+                                    ?.filter { it.hijoId == _uiState.value.hijoId } ?: emptyList()
 
                             val tareasDisponibles = tareasActivas.filter { tarea ->
                                 !tareasCompletadas.any {
@@ -376,6 +358,7 @@ class HijoViewModel @Inject constructor(
                                 )
                             }
                         }
+
                         tareasActivasResource is Resource.Error<*> || tareasCompletadasResource is Resource.Error<*> -> {
                             val mensajeError = buildString {
                                 if (tareasActivasResource is Resource.Error<*>)
@@ -391,11 +374,12 @@ class HijoViewModel @Inject constructor(
                                 )
                             }
                         }
+
                         else -> {
                             _uiState.update { it.copy(isLoading = true) }
                         }
                     }
-                }.collect{}
+                }.collect {}
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
@@ -441,18 +425,26 @@ class HijoViewModel @Inject constructor(
         }
     }
 
-    fun cerrarSesion() {
-        sharedPreferences.edit().remove("hijoId").apply()
-        _uiState.update {
-            it.copy(
-                hijoId = null,
-                padreId = "",
-                nombre = "",
-                fotoPerfil = "",
-                isAuthenticated = false,
-                isSignInSuccessful = false,
-                isSuccess = false
-            )
+    fun getTransacciones() {
+        viewModelScope.launch {
+            val hijoId = _uiState.value.hijoId ?: return@launch
+            Log.d("HijoViewModel", "Cargando transacciones para hijoId: $hijoId")
+            transaccionHijoRepository.getAll().collect { result ->
+                when (result) {
+                    is Resource.Success -> {
+                        val filtered = result.data?.filter { it.hijoId == hijoId } ?: emptyList()
+                        Log.d("HijoViewModel", "Transacciones obtenidas: $filtered")
+                        _transacciones.value = filtered
+                    }
+
+                    is Resource.Error -> Log.e(
+                        "HijoViewModel",
+                        "Error al cargar transacciones: ${result.message}"
+                    )
+
+                    is Resource.Loading -> Log.d("HijoViewModel", "Cargando transacciones...")
+                }
+            }
         }
     }
 }
