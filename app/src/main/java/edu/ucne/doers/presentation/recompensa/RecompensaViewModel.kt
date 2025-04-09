@@ -239,6 +239,10 @@ class RecompensaViewModel @Inject constructor(
     fun onCondicionChange(nuevaCondicion: CondicionRecompensa) {
         TODO("Not yet implemented")
     }
+
+    fun clearImage() {
+        _uiState.update { it.copy(imagenURL = "") }
+    }
 }
 
 fun RecompensaUiState.toEntity() = RecompensaEntity(
