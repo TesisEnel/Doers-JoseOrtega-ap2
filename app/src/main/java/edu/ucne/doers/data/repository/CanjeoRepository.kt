@@ -80,12 +80,14 @@ fun CanjeoDto.toEntity() = CanjeoEntity(
     canjeoId = this.canjeoId,
     hijoId = this.hijoId,
     recompensaId = this.recompensaId,
-    fecha = this.fecha
+    fecha = this.fecha,
+    estado = this.estado
 )
 
 fun CanjeoEntity.toDto() = CanjeoDto(
     canjeoId = this.canjeoId,
     hijoId = this.hijoId,
     recompensaId = this.recompensaId,
-    fecha = this.fecha
+    fecha = this.fecha,
+    estado = this.estado
 )

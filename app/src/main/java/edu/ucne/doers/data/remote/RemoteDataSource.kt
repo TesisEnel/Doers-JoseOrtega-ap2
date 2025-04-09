@@ -4,7 +4,6 @@ import edu.ucne.doers.data.remote.dto.CanjeoDto
 import edu.ucne.doers.data.remote.dto.HijoDto
 import edu.ucne.doers.data.remote.dto.PadreDto
 import edu.ucne.doers.data.remote.dto.RecompensaDto
-import edu.ucne.doers.data.remote.dto.SolicitudRecompensaDto
 import edu.ucne.doers.data.remote.dto.TareaDto
 import edu.ucne.doers.data.remote.dto.TareaHijoDto
 import edu.ucne.doers.data.remote.dto.TransaccionHijoDto
@@ -44,12 +43,6 @@ class RemoteDataSource @Inject constructor(
     suspend fun saveRecompensa(recompensaDto: RecompensaDto) = doersApi.saveRecompensa(recompensaDto)
     suspend fun updateRecompensa(id: Int, recompensaDto: RecompensaDto) = doersApi.updateRecompensa(id, recompensaDto)
     suspend fun deleteRecompensa(id: Int) = doersApi.deleteRecompensa(id)
-
-    suspend fun getSolicitudesRecompensas() = doersApi.getSolicitudesRecompensas()
-    suspend fun getSolicitudRecompensa(id: Int) = doersApi.getSolicitudRecompensa(id)
-    suspend fun saveSolicitudRecompensa(solicitudRecompensaDto: SolicitudRecompensaDto) = doersApi.saveSolicitudRecompensa(solicitudRecompensaDto)
-    suspend fun updateSolicitudRecompensa(id: Int, solicitudRecompensaDto: SolicitudRecompensaDto) = doersApi.updateSolicitudRecompensa(id, solicitudRecompensaDto)
-    suspend fun deleteSolicitudRecompensa(id: Int) = doersApi.deleteSolicitudRecompensa(id)
 
     suspend fun getTareas() = doersApi.getTareas()
     suspend fun getTarea(id: Int) = doersApi.getTarea(id)

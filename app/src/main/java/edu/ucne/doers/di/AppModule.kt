@@ -63,8 +63,6 @@ object AppModule {
     fun provideCanjeoDao(doersDb: DoersDb) = doersDb.canjeoDao()
     @Provides
     fun provideTransaccionHijoDao(doersDb: DoersDb) = doersDb.transaccionHijoDao()
-    @Provides
-    fun provideSolicitudRecompensaDao(doersDb: DoersDb) = doersDb.solicitudRecompensaDao()
 
     @Provides
     @Singleton

@@ -4,7 +4,6 @@ import edu.ucne.doers.data.remote.dto.CanjeoDto
 import edu.ucne.doers.data.remote.dto.HijoDto
 import edu.ucne.doers.data.remote.dto.PadreDto
 import edu.ucne.doers.data.remote.dto.RecompensaDto
-import edu.ucne.doers.data.remote.dto.SolicitudRecompensaDto
 import edu.ucne.doers.data.remote.dto.TareaDto
 import edu.ucne.doers.data.remote.dto.TareaHijoDto
 import edu.ucne.doers.data.remote.dto.TransaccionHijoDto
@@ -82,21 +81,6 @@ interface DoersApi {
 
     @DELETE("api/Recompensas/{id}")
     suspend fun deleteRecompensa(@Path("id") id: Int): Response<Unit>
-
-    @GET("api/SolicitudesRecompensas")
-    suspend fun getSolicitudesRecompensas(): List<SolicitudRecompensaDto>
-
-    @GET("api/SolicitudesRecompensas/{id}")
-    suspend fun getSolicitudRecompensa(@Path("id") id: Int): SolicitudRecompensaDto
-
-    @POST("api/SolicitudesRecompensas")
-    suspend fun saveSolicitudRecompensa(@Body solicitudRecompensaDto: SolicitudRecompensaDto): SolicitudRecompensaDto
-
-    @PUT("api/SolicitudesRecompensas/{id}")
-    suspend fun updateSolicitudRecompensa(@Path("id") solicitudId: Int, @Body solicitudRecompensaDto: SolicitudRecompensaDto): Response<SolicitudRecompensaDto>
-
-    @DELETE("api/SolicitudesRecompensas/{id}")
-    suspend fun deleteSolicitudRecompensa(@Path("id") id: Int): Response<Unit>
 
     @GET("api/Tareas")
     suspend fun getTareas(): List<TareaDto>
