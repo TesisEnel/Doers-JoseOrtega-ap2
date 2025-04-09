@@ -80,7 +80,6 @@ fun HijoBodyListScreen(
     val appReferences = remember { AppReferences(context) }
     var showModal by rememberSaveable { mutableStateOf(appReferences.isFirstTime()) }
 
-    // Manejo de mensajes
     LaunchedEffect(uiState.errorMessage, uiState.successMessage) {
         uiState.errorMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()

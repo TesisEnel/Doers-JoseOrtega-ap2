@@ -41,6 +41,7 @@ import edu.ucne.doers.presentation.navigation.Screen
 import edu.ucne.doers.presentation.recompensa.RecompensaUiState
 import edu.ucne.doers.presentation.recompensa.RecompensaViewModel
 import edu.ucne.doers.presentation.recompensa.comp.HijoNavBar
+import edu.ucne.doers.presentation.recompensa.toUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -111,7 +112,9 @@ fun RecompensasHijoScreen(
                 items(uiState.recompensas.filter {
                     it.estado == EstadoRecompensa.DISPONIBLE
                 }) { recompensa ->
-                    RecompensaCard(recompensa)
+                    RecompensaCard(
+                        recompensa = recompensa.toUiState()
+                    )
                 }
             }
         }

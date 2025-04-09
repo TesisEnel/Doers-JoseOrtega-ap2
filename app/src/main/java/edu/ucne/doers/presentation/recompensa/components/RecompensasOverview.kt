@@ -28,10 +28,10 @@ import edu.ucne.doers.presentation.tareas.components.TaskCounterRecompensa
 @Composable
 fun RecompensasOverview(
     modifier: Modifier = Modifier,
-    recompensas: List<RecompensaUiState>,
+    recompensas: List<RecompensaEntity>,
     onEdit: (Int) -> Unit,
     onDelete: (RecompensaEntity) -> Unit,
-    onCondicionChange: (Int, CondicionRecompensa) -> Unit,
+    onCondicionChange: (CondicionRecompensa) -> Unit,
     viewModel: RecompensaViewModel = hiltViewModel(),
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {

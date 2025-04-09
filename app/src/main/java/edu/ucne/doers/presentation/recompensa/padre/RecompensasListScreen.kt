@@ -32,7 +32,6 @@ import edu.ucne.doers.presentation.recompensa.RecompensaUiState
 import edu.ucne.doers.presentation.recompensa.RecompensaViewModel
 import edu.ucne.doers.presentation.recompensa.components.RecompensasOverview
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecompensasListScreen(
     viewModel: RecompensaViewModel = hiltViewModel(),
@@ -113,7 +112,9 @@ fun RecompensasBodyListScreen(
                 recompensas = uiState.recompensas,
                 onEdit = onEdit,
                 onDelete = onDelete,
-                onCondicionChange = onCondicionChange
+                onCondicionChange = { nuevaCondicion ->
+                    onCondicionChange(uiState.recompensaId, nuevaCondicion)
+                }
             )
         }
     )

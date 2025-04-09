@@ -76,14 +76,6 @@ fun RecompensaBodyScreen(
 ) {
     val azulMar = Color(0xFF1976D2)
 
-    /*LaunchedEffect(recompensaId) {
-        if (recompensaId > 0) {
-            viewModel.find(recompensaId)
-        } else {
-            viewModel.new()
-        }
-    }*/
-
     Scaffold(
         topBar = {
             TopAppBar(

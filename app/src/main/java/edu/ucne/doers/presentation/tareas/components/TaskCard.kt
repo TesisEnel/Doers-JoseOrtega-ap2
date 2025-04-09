@@ -159,7 +159,7 @@ fun TaskCard(
                                     checkedThumbColor = Color.White,
                                     checkedTrackColor = Color(0xFF1976D2),
                                     uncheckedThumbColor = Color.LightGray,
-                                    uncheckedTrackColor = Color(0xFFBDBDBD), // gris más fuerte que el gris por defecto
+                                    uncheckedTrackColor = Color(0xFFBDBDBD),
                                     disabledCheckedTrackColor = Color(0xFFBDBDBD),
                                     disabledUncheckedTrackColor = Color(0xFFBDBDBD),
                                     disabledCheckedThumbColor = Color.White,

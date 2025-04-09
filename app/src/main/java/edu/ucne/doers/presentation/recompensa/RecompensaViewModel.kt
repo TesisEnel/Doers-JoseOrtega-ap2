@@ -84,7 +84,7 @@ class RecompensaViewModel @Inject constructor(
                         println("Recompensas cargadas: ${resource.data}")
                         _uiState.update {
                             it.copy(
-                                recompensas = resource.data?.map { it.toUiState() } ?: emptyList(),
+                                recompensas = resource.data ?: emptyList(),
                                 isLoading = false,
                                 errorMessage = null
                             )
@@ -215,6 +215,12 @@ class RecompensaViewModel @Inject constructor(
             } else {
                 _uiState.update { it.copy(errorMessage = "Recompensa no encontrada") }
             }
+        }
+    }
+
+    fun clearImage() {
+        _uiState.update { current ->
+            current.copy(imagenURL = "")
         }
     }
 

@@ -78,7 +78,6 @@ fun RecompensaCard(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
             Row(modifier = Modifier.height(IntrinsicSize.Min)) {
-                // 🖼️ Imagen a la izquierda
                 if (recompensa.imagenURL.isNotBlank()) {
                     Image(
                         painter = rememberAsyncImagePainter(File(recompensa.imagenURL)),
@@ -91,7 +90,6 @@ fun RecompensaCard(
                     )
                 }
 
-                // 📋 Parte derecha: contenido
                 Column(
                     modifier = Modifier
                         .padding(12.dp)
@@ -159,20 +157,31 @@ fun RecompensaCard(
         if (showDeleteDialog) {
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
-                title = { Text("Confirmar eliminación", fontWeight = FontWeight.Bold) },
+                title = {
+                    Text(
+                        text = "Confirmar eliminación",
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center
+                    )
+                },
                 text = {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
                         Text(
-                            "¿Estás seguro que deseas eliminar esta recompensa?",
+                            text = "¿Estás seguro que deseas eliminar esta recompensa?",
+                            fontWeight = FontWeight.SemiBold,
                             textAlign = TextAlign.Center,
                             fontSize = 20.sp
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Icon(
                             painter = painterResource(id = R.drawable.pensado_negro),
-                            contentDescription = null,
+                            contentDescription = "Pensando",
                             modifier = Modifier.size(70.dp),
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = Color(0xFF1976D2)
                         )
                     }
                 },
