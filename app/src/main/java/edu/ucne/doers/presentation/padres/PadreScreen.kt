@@ -75,6 +75,7 @@ fun PadreScreen(
     val hijos by padreViewModel.hijos.collectAsState()
     val tareasHijo by padreViewModel.tareasHijo.collectAsState()
     val recompensasMap by padreViewModel.recompensasPendientesMap.collectAsState()
+    val hijoUiState by hijoViewModel.uiState.collectAsState()
 
     var showDialogAgregarPuntos by remember { mutableStateOf(false) }
     var showDialogEliminarHijo by remember { mutableStateOf(false) }
@@ -87,11 +88,21 @@ fun PadreScreen(
 
     val context = LocalContext.current
     val toastMessage by padreViewModel.toastMessage.collectAsState()
+    val hijoToastMessage by hijoViewModel.uiState.collectAsState()
 
-    LaunchedEffect(toastMessage) {
+    LaunchedEffect(toastMessage, hijoUiState.successMessage, hijoUiState.errorMessage) {
         toastMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
             padreViewModel.clearToast()
+        }
+        hijoUiState.successMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            padreViewModel.getHijosByPadre(padreUiState.padreId ?: "") // Actualizar lista de hijos
+            hijoViewModel.clearMessages() // Limpiar mensaje
+        }
+        hijoUiState.errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            hijoViewModel.clearMessages() // Limpiar mensaje
         }
     }
 
@@ -335,8 +346,7 @@ fun PadreScreen(
                                 horizontalArrangement = Arrangement.End
                             ) {
                                 IconButton(onClick = {
-                                    padreUiState.padreId?.let { hijoViewModel.getHijosByPadre(it)
-                                    Log.d("Hijos", hijoUiState.hijos.toString())}
+                                    padreUiState.padreId?.let { hijoViewModel.getHijosByPadre(it)}
                                 }) {
                                     Icon(
                                         imageVector = Icons.Filled.Refresh,
@@ -444,6 +454,7 @@ fun PadreScreen(
         onAgregar = { puntos ->
             hijoViewModel.agregarPuntos(selectedHijo!!, puntos)
             showDialogAgregarPuntos = false
+            puntosAgregar = ""
         },
         selectedHijo = selectedHijo,
         puntosAgregar = puntosAgregar,
