@@ -302,6 +302,14 @@ fun HijoScreen(
                             }
                         }
                     }
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    TextButton(onClick = { hijoViewModel.cerrarSesion() }) {
+                        Text(
+                            text = "Cerrar sesión (TEMP)",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
             }
         }
