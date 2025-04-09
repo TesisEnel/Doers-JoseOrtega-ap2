@@ -8,7 +8,6 @@ data class TareaDto(
     val tareaId: Int,
     val padreId: String,
     val descripcion: String,
-    val imagenURL: String?,
     val puntos: Int,
     val estado: EstadoTarea,
     val periodicidad: PeriodicidadTarea?,
