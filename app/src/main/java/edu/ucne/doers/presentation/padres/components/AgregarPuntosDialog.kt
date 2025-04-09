@@ -25,7 +25,7 @@ import edu.ucne.doers.data.local.entity.HijoEntity
 fun AgregarPuntosDialog(
     showDialog: Boolean,
     onDismiss: () -> Unit,
-    onAgregar: (Int) -> Unit,
+    onAgregar: (String) -> Unit, // Sigue esperando un String
     selectedHijo: HijoEntity?,
     puntosAgregar: String,
     onPuntosChange: (String) -> Unit
@@ -44,7 +44,11 @@ fun AgregarPuntosDialog(
                 Column {
                     Text("Agregar Puntos", style = MaterialTheme.typography.headlineLarge)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text(selectedHijo.nombre, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        selectedHijo.nombre,
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
                 }
             },
             text = {
@@ -57,12 +61,15 @@ fun AgregarPuntosDialog(
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
-                    puntosAgregar.toIntOrNull()?.let { puntos ->
-                        onAgregar(puntos)
-                        onDismiss()
-                    }
-                }) {
+                TextButton(
+                    onClick = {
+                        if (puntosAgregar.isNotBlank()) {
+                            onAgregar(puntosAgregar)
+                            onDismiss()
+                        }
+                    },
+                    enabled = puntosAgregar.isNotBlank()
+                ) {
                     Text("Agregar")
                 }
             },
