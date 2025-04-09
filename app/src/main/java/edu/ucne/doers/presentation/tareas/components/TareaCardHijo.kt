@@ -61,7 +61,7 @@ fun TareaCardHijo(
                 )
 
                 Text(
-                    text = tarea.periodicidad?.nombreMostrable ?: "Sin periodicidad",
+                    text = tarea.periodicidad?.nombreMostrable() ?: "Sin periodicidad",
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = Color(0xFF1976D2),
                         fontWeight = FontWeight.SemiBold
