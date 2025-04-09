@@ -14,21 +14,18 @@ class TransaccionHijoRepository @Inject constructor(
     private val transaccionHijoDao: TransaccionHijoDao,
     private val remote: RemoteDataSource
 ) {
-    suspend fun save(transaccionHijo: TransaccionHijo) = transaccionHijoDao.save(transaccionHijo)
 
-    suspend fun find(id: Int) = transaccionHijoDao.find(id)
-
-    fun getAll(): Flow<List<TransaccionHijo>> = transaccionHijoDao.getAll()
-
-    suspend fun delete(transaccionHijo: TransaccionHijo) = transaccionHijoDao.delete(transaccionHijo)
-
-
-    /*fun save(transaccionHijo: TransaccionHijo): Flow<Resource<Unit>> = flow {
+    fun save(transaccionHijo: TransaccionHijo): Flow<Resource<Unit>> = flow {
         emit(Resource.Loading())
-
         try {
-            transaccionHijoDao.save(transaccionHijo)
-            remote.saveTransaccionHijo(transaccionHijo.toDto())
+            val transaccionConId = if (transaccionHijo.transaccionId > 0) {
+                remote.updateTransaccionHijo(transaccionHijo.transaccionId, transaccionHijo.toDto())
+                transaccionHijo
+            } else {
+                val saved = remote.saveTransaccionHijo(transaccionHijo.toDto())
+                saved.toEntity()
+            }
+            transaccionHijoDao.save(transaccionConId)
             emit(Resource.Success(Unit))
         } catch (e: Exception) {
             emit(Resource.Error("Error al guardar transacción: ${e.localizedMessage}"))
@@ -51,37 +48,32 @@ class TransaccionHijoRepository @Inject constructor(
 
     fun getAll(): Flow<Resource<List<TransaccionHijo>>> = flow {
         emit(Resource.Loading())
-
-        val local = transaccionHijoDao.getAll().firstOrNull()
-        emit(Resource.Success(local ?: emptyList()))
-
+        val localData = transaccionHijoDao.getAll().firstOrNull()
+        emit(Resource.Success(localData ?: emptyList()))
         try {
             val remoteData = remote.getTransaccionesHijo()
             val entities = remoteData.map { it.toEntity() }
             transaccionHijoDao.save(entities)
-
             val updated = transaccionHijoDao.getAll().firstOrNull()
             emit(Resource.Success(updated ?: emptyList()))
         } catch (e: Exception) {
-            emit(Resource.Error("Error al obtener transacciones: ${e.localizedMessage}", local))
+            emit(Resource.Error("Error al obtener transacciones: ${e.localizedMessage}", localData))
         }
     }
 
     suspend fun delete(transaccionHijo: TransaccionHijo): Resource<Unit> {
         return try {
             transaccionHijoDao.delete(transaccionHijo)
-            remote.deleteTransaccionHijo(transaccionHijo.transaccionID)
+            remote.deleteTransaccionHijo(transaccionHijo.transaccionId)
             Resource.Success(Unit)
         } catch (e: Exception) {
             Resource.Error("Error al eliminar transacción: ${e.localizedMessage}")
         }
     }
-
-     */
 }
 
 fun TransaccionHijo.toDto() = TransaccionHijoDto(
-    transaccionID = transaccionID,
+    transaccionId = transaccionId,
     hijoId = hijoId,
     tipo = tipo,
     monto = monto,
@@ -90,7 +82,7 @@ fun TransaccionHijo.toDto() = TransaccionHijoDto(
 )
 
 fun TransaccionHijoDto.toEntity() = TransaccionHijo(
-    transaccionID = transaccionID,
+    transaccionId = transaccionId,
     hijoId = hijoId,
     tipo = tipo,
     monto = monto,
