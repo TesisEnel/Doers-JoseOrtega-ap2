@@ -31,7 +31,6 @@ import edu.ucne.doers.presentation.sign_in.GoogleAuthUiClient
 import edu.ucne.doers.presentation.tareas.hijo.HijoListScreen
 import edu.ucne.doers.presentation.tareas.padre.TareaScreen
 import edu.ucne.doers.presentation.tareas.padre.TareasListScreen
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -52,17 +51,10 @@ fun DoersNavHost(
                     val signInResult = googleAuthUiClient.signInWithIntent(
                         intent = result.data ?: return@launch
                     )
-                    padreViewModel.onSignInResult(signInResult)
-                    delay(500)
-                    if (padreState.isSignInSuccessful && signInResult.errorMessage == null) {
+                    padreViewModel.onSignInResult(signInResult) {
                         navHostController.navigate(Screen.Padre) {
                             popUpTo(Screen.Home) { inclusive = true }
                         }
-                    } else {
-                        padreViewModel.setLoading(false)
-                        padreViewModel.setSignInError(
-                            signInResult.errorMessage ?: "Error desconocido"
-                        )
                     }
                 }
             } else {
@@ -90,28 +82,18 @@ fun DoersNavHost(
                         scope.launch {
                             val isAuthenticated = padreViewModel.isAuthenticated()
                             if (isAuthenticated) {
-                                padreViewModel.setLoading(true)
-                                delay(100)
-                                padreViewModel.getCurrentUser()
-                                delay(100)
-                                if (padreState.isSignInSuccessful) {
-                                    navHostController.navigate(Screen.Padre) {
-                                        popUpTo(Screen.Home) { inclusive = true }
-                                    }
-                                } else {
-                                    padreViewModel.setSignInError("Error al cargar datos del usuario")
+                                // Ya autenticado → ir directo al perfil
+                                navHostController.navigate(Screen.Padre) {
+                                    popUpTo(Screen.Home) { inclusive = true }
                                 }
-                                padreViewModel.setLoading(false)
                             } else {
                                 padreViewModel.setLoading(true)
-                                val signInIntentSender = googleAuthUiClient.signIn()
-                                if (signInIntentSender != null) {
-                                    launcher.launch(
-                                        IntentSenderRequest.Builder(signInIntentSender).build()
-                                    )
+                                val intentSender = googleAuthUiClient.signIn()
+                                if (intentSender != null) {
+                                    launcher.launch(IntentSenderRequest.Builder(intentSender).build())
                                 } else {
                                     padreViewModel.setLoading(false)
-                                    padreViewModel.setSignInError("Error al iniciar el proceso de autenticación")
+                                    padreViewModel.setSignInError("Error al iniciar sesión con Google")
                                 }
                             }
                         }
@@ -139,6 +121,7 @@ fun DoersNavHost(
                     onNavigateToRecompensas = { navHostController.navigate(Screen.RecompensaList) },
                     onNavigateToPerfil = { navHostController.navigate(Screen.Home) },
                     onSignOut = {
+                        padreViewModel.signOut()
                         navHostController.navigate(Screen.Home) {
                             popUpTo(Screen.Padre) { inclusive = true }
                         }
