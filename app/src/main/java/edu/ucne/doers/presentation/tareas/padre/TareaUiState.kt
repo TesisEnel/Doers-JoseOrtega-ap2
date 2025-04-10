@@ -12,7 +12,7 @@ data class TareaUiState(
     val padreId: String,
     val estado: EstadoTarea = EstadoTarea.PENDIENTE,
     val periodicidad: PeriodicidadTarea? = null,
-    val condicion: CondicionTarea = CondicionTarea.INACTIVA,
+    val condicion: CondicionTarea = CondicionTarea.ACTIVA,
     val listaTareas: List<TareaEntity> = emptyList(),
     val errorMessage: String? = null,
     val isLoading: Boolean = false

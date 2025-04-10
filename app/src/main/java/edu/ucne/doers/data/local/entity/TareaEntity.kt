@@ -25,5 +25,5 @@ data class TareaEntity(
     val puntos: Int,
     val estado: EstadoTarea = EstadoTarea.PENDIENTE,
     val periodicidad: PeriodicidadTarea? = null,
-    val condicion: CondicionTarea = CondicionTarea.INACTIVA
+    val condicion: CondicionTarea = CondicionTarea.ACTIVA
 )

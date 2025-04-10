@@ -59,6 +59,7 @@ fun RecompensasHijoScreen(
     LaunchedEffect(padreId) {
         viewModel.loadRecompensas()
         hijoViewModel.loadSaldoActual()
+        hijoViewModel.getHijosByPadre(padreId)
     }
 
     Scaffold(

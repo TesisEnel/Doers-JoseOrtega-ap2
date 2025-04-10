@@ -154,7 +154,7 @@ fun TaskCard(
                                     val mensaje = if (isChecked) "Tarea activada" else "Tarea desactivada"
                                     Toast.makeText(context, mensaje, Toast.LENGTH_SHORT).show()
                                 },
-                                enabled = !isTareaCompletada,
+                                //enabled = !isTareaCompletada,
                                 colors = SwitchDefaults.colors(
                                     checkedThumbColor = Color.White,
                                     checkedTrackColor = Color(0xFF1976D2),
