@@ -1,5 +1,7 @@
 package edu.ucne.doers.data.repository
 
+import android.annotation.SuppressLint
+import android.util.Log
 import edu.ucne.doers.data.local.dao.CanjeoDao
 import edu.ucne.doers.data.local.entity.CanjeoEntity
 import edu.ucne.doers.data.remote.RemoteDataSource
@@ -8,6 +10,8 @@ import edu.ucne.doers.data.remote.dto.CanjeoDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
+import java.text.SimpleDateFormat
+import java.util.Date
 import javax.inject.Inject
 
 class CanjeoRepository @Inject constructor(
@@ -16,12 +20,17 @@ class CanjeoRepository @Inject constructor(
 ) {
     fun save(canjeo: CanjeoEntity): Flow<Resource<Unit>> = flow {
         emit(Resource.Loading())
+        Log.d("CanjeoRepository", "Guardando localmente: $canjeo")
 
         try {
             canjeoDao.save(canjeo)
+            Log.d("CanjeoRepository", "Guardado local exitoso. Enviando al servidor: ${canjeo.toDto()}")
+
             remoteDataSource.saveCanjeo(canjeo.toDto())
+            Log.d("CanjeoRepository", "Guardado remoto exitoso")
             emit(Resource.Success(Unit))
         } catch (e: Exception) {
+            Log.e("CanjeoRepository", "Error al guardar: ${e.message}", e)
             emit(Resource.Error("Error al guardar canjeo: ${e.localizedMessage}"))
         }
     }
@@ -71,14 +80,18 @@ fun CanjeoDto.toEntity() = CanjeoEntity(
     canjeoId = this.canjeoId,
     hijoId = this.hijoId,
     recompensaId = this.recompensaId,
-    fecha = this.fecha,
+    fecha = Date(),
     estado = this.estado
 )
 
-fun CanjeoEntity.toDto() = CanjeoDto(
-    canjeoId = this.canjeoId,
-    hijoId = this.hijoId,
-    recompensaId = this.recompensaId,
-    fecha = this.fecha,
-    estado = this.estado
-)
+@SuppressLint("SimpleDateFormat")
+fun CanjeoEntity.toDto(): CanjeoDto {
+    val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+    return CanjeoDto(
+        canjeoId = this.canjeoId,
+        hijoId = this.hijoId,
+        recompensaId = this.recompensaId,
+        fecha = dateFormat.format(fecha),
+        estado = this.estado
+    )
+}
