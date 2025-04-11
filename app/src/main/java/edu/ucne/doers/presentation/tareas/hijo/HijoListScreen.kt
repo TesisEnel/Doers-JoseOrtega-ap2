@@ -111,7 +111,7 @@ fun HijoBodyListScreen(
                 modifier = Modifier.shadow(elevation = 8.dp)
             )
 
-            if (uiState.isLoading && uiState.ultimaTareaProcesada == null) {
+            if (uiState.isLoading && uiState.ultimaAccionProcesada == null) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(48.dp),

@@ -22,7 +22,7 @@ data class HijoUiState(
     val listaTareas: List<TareaEntity> = emptyList(),
     val listaTareasFiltradas: List<TareaEntity> = emptyList(),
     val successMessage: String? = null,
-    val ultimaTareaProcesada: Int? = null
+    val ultimaAccionProcesada: Int? = null
 )
 
 fun HijoEntity.toUiState() = HijoUiState(

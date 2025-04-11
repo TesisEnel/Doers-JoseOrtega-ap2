@@ -26,10 +26,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.sql.Date
+import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
@@ -52,6 +51,7 @@ class HijoViewModel @Inject constructor(
 
     private val _transacciones = MutableStateFlow<List<TransaccionHijo>>(emptyList())
     val transacciones: StateFlow<List<TransaccionHijo>> = _transacciones.asStateFlow()
+
 
     init {
         checkAuthenticatedHijo()
@@ -288,7 +288,7 @@ class HijoViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     isLoading = true,
-                    ultimaTareaProcesada = tareaId,
+                    ultimaAccionProcesada = tareaId,
                     errorMessage = null,
                     successMessage = null
                 )
@@ -317,7 +317,7 @@ class HijoViewModel @Inject constructor(
                                 it.copy(
                                     isLoading = false,
                                     successMessage = "Tarea enviada para revisión",
-                                    ultimaTareaProcesada = null
+                                    ultimaAccionProcesada = null
                                 )
                             }
                             loadTareas()
@@ -329,7 +329,7 @@ class HijoViewModel @Inject constructor(
                                 it.copy(
                                     isLoading = false,
                                     errorMessage = saveResult.message ?: "Error al guardar tarea",
-                                    ultimaTareaProcesada = null
+                                    ultimaAccionProcesada = null
                                 )
                             }
                         }
@@ -342,7 +342,7 @@ class HijoViewModel @Inject constructor(
                     it.copy(
                         isLoading = false,
                         errorMessage = e.message ?: "Error al completar tarea",
-                        ultimaTareaProcesada = null
+                        ultimaAccionProcesada = null
                     )
                 }
             }
@@ -352,8 +352,10 @@ class HijoViewModel @Inject constructor(
     fun reclamarRecompensa(recompensaId: Int) {
         viewModelScope.launch {
             val hijoId = _uiState.value.hijoId
+            Log.d("reclamarRecompensa", "Inicio - hijoId: $hijoId")
             if (hijoId == 0) {
                 _uiState.update { it.copy(errorMessage = "Error: No se encontró el ID del hijo") }
+                Log.e("reclamarRecompensa", "No se encontró el ID del hijo")
                 return@launch
             }
 
@@ -368,65 +370,54 @@ class HijoViewModel @Inject constructor(
             try {
                 val recompensa = recompensaRepository.find(recompensaId)
                     ?: throw Exception("Recompensa no encontrada")
+                Log.d("reclamarRecompensa", "Recompensa encontrada: $recompensa")
 
                 val hijo = hijoId?.let { hijoRepository.find(it) }
                     ?: throw Exception("Hijo no encontrado")
+                Log.d("reclamarRecompensa", "Hijo encontrado: $hijo, saldoActual: ${hijo.saldoActual}")
+
                 if (hijo.saldoActual < recompensa.puntosNecesarios) {
                     throw Exception("No tienes suficientes puntos para reclamar esta recompensa")
                 }
 
-                val canjeos = canjeoRepository.getAll().firstOrNull { it is Resource.Success }?.data ?: emptyList()
-                val countPending = canjeos.count {
-                    it.recompensaId == recompensaId &&
-                            it.hijoId == hijoId &&
-                            it.estado == EstadoRecompensa.PENDIENTE
-                }
-                if (countPending > 0) {
-                    throw Exception("Ya tienes esta recompensa pendiente de verificación")
-                }
+                val nuevoCanjeo = CanjeoEntity(
+                    canjeoId = 0,
+                    hijoId = hijoId,
+                    recompensaId = recompensaId,
+                    fecha = Date(),
+                    estado = EstadoRecompensa.PENDIENTE
+                )
+                Log.d("reclamarRecompensa", "Nuevo canjeo creado: $nuevoCanjeo")
 
-                val nuevoCanjeo = hijoId?.let {
-                    CanjeoEntity(
-                        canjeoId = 0,
-                        hijoId = it,
-                        recompensaId = recompensaId,
-                        fecha = Date(System.currentTimeMillis()),
-                        estado = EstadoRecompensa.PENDIENTE
-                    )
-                }
-
-                if (nuevoCanjeo != null) {
-                    canjeoRepository.save(nuevoCanjeo).collect { resource ->
-                        when (resource) {
-                            is Resource.Loading -> {
-                                _uiState.update { it.copy(isLoading = true) }
-                            }
-
-                            is Resource.Success -> {
-                                val nuevoSaldo = hijo.saldoActual - recompensa.puntosNecesarios
-                                val hijoActualizado = hijo.copy(saldoActual = nuevoSaldo)
-                                hijoRepository.save(hijoActualizado).collect { saveResult ->
-                                    when (saveResult) {
-                                        is Resource.Success -> {
-                                            _uiState.update {
-                                                it.copy(
-                                                    isLoading = false,
-                                                    saldoActual = nuevoSaldo,
-                                                    successMessage = "Recompensa reclamada, esperando verificación del padre"
-                                                )
-                                            }
-                                            getTransacciones()
+                canjeoRepository.save(nuevoCanjeo).collect { resource ->
+                    when (resource) {
+                        is Resource.Loading -> {
+                            Log.d("reclamarRecompensa", "Guardando canjeo: Loading")
+                        }
+                        is Resource.Success -> {
+                            Log.d("reclamarRecompensa", "Canjeo guardado con éxito")
+                            val nuevoSaldo = hijo.saldoActual - recompensa.puntosNecesarios
+                            val hijoActualizado = hijo.copy(saldoActual = nuevoSaldo)
+                            hijoRepository.save(hijoActualizado).collect { saveResult ->
+                                when (saveResult) {
+                                    is Resource.Success -> {
+                                        _uiState.update {
+                                            it.copy(
+                                                isLoading = false,
+                                                saldoActual = nuevoSaldo,
+                                                successMessage = "Recompensa reclamada, esperando verificación del padre"
+                                            )
                                         }
-
-                                        is Resource.Error -> throw Exception("Error al actualizar saldo: ${saveResult.message}")
-                                        is Resource.Loading -> {}
+                                        Log.d("reclamarRecompensa", "Recompensa reclamada con éxito")
+                                        getTransacciones()
                                     }
+                                    is Resource.Error -> throw Exception("Error al actualizar saldo: ${saveResult.message}")
+                                    is Resource.Loading -> {}
                                 }
                             }
-
-                            is Resource.Error -> {
-                                throw Exception("Error al guardar el canjeo: ${resource.message}")
-                            }
+                        }
+                        is Resource.Error -> {
+                            throw Exception("Error al guardar el canjeo: ${resource.message}")
                         }
                     }
                 }
@@ -437,6 +428,7 @@ class HijoViewModel @Inject constructor(
                         errorMessage = e.message ?: "Error al reclamar recompensa"
                     )
                 }
+                Log.e("reclamarRecompensa", "Error: ${e.message}")
             }
         }
     }
