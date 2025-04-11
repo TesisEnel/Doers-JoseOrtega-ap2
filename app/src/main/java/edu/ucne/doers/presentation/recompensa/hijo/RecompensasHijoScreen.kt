@@ -34,7 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import edu.ucne.doers.data.local.model.EstadoRecompensa
+import edu.ucne.doers.data.local.model.CondicionRecompensa
 import edu.ucne.doers.presentation.componentes.ImagenRecompensa
 import edu.ucne.doers.presentation.hijos.HijoViewModel
 import edu.ucne.doers.presentation.navigation.Screen
@@ -111,7 +111,7 @@ fun RecompensasHijoScreen(
                 contentPadding = PaddingValues(16.dp)
             ) {
                 items(uiState.recompensas.filter {
-                    it.estado == EstadoRecompensa.DISPONIBLE
+                    it.condicion == CondicionRecompensa.ACTIVA
                 }) { recompensa ->
                     RecompensaCard(
                         recompensa = recompensa.toUiState()

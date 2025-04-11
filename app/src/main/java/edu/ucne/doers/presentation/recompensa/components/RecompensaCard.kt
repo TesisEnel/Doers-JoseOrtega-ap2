@@ -1,5 +1,6 @@
 package edu.ucne.doers.presentation.recompensa.components
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -72,7 +73,10 @@ fun RecompensaCard(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { isExpanded = !isExpanded },
+                .clickable {
+                    isExpanded = !isExpanded
+                    Log.d("RecompensaCard", "isExpanded: $isExpanded")
+                },
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             shape = RoundedCornerShape(12.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -113,6 +117,7 @@ fun RecompensaCard(
                             onCheckedChange = { isChecked ->
                                 val nuevoEstado = if (isChecked) CondicionRecompensa.ACTIVA else CondicionRecompensa.INACTIVA
                                 onCondicionChange(nuevoEstado)
+                                Log.d("RecompensaCard", "Switch checked: $isChecked, nuevoEstado: $nuevoEstado")
                                 Toast.makeText(
                                     context,
                                     if (isChecked) "Recompensa activada" else "Recompensa desactivada",
@@ -190,6 +195,7 @@ fun RecompensaCard(
                         onClick = {
                             onDelete(recompensa)
                             showDeleteDialog = false
+                            Log.d("RecompensaCard", "Recompensa eliminada: ${recompensa.recompensaId}")
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
                     ) {
