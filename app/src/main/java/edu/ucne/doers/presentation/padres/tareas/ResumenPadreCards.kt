@@ -1,6 +1,5 @@
 package edu.ucne.doers.presentation.padres.tareas
 
-
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -33,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import edu.ucne.doers.data.local.entity.CanjeoEntity
 import edu.ucne.doers.data.local.entity.HijoEntity
 import edu.ucne.doers.data.local.entity.RecompensaEntity
 import edu.ucne.doers.data.local.entity.TareaEntity
@@ -44,11 +44,14 @@ import edu.ucne.doers.data.local.model.EstadoTareaHijo
 fun ResumenPadreCards(
     hijos: List<HijoEntity>,
     tareasHijo: List<TareaHijo>,
-    recompensasPendientesMap: Map<String, List<RecompensaEntity>>,
+    recompensas: List<RecompensaEntity>,
+    canjeos: List<CanjeoEntity>,
     tareas: List<TareaEntity>,
     onCardClick: (String) -> Unit,
     onValidarTarea: (TareaHijo) -> Unit,
-    onNoValidarTarea: (TareaHijo) -> Unit
+    onNoValidarTarea: (TareaHijo) -> Unit,
+    onValidarRecompensa: (CanjeoEntity) -> Unit,
+    onNoValidarRecompensa: (CanjeoEntity) -> Unit
 ) {
     var expandedCard by remember { mutableStateOf<String?>(null) }
 
@@ -69,8 +72,9 @@ fun ResumenPadreCards(
                     .clickable {
                         expandedCard = if (expandedCard == "tareas") null else "tareas"
                         onCardClick("tareas")
+                        println("Clicked Tareas card. expandedCard = $expandedCard")
                     },
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0))
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFEEE9E1))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -86,6 +90,7 @@ fun ResumenPadreCards(
                     }
                     val tareasPendientes = tareasHijo.filter { it.estado == EstadoTareaHijo.PENDIENTE_VERIFICACION }
                     Text(text = "${tareasPendientes.size} tareas", style = MaterialTheme.typography.bodyMedium)
+                    println("Tareas pendientes count: ${tareasPendientes.size}")
                 }
             }
 
@@ -95,6 +100,7 @@ fun ResumenPadreCards(
                     .clickable {
                         expandedCard = if (expandedCard == "recompensas") null else "recompensas"
                         onCardClick("recompensas")
+                        println("Clicked Recompensas card. expandedCard = $expandedCard")
                     },
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD))
             ) {
@@ -110,20 +116,25 @@ fun ResumenPadreCards(
                             contentDescription = null
                         )
                     }
-                    val totalRecompensas = recompensasPendientesMap.values.flatten()
-                        .count { it.estado == EstadoRecompensa.PENDIENTE }
+                    val totalRecompensas = canjeos.count { it.estado == EstadoRecompensa.PENDIENTE } // Ajustado para usar canjeos
                     Text(text = "$totalRecompensas recompensas", style = MaterialTheme.typography.bodyMedium)
+                    println("Recompensas pendientes count: $totalRecompensas")
+                    println("Total canjeos: ${canjeos.size}, Canjeos pendientes: ${canjeos.filter { it.estado == EstadoRecompensa.PENDIENTE }.size}")
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        println("Current expandedCard value: $expandedCard")
+
         if (expandedCard == "tareas") {
             tareasHijo.filter { it.estado == EstadoTareaHijo.PENDIENTE_VERIFICACION }.forEach { tarea ->
                 val hijo = hijos.find { it.hijoId == tarea.hijoId }
                 val tareaDesc = tareas.find { it.tareaId == tarea.tareaId }?.descripcion ?: "Tarea desconocida"
                 val nombreHijo = hijo?.nombre ?: "Desconocido"
+
+                println("Rendering tarea for hijo: $nombreHijo, tareaDesc: $tareaDesc")
 
                 Card(
                     modifier = Modifier
@@ -169,19 +180,54 @@ fun ResumenPadreCards(
         }
 
         if (expandedCard == "recompensas") {
-            recompensasPendientesMap.forEach { (hijoId, recompensas) ->
-                val nombreHijo = hijos.find { it.hijoId.toString() == hijoId }?.nombre ?: "Desconocido"
-                recompensas.filter { it.estado == EstadoRecompensa.PENDIENTE }.forEach { recompensa ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFE1F5FE))
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text("Recompensa: ${recompensa.descripcion}")
-                            Text("Puntos: ${recompensa.puntosNecesarios}")
-                            Text("Hijo: $nombreHijo")
+            println("Entering recompensas block. Canjeos size: ${canjeos.size}")
+            canjeos.filter { it.estado == EstadoRecompensa.PENDIENTE }.forEach { canjeo ->
+                val hijo = hijos.find { it.hijoId == canjeo.hijoId }
+                val recompensa = recompensas.find { it.recompensaId == canjeo.recompensaId }
+                val recompensaDesc = recompensa?.descripcion ?: "Recompensa desconocida"
+                val puntosNecesarios = recompensa?.puntosNecesarios ?: 0
+                val nombreHijo = hijo?.nombre ?: "Desconocido"
+
+                println("Rendering canjeo - Hijo: $nombreHijo, Recompensa: $recompensaDesc, Puntos: $puntosNecesarios")
+
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFE1F5FE))
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            "El hijo \"$nombreHijo\" ha solicitado la recompensa \"$recompensaDesc\"",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontStyle = FontStyle.Italic,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        )
+                        Text("Puntos: $puntosNecesarios")
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.End,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Button(
+                                onClick = { onValidarRecompensa(canjeo) },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF81C784))
+                            ) {
+                                Icon(Icons.Default.Check, contentDescription = "Validar")
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Validar")
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Button(
+                                onClick = { onNoValidarRecompensa(canjeo) },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE57373))
+                            ) {
+                                Icon(Icons.Default.Close, contentDescription = "Rechazar")
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Rechazar")
+                            }
                         }
                     }
                 }

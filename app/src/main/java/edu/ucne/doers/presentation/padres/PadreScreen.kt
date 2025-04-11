@@ -74,7 +74,9 @@ fun PadreScreen(
 
     val hijos by padreViewModel.hijos.collectAsState()
     val tareasHijo by padreViewModel.tareasHijo.collectAsState()
-    val recompensasMap by padreViewModel.recompensasPendientesMap.collectAsState()
+    //val recompensasMap by padreViewModel.recompensasPendientesMap.collectAsState()
+    val recompensas by padreViewModel.recompensas.collectAsState()
+    val canjeos by padreViewModel.canjeoHijo.collectAsState()
     val hijoUiState by hijoViewModel.uiState.collectAsState()
 
     var showDialogAgregarPuntos by remember { mutableStateOf(false) }
@@ -309,7 +311,8 @@ fun PadreScreen(
                     ResumenPadreCards(
                         hijos = hijos,
                         tareasHijo = tareasHijo,
-                        recompensasPendientesMap = recompensasMap,
+                        recompensas = recompensas,
+                        canjeos = canjeos,
                         tareas = padreViewModel.tareas.collectAsState().value,
                         onCardClick = {tipo -> Log.d("PadreScreen", "Card $tipo clickeado")},
                         onValidarTarea = { tarea ->
@@ -317,6 +320,12 @@ fun PadreScreen(
                         },
                         onNoValidarTarea = { tarea ->
                             padreViewModel.rechazarTarea(tarea)
+                        },
+                        onValidarRecompensa = { canjeo ->
+                            padreViewModel.validarRecompensa(canjeo)
+                        },
+                        onNoValidarRecompensa = { canjeo ->
+                            padreViewModel.rechazarRecompensa(canjeo)
                         }
                     )
 

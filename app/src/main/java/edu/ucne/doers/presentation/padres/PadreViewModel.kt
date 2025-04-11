@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import edu.ucne.doers.data.local.entity.CanjeoEntity
 import edu.ucne.doers.data.local.entity.HijoEntity
 import edu.ucne.doers.data.local.entity.PadreEntity
 import edu.ucne.doers.data.local.entity.RecompensaEntity
@@ -17,12 +18,13 @@ import edu.ucne.doers.data.local.model.EstadoTareaHijo
 import edu.ucne.doers.data.local.model.TipoTransaccion
 import edu.ucne.doers.data.remote.Resource
 import edu.ucne.doers.data.repository.AuthRepository
+import edu.ucne.doers.data.repository.CanjeoRepository
 import edu.ucne.doers.data.repository.HijoRepository
 import edu.ucne.doers.data.repository.PadreRepository
+import edu.ucne.doers.data.repository.RecompensaRepository
 import edu.ucne.doers.data.repository.TareaHijoRepository
 import edu.ucne.doers.data.repository.TareaRepository
 import edu.ucne.doers.data.repository.TransaccionHijoRepository
-import edu.ucne.doers.presentation.hijos.HijoViewModel
 import edu.ucne.doers.presentation.sign_in.GoogleAuthUiClient
 import edu.ucne.doers.presentation.sign_in.SignInResult
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,6 +43,8 @@ class PadreViewModel @Inject constructor(
     private val hijoRepository: HijoRepository,
     private val tareaHijoRepository: TareaHijoRepository,
     private val tareaRepository: TareaRepository,
+    private val recompensaRepository: RecompensaRepository,
+    private val canjeoRepository: CanjeoRepository,
     private val authRepository: AuthRepository,
     private val googleAuthUiClient: GoogleAuthUiClient,
     private val transaccionHijoRepository: TransaccionHijoRepository
@@ -57,6 +61,12 @@ class PadreViewModel @Inject constructor(
 
     private val _recompensasPendientesMap = MutableStateFlow<Map<String, List<RecompensaEntity>>>(emptyMap())
     val recompensasPendientesMap: StateFlow<Map<String, List<RecompensaEntity>>> = _recompensasPendientesMap.asStateFlow()
+
+    private val _recompensas = MutableStateFlow<List<RecompensaEntity>>(emptyList())
+    val recompensas: StateFlow<List<RecompensaEntity>> = _recompensas.asStateFlow()
+
+    private val _canjeoHijo = MutableStateFlow<List<CanjeoEntity>>(emptyList())
+    val canjeoHijo: StateFlow<List<CanjeoEntity>> = _canjeoHijo.asStateFlow()
 
     private val _tareas = MutableStateFlow<List<TareaEntity>>(emptyList())
     val tareas: StateFlow<List<TareaEntity>> = _tareas.asStateFlow()
@@ -162,6 +172,79 @@ class PadreViewModel @Inject constructor(
         }
     }
 
+    fun validarRecompensa(canjeo: CanjeoEntity) {
+        viewModelScope.launch {
+            try {
+                val canjeoAprobado = canjeo.copy(
+                    estado = EstadoRecompensa.RECLAMADA,
+                    fecha = Date()
+                )
+                canjeoRepository.save(canjeoAprobado).collect { result ->
+                    when (result) {
+                        is Resource.Success -> Log.d("PadreViewModel", "Canjeo aprobado guardado")
+                        is Resource.Error -> throw Exception("Error al guardar canjeo: ${result.message}")
+                        is Resource.Loading -> Log.d("PadreViewModel", "Guardando canjeo...")
+                    }
+                }
+
+                val hijo = hijoRepository.find(canjeo.hijoId)
+                val recompensa = recompensaRepository.find(canjeo.recompensaId)
+                if (hijo != null && recompensa != null) {
+                    val puntosGastados = recompensa.puntosNecesarios
+                    val hijoActualizado = hijo.copy(saldoActual = hijo.saldoActual - puntosGastados)
+                    hijoRepository.save(hijoActualizado).collect { result ->
+                        when (result) {
+                            is Resource.Success -> {
+                                getHijosByPadre(hijo.padreId)
+                            }
+                            is Resource.Error -> throw Exception("Error al actualizar hijo: ${result.message}")
+                            is Resource.Loading -> Log.d("PadreViewModel", "Actualizando saldo...")
+                        }
+                    }
+                    val transaccion = TransaccionHijo(
+                        transaccionId = 0,
+                        hijoId = hijo.hijoId,
+                        tipo = TipoTransaccion.CONSUMIDO,
+                        monto = puntosGastados,
+                        descripcion = "Puntos gastados por recompensa: ${recompensa.descripcion}",
+                        fecha = Date()
+                    )
+                    transaccionHijoRepository.save(transaccion).collect { result ->
+                        when (result) {
+                            is Resource.Success -> Log.d("PadreViewModel", "Transacción guardada exitosamente")
+                            is Resource.Error -> Log.e("PadreViewModel", "Error al guardar transacción: ${result.message}")
+                            is Resource.Loading -> Log.d("PadreViewModel", "Guardando transacción...")
+                        }
+                    }
+                } else {
+                    throw Exception("Hijo o recompensa no encontrados")
+                }
+                getRecompensasHijo()
+                _toastMessage.value = "Recompensa validada con éxito"
+
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al validar recompensa: ${e.message}"
+            }
+        }
+    }
+
+
+    fun rechazarRecompensa(canjeo: CanjeoEntity) {
+        viewModelScope.launch {
+            try {
+                canjeoRepository.delete(canjeo) // Elimina el canjeo
+                _toastMessage.value = "Recompensa rechazada con éxito"
+                _canjeoHijo.update { canjeos ->
+                    canjeos.filterNot { it.canjeoId == canjeo.canjeoId } // Filtra el canjeo eliminado
+                }
+                getRecompensasHijo() // Refresca las recompensas
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al rechazar recompensa: ${e.message}"
+            }
+        }
+    }
+
+
     fun clearToast() {
         _toastMessage.value = null
     }
@@ -253,7 +336,7 @@ class PadreViewModel @Inject constructor(
         }
     }
 
-    fun getCurrentUser() {
+    private fun getCurrentUser() {
         viewModelScope.launch {
             setLoading(true)
             val currentUser = authRepository.getUser()
@@ -275,7 +358,7 @@ class PadreViewModel @Inject constructor(
 
                 getHijosByPadre(currentUser.userId)
                 getTareasHijo()
-                cargarRecompensasPendientesPorHijo(currentUser.userId)
+                getRecompensasHijo()
             } else {
                 _uiState.update {
                     it.copy(
@@ -347,7 +430,7 @@ class PadreViewModel @Inject constructor(
                 if (resource is Resource.Success) {
                     val hijosDelPadre = resource.data?.filter { it.padreId == padreId } ?: emptyList()
                     _hijos.value = hijosDelPadre
-                    cargarRecompensasPendientesPorHijo(padreId)
+                    getRecompensasHijo()
                 } else if (resource is Resource.Error) {
                     _hijos.value = resource.data?.filter { it.padreId == padreId } ?: emptyList()
                 }
@@ -355,15 +438,21 @@ class PadreViewModel @Inject constructor(
         }
     }
 
-    private fun cargarRecompensasPendientesPorHijo(padreId: String) {
+    private fun getRecompensasHijo() {
         viewModelScope.launch {
-            val hijosConRecompensas = hijoRepository.getHijosConRecompensasByPadreId(padreId)
-            val recompensasMap = hijosConRecompensas.associate { entry ->
-                entry.hijo.hijoId.toString() to entry.recompensas.filter {
-                    it.estado == EstadoRecompensa.PENDIENTE
+            recompensaRepository.getAll().collect { resource ->
+                when (resource) {
+                    is Resource.Loading -> {
+                    }
+                    is Resource.Success -> {
+                        _recompensas.value = resource.data!!
+                    }
+                    is Resource.Error -> {
+                        _uiState.update { it.copy(errorMessage = resource.message) }
+                    }
                 }
             }
-            _recompensasPendientesMap.value = recompensasMap
+
         }
     }
 
