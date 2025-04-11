@@ -36,8 +36,8 @@ import edu.ucne.doers.presentation.recompensa.components.CreateRecompensaForm
 @Composable
 fun RecompensaScreen(
     viewModel: RecompensaViewModel = hiltViewModel(),
+    goRecompensasList: () -> Unit,
     recompensaId: Int,
-    goRecompensasList: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -56,10 +56,10 @@ fun RecompensaScreen(
     }
 
     RecompensaBodyScreen(
-        viewModel = viewModel,
-        uiState = uiState,
-        recompensaId = recompensaId,
-        goBack = goRecompensasList,
+        viewModel,
+        uiState,
+        recompensaId,
+        goRecompensasList = goRecompensasList,
         onPickImage = { imagePickerLauncher.launch("image/*") }
     )
 }
@@ -71,9 +71,14 @@ fun RecompensaBodyScreen(
     viewModel: RecompensaViewModel,
     uiState: RecompensaUiState,
     recompensaId: Int,
-    goBack: () -> Unit,
+    goRecompensasList: () -> Unit,
     onPickImage: () -> Unit
 ) {
+    LaunchedEffect(recompensaId) {
+        if (recompensaId > 0)
+            viewModel.find(recompensaId)
+    }
+
     val azulMar = Color(0xFF1976D2)
 
     Scaffold(
@@ -95,7 +100,7 @@ fun RecompensaBodyScreen(
                     }
                 },
                 navigationIcon = {
-                    IconButton(onClick = goBack) {
+                    IconButton(onClick = goRecompensasList) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver",
@@ -105,15 +110,16 @@ fun RecompensaBodyScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = azulMar)
             )
+        },
+        content = { paddingValues ->
+            CreateRecompensaForm(
+                modifier = Modifier.padding(paddingValues),
+                viewModel = viewModel,
+                uiState = uiState,
+                goRecompensasList = goRecompensasList,
+                recompensaId = recompensaId,
+                onPickImage = onPickImage
+            )
         }
-    ) { padding ->
-        CreateRecompensaForm(
-            modifier = Modifier.padding(padding),
-            viewModel = viewModel,
-            uiState = uiState,
-            goBack = goBack,
-            recompensaId = recompensaId,
-            onPickImage = onPickImage
-        )
-    }
+    )
 }

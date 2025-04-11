@@ -2,7 +2,9 @@ package edu.ucne.doers.data.repository
 
 import edu.ucne.doers.data.local.dao.RecompensaDao
 import edu.ucne.doers.data.local.entity.RecompensaEntity
+import edu.ucne.doers.data.local.entity.TareaEntity
 import edu.ucne.doers.data.local.model.CondicionRecompensa
+import edu.ucne.doers.data.local.model.CondicionTarea
 import edu.ucne.doers.data.remote.RemoteDataSource
 import edu.ucne.doers.data.remote.Resource
 import edu.ucne.doers.data.remote.dto.RecompensaDto
@@ -17,12 +19,19 @@ class RecompensaRepository @Inject constructor(
 ) {
     fun save(recompensa: RecompensaEntity): Flow<Resource<Unit>> = flow {
         emit(Resource.Loading())
-        try {
-            recompensaDao.save(recompensa)
-            val dto = recompensa.toDto()
-            remote.saveRecompensa(dto)
 
+        try {
+            val recompensaEntityConId = if (recompensa.recompensaId > 0) {
+                remote.updateRecompensa(recompensa.recompensaId, recompensa.toDto())
+                recompensa
+            } else {
+                val saved = remote.saveRecompensa(recompensa.toDto())
+                saved.toEntity()
+            }
+
+            recompensaDao.save(recompensaEntityConId)
             emit(Resource.Success(Unit))
+
         } catch (e: Exception) {
             emit(Resource.Error("Error al guardar recompensa: ${e.localizedMessage}"))
         }
@@ -40,13 +49,13 @@ class RecompensaRepository @Inject constructor(
             val updatedLocal = recompensaDao.getAll().firstOrNull()
             emit(Resource.Success(updatedLocal ?: emptyList()))
         } catch (e: Exception) {
-            emit(Resource.Error("Error al cargar recompensas: ${e.localizedMessage}", localData))
+            emit(Resource.Error("Error al obtener recompensas: ${e.localizedMessage}", localData))
         }
     }
 
     fun getRecompensasByPadreId(padreId: String): Flow<Resource<List<RecompensaEntity>>> = flow {
         emit(Resource.Loading())
-        recompensaDao.getRecompensasByPadreId(padreId).collect { local ->
+        recompensaDao.getByPadreId(padreId).collect { local ->
             emit(Resource.Success(local ?: emptyList()))
         }
         try {
@@ -81,27 +90,40 @@ class RecompensaRepository @Inject constructor(
             Resource.Error("Error al eliminar recompensa: ${e.localizedMessage}")
         }
     }
+
+    fun getActiveRewards(): Flow<Resource<List<RecompensaEntity>>> = flow {
+        emit(Resource.Loading())
+        val local = recompensaDao.getByCondition(CondicionRecompensa.ACTIVA).firstOrNull()
+        emit(Resource.Success(local ?: emptyList()))
+
+        try {
+            val remoteData = remote.getRecompensasActivas()
+            val entities = remoteData.map { it.toEntity() }
+            recompensaDao.save(entities)
+            val updated = recompensaDao.getByCondition(CondicionRecompensa.ACTIVA).firstOrNull()
+            emit(Resource.Success(updated ?: emptyList()))
+        } catch (e: Exception) {
+            emit(Resource.Error("Error al obtener recompensas activas: ${e.localizedMessage}", local))
+        }
+    }
 }
 
 fun RecompensaEntity.toDto() = RecompensaDto(
-    recompensaId = recompensaId,
-    padreId = padreId,
-    hijoId = hijoId,
-    descripcion = descripcion,
-    imagenURL = imagenURL,
-    puntosNecesarios = puntosNecesarios,
-    estado = estado,
-    condicion = condicion
+    recompensaId = this.recompensaId,
+    padreId = this.padreId,
+    descripcion = this.descripcion,
+    imagenURL = this.imagenURL,
+    puntosNecesarios = this.puntosNecesarios,
+    estado = this.estado,
+    condicion = this.condicion
 )
 
 fun RecompensaDto.toEntity() = RecompensaEntity(
-    recompensaId = recompensaId,
-    hijoId = hijoId,
-    padreId = padreId,
-    descripcion = descripcion,
-    imagenURL = imagenURL,
-    puntosNecesarios = puntosNecesarios,
-    estado = estado,
-    condicion = CondicionRecompensa.INACTIVA
+    recompensaId = this.recompensaId,
+    padreId = this.padreId,
+    descripcion = this.descripcion,
+    imagenURL = this.imagenURL,
+    puntosNecesarios = this.puntosNecesarios,
+    estado = this.estado,
+    condicion = this.condicion
 )
-

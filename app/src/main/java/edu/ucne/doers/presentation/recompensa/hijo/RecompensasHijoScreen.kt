@@ -1,5 +1,6 @@
 package edu.ucne.doers.presentation.recompensa.hijo
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,37 +30,40 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import edu.ucne.doers.data.local.model.CondicionRecompensa
+import edu.ucne.doers.data.local.entity.RecompensaEntity
 import edu.ucne.doers.presentation.componentes.ImagenRecompensa
 import edu.ucne.doers.presentation.hijos.HijoViewModel
 import edu.ucne.doers.presentation.navigation.Screen
-import edu.ucne.doers.presentation.recompensa.RecompensaUiState
-import edu.ucne.doers.presentation.recompensa.RecompensaViewModel
 import edu.ucne.doers.presentation.recompensa.comp.HijoNavBar
-import edu.ucne.doers.presentation.recompensa.toUiState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecompensasHijoScreen(
-    viewModel: RecompensaViewModel = hiltViewModel(),
-    padreId: String,
-    hijoViewModel: HijoViewModel,
+    viewModel: HijoViewModel = hiltViewModel(),
     onNavigateToTareas: () -> Unit,
     onNavigateToPerfil: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val hijoUiState by hijoViewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+
     val azulCielo = Color(0xFF1976D2)
 
-    LaunchedEffect(padreId) {
-        viewModel.loadRecompensas()
-        hijoViewModel.loadSaldoActual()
-        hijoViewModel.getHijosByPadre(padreId)
+    LaunchedEffect(uiState.errorMessage, uiState.successMessage) {
+        uiState.errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.clearMessages()
+        }
+        uiState.successMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearMessages()
+        }
+        viewModel.loadSaldoActual()
     }
 
     Scaffold(
@@ -77,7 +81,7 @@ fun RecompensasHijoScreen(
                             color = Color.White
                         )
                         Text(
-                            text = "${hijoUiState.saldoActual} 🪙",
+                            text = "${uiState.saldoActual} 🪙",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Medium,
                             color = Color.White
@@ -110,11 +114,11 @@ fun RecompensasHijoScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(16.dp)
             ) {
-                items(uiState.recompensas.filter {
-                    it.condicion == CondicionRecompensa.ACTIVA
-                }) { recompensa ->
-                    RecompensaCard(
-                        recompensa = recompensa.toUiState()
+                val recompensasFiltradas = uiState.listaRecompensasFiltradas
+                items(recompensasFiltradas, key = { it.recompensaId }) { recompensa ->
+                    RecompensaCardHijo(
+                        recompensa = recompensa,
+                        onReclamar = { viewModel.reclamarRecompensa(recompensa.recompensaId) }
                     )
                 }
             }
@@ -123,9 +127,9 @@ fun RecompensasHijoScreen(
 }
 
 @Composable
-fun RecompensaCard(
-    recompensa: RecompensaUiState,
-    viewModel: HijoViewModel = hiltViewModel(),
+fun RecompensaCardHijo(
+    recompensa: RecompensaEntity,
+    onReclamar: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -154,9 +158,7 @@ fun RecompensaCard(
                 )
             }
             Button(
-                onClick = {
-                    viewModel.reclamarRecompensa(recompensa.recompensaId)
-                },
+                onClick = onReclamar,
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFFFFD740),

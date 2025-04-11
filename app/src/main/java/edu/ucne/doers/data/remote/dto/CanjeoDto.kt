@@ -1,11 +1,12 @@
 package edu.ucne.doers.data.remote.dto
 
-import edu.ucne.doers.data.local.model.EstadoRecompensa
+import edu.ucne.doers.data.local.model.EstadoCanjeo
+import java.util.Date
 
 data class CanjeoDto(
     val canjeoId: Int,
-    val hijoId: Int,
+    val hijoId: Int? = null,
     val recompensaId: Int,
-    val fecha: String,
-    val estado : EstadoRecompensa
+    val fecha: Date?,
+    val estado : EstadoCanjeo
 )

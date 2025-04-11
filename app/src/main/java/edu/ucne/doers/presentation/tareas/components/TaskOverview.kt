@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import edu.ucne.doers.data.local.entity.TareaEntity
 import edu.ucne.doers.data.local.model.EstadoTarea
-import edu.ucne.doers.presentation.tareas.padre.TareaViewModel
+import edu.ucne.doers.presentation.tareas.TareaViewModel
 
 @Composable
 fun TaskOverview(

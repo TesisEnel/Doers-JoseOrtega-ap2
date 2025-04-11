@@ -1,9 +1,11 @@
 package edu.ucne.doers.data.repository
 
 import android.annotation.SuppressLint
-import android.util.Log
 import edu.ucne.doers.data.local.dao.CanjeoDao
 import edu.ucne.doers.data.local.entity.CanjeoEntity
+import edu.ucne.doers.data.local.entity.TareaHijo
+import edu.ucne.doers.data.local.model.EstadoCanjeo
+import edu.ucne.doers.data.local.model.EstadoTareaHijo
 import edu.ucne.doers.data.remote.RemoteDataSource
 import edu.ucne.doers.data.remote.Resource
 import edu.ucne.doers.data.remote.dto.CanjeoDto
@@ -16,21 +18,23 @@ import javax.inject.Inject
 
 class CanjeoRepository @Inject constructor(
     private val canjeoDao: CanjeoDao,
-    private val remoteDataSource: RemoteDataSource
+    private val remote: RemoteDataSource
 ) {
     fun save(canjeo: CanjeoEntity): Flow<Resource<Unit>> = flow {
         emit(Resource.Loading())
-        Log.d("CanjeoRepository", "Guardando localmente: $canjeo")
 
         try {
-            canjeoDao.save(canjeo)
-            Log.d("CanjeoRepository", "Guardado local exitoso. Enviando al servidor: ${canjeo.toDto()}")
-
-            remoteDataSource.saveCanjeo(canjeo.toDto())
-            Log.d("CanjeoRepository", "Guardado remoto exitoso")
+            val canjeoEntityConId = if (canjeo.canjeoId > 0) {
+                val updated = remote.updateCanjeo(canjeo.canjeoId, canjeo.toDto())
+                canjeo
+            } else {
+                val saved = remote.saveCanjeo(canjeo.toDto())
+                val entity = saved.toEntity()
+                entity
+            }
+            canjeoDao.save(canjeoEntityConId)
             emit(Resource.Success(Unit))
         } catch (e: Exception) {
-            Log.e("CanjeoRepository", "Error al guardar: ${e.message}", e)
             emit(Resource.Error("Error al guardar canjeo: ${e.localizedMessage}"))
         }
     }
@@ -40,7 +44,7 @@ class CanjeoRepository @Inject constructor(
             val local = canjeoDao.find(id)
             if (local != null) return local
 
-            val remote = remoteDataSource.getCanjeo(id)
+            val remote = remote.getCanjeo(id)
             val entity = remote.toEntity()
             canjeoDao.save(entity)
             entity
@@ -49,49 +53,52 @@ class CanjeoRepository @Inject constructor(
         }
     }
 
-    fun getAll(): Flow<Resource<List<CanjeoEntity>>> = flow {
-        emit(Resource.Loading())
-        val localData = canjeoDao.getAll().firstOrNull()
-        emit(Resource.Success(localData ?: emptyList()))
-
-        try {
-            val remoteData = remoteDataSource.getCanjeos()
-            val entities = remoteData.map { it.toEntity() }
-            canjeoDao.save(entities)
-            val updatedLocal = canjeoDao.getAll().firstOrNull()
-            emit(Resource.Success(updatedLocal ?: emptyList()))
-        } catch (e: Exception) {
-            emit(Resource.Error("Error al obtener canjeos: ${e.localizedMessage}", localData))
-        }
-    }
-
     suspend fun delete(canjeo: CanjeoEntity) {
         try {
             canjeoDao.delete(canjeo)
-            remoteDataSource.deleteCanjeo(canjeo.canjeoId)
+            remote.deleteCanjeo(canjeo.canjeoId)
         } catch (e: Exception) {
             println("Error al eliminar en el API: ${e.message}")
         }
     }
 
+    suspend fun countPendingRewards(recompensaId: Int, hijoId: Int, estado: EstadoCanjeo): Int {
+        return canjeoDao.countPendingRewards(recompensaId, hijoId, estado)
+    }
+
+    fun getAll(): Flow<Resource<List<CanjeoEntity>>> = flow {
+        emit(Resource.Loading())
+
+        val local = canjeoDao.getAll().firstOrNull()
+        emit(Resource.Success(local ?: emptyList()))
+
+        try {
+            val remoteData = remote.getCanjeos()
+            val entities = remoteData.map { it.toEntity() }
+            canjeoDao.save(entities)
+
+            val updated = canjeoDao.getAll().firstOrNull()
+            emit(Resource.Success(updated ?: emptyList()))
+        } catch (e: Exception) {
+            emit(Resource.Error("Error al obtener canjeos: ${e.localizedMessage}", local))
+        }
+    }
 }
 
 fun CanjeoDto.toEntity() = CanjeoEntity(
     canjeoId = this.canjeoId,
-    hijoId = this.hijoId,
     recompensaId = this.recompensaId,
-    fecha = Date(),
-    estado = this.estado
+    hijoId = this.hijoId,
+    estado = this.estado,
+    fecha = this.fecha
 )
 
-@SuppressLint("SimpleDateFormat")
 fun CanjeoEntity.toDto(): CanjeoDto {
-    val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
     return CanjeoDto(
         canjeoId = this.canjeoId,
-        hijoId = this.hijoId,
         recompensaId = this.recompensaId,
-        fecha = dateFormat.format(fecha),
-        estado = this.estado
+        hijoId = this.hijoId,
+        estado = this.estado,
+        fecha = this.fecha
     )
 }

@@ -1,4 +1,4 @@
-package edu.ucne.doers.presentation.tareas.padre
+package edu.ucne.doers.presentation.tareas
 
 import edu.ucne.doers.data.local.entity.TareaEntity
 import edu.ucne.doers.data.local.model.CondicionTarea

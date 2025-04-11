@@ -1,4 +1,4 @@
-package edu.ucne.doers.presentation.tareas.padre
+package edu.ucne.doers.presentation.tareas
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

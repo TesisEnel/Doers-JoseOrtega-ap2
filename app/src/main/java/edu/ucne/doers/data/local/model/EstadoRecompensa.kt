@@ -2,27 +2,20 @@ package edu.ucne.doers.data.local.model
 
 import androidx.compose.ui.graphics.Color
 import com.squareup.moshi.Json
-import kotlinx.serialization.Serializable
 
-@Serializable
+
 enum class EstadoRecompensa {
     @Json(name = "DISPONIBLE") DISPONIBLE,
-    @Json(name = "NO DISPONIBLE") NO_DISPONIBLE,
-    @Json(name = "PENDIENTE") PENDIENTE,
-    @Json(name = "RECLAMADA") RECLAMADA;
+    @Json(name = "NO_DISPONIBLE") NO_DISPONIBLE;
 
-    fun nombreMostrable(): String = when (this) {
+    fun nombreMostrable() = when(this) {
         DISPONIBLE -> "Disponible"
         NO_DISPONIBLE -> "No Disponible"
-        PENDIENTE -> "Pendiente"
-        RECLAMADA -> "Reclamada"
     }
 
-    fun color(): Color = when (this) {
-        DISPONIBLE -> Color(0xFF4CAF50)
-        NO_DISPONIBLE -> Color(0xFFF44336)
-        PENDIENTE -> Color(0xFFFFA000)
-        RECLAMADA -> Color(0xFF2196F3)
+    fun color(): Color = when(this) {
+        DISPONIBLE -> Color(0xFF388E3C)
+        NO_DISPONIBLE -> Color.Red
     }
 }
 
@@ -33,5 +26,17 @@ enum class CondicionRecompensa {
     fun nombreMostrable(): String = when (this) {
         ACTIVA -> "Activa"
         INACTIVA -> "Inactiva"
+    }
+}
+
+enum class EstadoCanjeo {
+    @Json(name = "PENDIENTE_VERIFICACION") PENDIENTE_VERIFICACION,
+    @Json(name = "APROBADO") APROBADO,
+    @Json(name = "RECHAZADO") RECHAZADO;
+
+    fun nombreMostrable(): String = when (this) {
+        PENDIENTE_VERIFICACION -> "Pendiente de verificación"
+        APROBADO -> "Aprobado"
+        RECHAZADO -> "Rechazado"
     }
 }

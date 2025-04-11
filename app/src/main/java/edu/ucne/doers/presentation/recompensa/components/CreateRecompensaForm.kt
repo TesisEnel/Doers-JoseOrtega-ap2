@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -58,7 +57,7 @@ fun CreateRecompensaForm(
     modifier: Modifier,
     viewModel: RecompensaViewModel,
     uiState: RecompensaUiState,
-    goBack: () -> Unit,
+    goRecompensasList: () -> Unit,
     recompensaId: Int,
     onPickImage: () -> Unit
 ) {
@@ -95,8 +94,10 @@ fun CreateRecompensaForm(
 
         OutlinedTextField(
             value = uiState.puntosNecesarios.toString(),
-            onValueChange = { viewModel.onPuntosNecesariosChange(it.toIntOrNull() ?: 0) },
-            label = { Text("Puntos necesarios") },
+            onValueChange = { puntosNecesarios ->
+                puntosNecesarios.toIntOrNull()?.let { viewModel.onPuntosNecesariosChange(it) }
+            },
+            label = { Text("Puntos Necesarios") },
             modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
             isError = uiState.errorMessage?.contains("puntos") == true,
@@ -105,9 +106,7 @@ fun CreateRecompensaForm(
                     Text(uiState.errorMessage ?: "", color = Color.Red)
             }
         )
-
         Spacer(Modifier.height(24.dp))
-
         Text(
             text = "Imagen de la Recompensa",
             fontSize = 18.sp,
@@ -115,7 +114,6 @@ fun CreateRecompensaForm(
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(bottom = 8.dp)
         )
-
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -133,7 +131,7 @@ fun CreateRecompensaForm(
                     Box(modifier = Modifier.fillMaxSize()) {
                         Image(
                             painter = rememberAsyncImagePainter(File(uiState.imagenURL)),
-                            contentDescription = "Vista previa de imagen",
+                            contentDescription = "Vista Previa de Imagen",
                             modifier = Modifier
                                 .fillMaxSize()
                                 .clip(RoundedCornerShape(12.dp)),
@@ -148,7 +146,7 @@ fun CreateRecompensaForm(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
-                                contentDescription = "Eliminar imagen",
+                                contentDescription = "Eliminar Imagen",
                                 tint = Color.Red
                             )
                         }
@@ -156,64 +154,93 @@ fun CreateRecompensaForm(
                 } else {
                     Icon(
                         imageVector = Icons.Default.Image,
-                        contentDescription = "Sin imagen",
+                        contentDescription = "Sin Imagen",
                         modifier = Modifier.size(64.dp),
                         tint = Color.Gray
                     )
                 }
             }
         }
-
         Spacer(Modifier.height(12.dp))
-
+        if (uiState.errorMessage != null && uiState.errorMessage.contains("requeridos")) {
+            Text(
+                text = uiState.errorMessage,
+                color = Color.Red,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+        }
         OutlinedButton(
             onClick = onPickImage,
             modifier = Modifier.align(Alignment.CenterHorizontally),
             shape = RoundedCornerShape(8.dp),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
         ) {
-            Icon(Icons.Default.UploadFile, contentDescription = "Subir imagen")
+            Icon(Icons.Default.UploadFile, contentDescription = "Subir Imagen")
             Spacer(Modifier.width(8.dp))
             Text("Seleccionar Imagen")
         }
-
         Spacer(Modifier.height(24.dp))
-
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             if (recompensaId > 0) {
-                Button(
-                    onClick = {
-                        viewModel.save()
-                        goBack()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF388E3C))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Edit, contentDescription = "Modificar", tint = Color.White)
-                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                    Text("Modificar", color = Color.White)
+                    Button(
+                        onClick = {
+                            viewModel.save()
+                            goRecompensasList()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Modificar",
+                            tint = Color.White
+                        )
+                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                        Text(text = "Modificar", color = Color.White)
+                    }
                 }
             } else {
-                Button(
-                    onClick = { viewModel.new() },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Nuevo", tint = Color.White)
-                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                    Text("Nuevo", color = Color.White)
-                }
-                Button(
-                    onClick = {
-                        viewModel.save()
-                        goBack()
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF388E3C))
-                ) {
-                    Icon(Icons.Default.Check, contentDescription = "Guardar", tint = Color.White)
-                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                    Text("Guardar", color = Color.White)
+                    Button(
+                        onClick = {
+                            viewModel.new()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Nuevo",
+                            tint = Color.White
+                        )
+                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                        Text("Nuevo", color = Color.White)
+                    }
+                    Button(
+                        onClick = {
+                            viewModel.save()
+                            goRecompensasList()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF388E3C))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Guardar",
+                            tint = Color.White
+                        )
+                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                        Text(text = "Guardar", color = Color.White)
+                    }
                 }
             }
         }

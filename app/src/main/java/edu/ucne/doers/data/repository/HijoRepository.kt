@@ -3,7 +3,6 @@ package edu.ucne.doers.data.repository
 import edu.ucne.doers.data.local.dao.HijoDao
 import edu.ucne.doers.data.local.dao.PadreDao
 import edu.ucne.doers.data.local.dao.TareaHijoDao
-import edu.ucne.doers.data.local.entity.HijoConRecompensas
 import edu.ucne.doers.data.local.entity.HijoEntity
 import edu.ucne.doers.data.local.entity.PadreEntity
 import edu.ucne.doers.data.local.entity.TareaHijo

@@ -1,6 +1,7 @@
 package edu.ucne.doers.presentation.hijos
 
 import edu.ucne.doers.data.local.entity.HijoEntity
+import edu.ucne.doers.data.local.entity.RecompensaEntity
 import edu.ucne.doers.data.local.entity.TareaEntity
 
 data class HijoUiState(
@@ -21,6 +22,8 @@ data class HijoUiState(
     val balance: Int = 0,
     val listaTareas: List<TareaEntity> = emptyList(),
     val listaTareasFiltradas: List<TareaEntity> = emptyList(),
+    val listaRecompensas: List<RecompensaEntity> = emptyList(),
+    val listaRecompensasFiltradas: List<RecompensaEntity> = emptyList(),
     val successMessage: String? = null,
     val ultimaAccionProcesada: Int? = null
 )

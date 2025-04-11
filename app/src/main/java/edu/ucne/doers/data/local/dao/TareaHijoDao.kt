@@ -13,7 +13,7 @@ interface TareaHijoDao {
     @Upsert
     suspend fun save(tareaHijo: TareaHijo)
 
-    @Upsert()
+    @Upsert
     suspend fun save(tareaHijo: List<TareaHijo>)
 
     @Query(

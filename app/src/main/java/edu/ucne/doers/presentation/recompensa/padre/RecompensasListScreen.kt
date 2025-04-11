@@ -41,19 +41,13 @@ fun RecompensasListScreen(
     onNavigateToPerfil: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    LaunchedEffect(uiState.recompensas) {
-        println("Recompensas: ${uiState.recompensas}")
-    }
     RecompensasBodyListScreen(
         uiState = uiState,
         goToAgregarRecompensa = goToAgregarRecompensa,
         onEdit = { recompensaId -> goToEditarRecompensa(recompensaId) },
         onDelete = { recompensa -> viewModel.delete(recompensa) },
         onNavigateToTareas = onNavigateToTareas,
-        onNavigateToPerfil = onNavigateToPerfil,
-        onCondicionChange = { recompensaId, nuevaCondicion ->
-            viewModel.onCondicionChange(recompensaId, nuevaCondicion)
-        }
+        onNavigateToPerfil = onNavigateToPerfil
     )
 }
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,8 +58,7 @@ fun RecompensasBodyListScreen(
     onEdit: (Int) -> Unit,
     onDelete: (RecompensaEntity) -> Unit,
     onNavigateToTareas: () -> Unit,
-    onNavigateToPerfil: () -> Unit,
-    onCondicionChange: (Int, CondicionRecompensa) -> Unit
+    onNavigateToPerfil: () -> Unit
 ) {
     val azulMar = Color(0xFF1976D2)
     Scaffold(
@@ -109,12 +102,9 @@ fun RecompensasBodyListScreen(
         content = { paddingValues ->
             RecompensasOverview(
                 modifier = Modifier.padding(paddingValues),
-                recompensas = uiState.recompensas,
+                recompensas = uiState.listaRecompensas,
                 onEdit = onEdit,
-                onDelete = onDelete,
-                onCondicionChange = { nuevaCondicion ->
-                    onCondicionChange(uiState.recompensaId, nuevaCondicion)
-                }
+                onDelete = onDelete
             )
         }
     )

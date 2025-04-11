@@ -5,7 +5,6 @@ import androidx.room.Delete
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
-import edu.ucne.doers.data.local.entity.HijoConRecompensas
 import edu.ucne.doers.data.local.entity.HijoEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -14,7 +13,7 @@ interface HijoDao {
     @Upsert
     suspend fun save(hijoEntity: HijoEntity)
 
-    @Upsert()
+    @Upsert
     suspend fun save(hijoEntity: List<HijoEntity>)
 
     @Query(
@@ -38,8 +37,4 @@ interface HijoDao {
 
     @Query("SELECT * FROM Hijos")
     fun getAll(): Flow<List<HijoEntity>>
-
-    @Transaction
-    @Query("SELECT * FROM Hijos WHERE padreId = :padreId")
-    suspend fun getHijosConRecompensasByPadreId(padreId: String): List<HijoConRecompensas>
 }

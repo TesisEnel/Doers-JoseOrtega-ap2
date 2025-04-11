@@ -8,12 +8,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberImagePainter
+import edu.ucne.doers.data.local.entity.RecompensaEntity
 import edu.ucne.doers.presentation.recompensa.RecompensaUiState
 import java.io.File
 
 @Composable
 fun ImagenRecompensa(
-    recompensa: RecompensaUiState
+    recompensa: RecompensaEntity
 ){
     if (recompensa.imagenURL.isNotEmpty()) {
         Image(

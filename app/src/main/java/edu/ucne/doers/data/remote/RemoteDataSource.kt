@@ -43,6 +43,7 @@ class RemoteDataSource @Inject constructor(
     suspend fun saveRecompensa(recompensaDto: RecompensaDto) = doersApi.saveRecompensa(recompensaDto)
     suspend fun updateRecompensa(id: Int, recompensaDto: RecompensaDto) = doersApi.updateRecompensa(id, recompensaDto)
     suspend fun deleteRecompensa(id: Int) = doersApi.deleteRecompensa(id)
+    suspend fun getRecompensasActivas() = doersApi.getRecompensasActivas()
 
     suspend fun getTareas() = doersApi.getTareas()
     suspend fun getTarea(id: Int) = doersApi.getTarea(id)

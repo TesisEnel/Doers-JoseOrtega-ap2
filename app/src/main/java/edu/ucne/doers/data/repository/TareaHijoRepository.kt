@@ -20,25 +20,17 @@ class TareaHijoRepository @Inject constructor(
         emit(Resource.Loading())
 
         try {
-            Log.d("TareaHijoRepository", "Iniciando guardado de TareaHijo: $tareaHijo")
             val tareaHijoEntityConId = if (tareaHijo.tareaHijoId > 0) {
                 val updated = remote.updateTareaHijo(tareaHijo.tareaHijoId, tareaHijo.toDto())
-                Log.d("TareaHijoRepository", "TareaHijo actualizada en API: $updated")
                 tareaHijo
             } else {
                 val saved = remote.saveTareaHijo(tareaHijo.toDto())
-                Log.d("TareaHijoRepository", "TareaHijo guardada en API: $saved")
                 val entity = saved.toEntity()
-                Log.d("TareaHijoRepository", "Convertido a entidad: $entity")
                 entity
             }
-
-            Log.d("TareaHijoRepository", "Guardando en Room: $tareaHijoEntityConId")
             tareaHijoDao.save(tareaHijoEntityConId)
-            Log.d("TareaHijoRepository", "Guardado en.Concurrent Room completado")
             emit(Resource.Success(Unit))
         } catch (e: Exception) {
-            Log.e("TareaHijoRepository", "Error al guardar: ${e.localizedMessage}", e)
             emit(Resource.Error("Error al guardar tarea hijo: ${e.localizedMessage}"))
         }
     }

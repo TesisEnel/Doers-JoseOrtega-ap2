@@ -26,6 +26,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import edu.ucne.doers.data.local.entity.TareaEntity
 import edu.ucne.doers.presentation.componentes.PadreNavBar
 import edu.ucne.doers.presentation.navigation.Screen
+import edu.ucne.doers.presentation.tareas.TareaUiState
+import edu.ucne.doers.presentation.tareas.TareaViewModel
 import edu.ucne.doers.presentation.tareas.components.TaskOverview
 
 @Composable
