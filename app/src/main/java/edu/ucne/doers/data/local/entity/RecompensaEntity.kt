@@ -9,17 +9,13 @@ import edu.ucne.doers.data.local.model.EstadoRecompensa
 
 @Entity(
     tableName = "Recompensas",
-    foreignKeys = [
-        ForeignKey(
-            entity = PadreEntity::class,
-            parentColumns = ["padreId"],
-            childColumns = ["padreId"],
-            onDelete = ForeignKey.CASCADE
-        )
-    ],
-    indices = [
-        Index(value = ["padreId"]),
-    ]
+    foreignKeys = [ForeignKey(
+        entity = PadreEntity::class,
+        parentColumns = ["padreId"],
+        childColumns = ["padreId"],
+        onDelete = ForeignKey.CASCADE
+    )],
+    indices = [Index(value = ["padreId"])]
 )
 data class RecompensaEntity(
     @PrimaryKey(autoGenerate = true) val recompensaId: Int = 0,
@@ -27,6 +23,6 @@ data class RecompensaEntity(
     val descripcion: String,
     val imagenURL: String,
     val puntosNecesarios: Int,
-    val estado: EstadoRecompensa = EstadoRecompensa.DISPONIBLE,
+    val estado: EstadoRecompensa = EstadoRecompensa.PENDIENTE,
     val condicion: CondicionRecompensa = CondicionRecompensa.ACTIVA
 )

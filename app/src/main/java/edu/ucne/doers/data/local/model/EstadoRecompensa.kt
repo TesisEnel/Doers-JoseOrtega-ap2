@@ -3,19 +3,21 @@ package edu.ucne.doers.data.local.model
 import androidx.compose.ui.graphics.Color
 import com.squareup.moshi.Json
 
-
 enum class EstadoRecompensa {
-    @Json(name = "DISPONIBLE") DISPONIBLE,
-    @Json(name = "NO_DISPONIBLE") NO_DISPONIBLE;
+    @Json(name = "PENDIENTE") PENDIENTE,
+    @Json(name = "COMPLETADA") COMPLETADA,
+    @Json(name = "CANCELADA") CANCELADA;
 
-    fun nombreMostrable() = when(this) {
-        DISPONIBLE -> "Disponible"
-        NO_DISPONIBLE -> "No Disponible"
+    fun nombreMostrable(): String = when (this) {
+        PENDIENTE -> "Pendiente"
+        COMPLETADA -> "Completada"
+        CANCELADA -> "Cancelada"
     }
 
-    fun color(): Color = when(this) {
-        DISPONIBLE -> Color(0xFF388E3C)
-        NO_DISPONIBLE -> Color.Red
+    fun color(): Color = when (this) {
+        PENDIENTE -> Color(0xFFFFA000)
+        COMPLETADA -> Color(0xFF388E3C)
+        CANCELADA -> Color(0xFFD32F2F)
     }
 }
 

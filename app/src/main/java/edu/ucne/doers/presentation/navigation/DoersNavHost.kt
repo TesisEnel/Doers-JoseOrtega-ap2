@@ -119,7 +119,6 @@ fun DoersNavHost(
                     hijoViewModel = hijoViewModel,
                     onNavigateToTareas = { navHostController.navigate(Screen.TareaList) },
                     onNavigateToRecompensas = { navHostController.navigate(Screen.RecompensaList) },
-                    onNavigateToPerfil = { navHostController.navigate(Screen.Home) },
                     onSignOut = {
                         padreViewModel.signOut()
                         navHostController.navigate(Screen.Home) {
@@ -165,10 +164,8 @@ fun DoersNavHost(
             }
             composable<Screen.RecompensaHijo> {
                 RecompensasHijoScreen(
-                    padreId = padreState.padreId ?: "",
                     onNavigateToPerfil = { navHostController.navigate(Screen.Hijo) },
                     onNavigateToTareas = { navHostController.navigate(Screen.TareaHijo) },
-                    hijoViewModel = hijoViewModel
                 )
             }
             composable<Screen.TareaList> {

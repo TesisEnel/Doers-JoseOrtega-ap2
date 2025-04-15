@@ -280,7 +280,7 @@ class HijoViewModel @Inject constructor(
         viewModelScope.launch {
             val hijoId = _uiState.value.hijoId
             if (hijoId == 0 || hijoId == null) {
-                _uiState.update { it.copy(errorMessage = "Error: No se encontró el ID del hijo") }
+                _uiState.update { it.copy(errorMessage = "Error: No se encontró el Id del hijo") }
                 return@launch
             }
 
@@ -351,7 +351,7 @@ class HijoViewModel @Inject constructor(
         viewModelScope.launch {
             val hijoId = _uiState.value.hijoId
             if (hijoId == 0 || hijoId == null) {
-                _uiState.update { it.copy(errorMessage = "Error: No se encontró el ID del hijo") }
+                _uiState.update { it.copy(errorMessage = "Error: No se encontró el Id del hijo") }
                 return@launch
             }
 
@@ -373,7 +373,7 @@ class HijoViewModel @Inject constructor(
                     )
 
                 if (countPending > 0) {
-                    throw Exception("Ya reclamaste esta recompensa. Intenta con otra.")
+                    throw Exception("Ya reclamaste esta recompensa")
                 }
                 val nuevoCanjeo = CanjeoEntity(
                     recompensaId = recompensaId,
@@ -415,7 +415,6 @@ class HijoViewModel @Inject constructor(
                         errorMessage = e.message ?: "Error al reclamar recompensa"
                     )
                 }
-                Log.e("reclamarRecompensa", "Error: ${e.message}")
             }
         }
     }

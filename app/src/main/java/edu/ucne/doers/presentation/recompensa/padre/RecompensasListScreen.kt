@@ -13,7 +13,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,7 +24,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import edu.ucne.doers.data.local.entity.RecompensaEntity
-import edu.ucne.doers.data.local.model.CondicionRecompensa
 import edu.ucne.doers.presentation.componentes.PadreNavBar
 import edu.ucne.doers.presentation.navigation.Screen
 import edu.ucne.doers.presentation.recompensa.RecompensaUiState

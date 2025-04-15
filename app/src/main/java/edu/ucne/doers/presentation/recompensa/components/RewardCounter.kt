@@ -1,8 +1,7 @@
-package edu.ucne.doers.presentation.tareas.components
+package edu.ucne.doers.presentation.recompensa.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -18,19 +17,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import edu.ucne.doers.R
 import edu.ucne.doers.data.local.model.EstadoCanjeo
-import edu.ucne.doers.data.local.model.EstadoTarea
-import edu.ucne.doers.ui.theme.DoersTheme
+import edu.ucne.doers.data.local.model.EstadoRecompensa
 
 @Composable
-fun TaskCounter(
+fun RewardCounter(
     label: String,
     count: Int,
-    estado: EstadoTarea
+    estado: EstadoRecompensa
 ) {
     Card(
         modifier = Modifier
@@ -50,8 +47,8 @@ fun TaskCounter(
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 8.dp),
                 color = when (estado) {
-                    EstadoTarea.COMPLETADA -> if(count > 0) Color(0xFF388E3C) else Color.Red
-                    EstadoTarea.PENDIENTE -> if(count > 0) Color(0xFFFFA000) else Color.Red
+                    EstadoRecompensa.COMPLETADA -> if(count > 0) Color(0xFF388E3C) else Color.Red
+                    EstadoRecompensa.PENDIENTE -> if(count > 0) Color(0xFFFFA000) else Color.Red
                     else -> Color.Black
                 }
             )
@@ -63,16 +60,15 @@ fun TaskCounter(
             )
 
             when (estado) {
-                EstadoTarea.COMPLETADA -> {
+                EstadoRecompensa.COMPLETADA -> {
                     Icon(
                         painter = painterResource(id = R.drawable.check),
                         contentDescription = "Completado",
                         modifier = Modifier.size(30.dp).padding(top = 4.dp),
                         tint = estado.color(),
-
-                    )
+                        )
                 }
-                EstadoTarea.PENDIENTE -> {
+                EstadoRecompensa.PENDIENTE -> {
                     Icon(
                         painter = painterResource(id = R.drawable.exclamation_mark),
                         contentDescription = "Pendiente",
@@ -80,25 +76,8 @@ fun TaskCounter(
                         tint = estado.color()
                     )
                 }
-                else -> {
-
-                }
+                else -> { }
             }
         }
-    }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun TaskCounterPreview() {
-    DoersTheme {
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.padding(16.dp)
-        ) {
-            TaskCounter(label = "Completados", count = 3, estado = EstadoTarea.COMPLETADA)
-            TaskCounter(label = "Pendientes", count = 5, estado = EstadoTarea.PENDIENTE)
-        }
-
     }
 }

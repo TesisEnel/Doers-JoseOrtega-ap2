@@ -11,7 +11,9 @@ import edu.ucne.doers.data.local.entity.RecompensaEntity
 import edu.ucne.doers.data.local.entity.TareaEntity
 import edu.ucne.doers.data.local.entity.TareaHijo
 import edu.ucne.doers.data.local.entity.TransaccionHijo
+import edu.ucne.doers.data.local.model.CondicionRecompensa
 import edu.ucne.doers.data.local.model.CondicionTarea
+import edu.ucne.doers.data.local.model.EstadoCanjeo
 import edu.ucne.doers.data.local.model.EstadoRecompensa
 import edu.ucne.doers.data.local.model.EstadoTarea
 import edu.ucne.doers.data.local.model.EstadoTareaHijo
@@ -59,9 +61,6 @@ class PadreViewModel @Inject constructor(
     private val _tareasHijo = MutableStateFlow<List<TareaHijo>>(emptyList())
     val tareasHijo: StateFlow<List<TareaHijo>> = _tareasHijo.asStateFlow()
 
-    private val _recompensasPendientesMap = MutableStateFlow<Map<String, List<RecompensaEntity>>>(emptyMap())
-    val recompensasPendientesMap: StateFlow<Map<String, List<RecompensaEntity>>> = _recompensasPendientesMap.asStateFlow()
-
     private val _recompensas = MutableStateFlow<List<RecompensaEntity>>(emptyList())
     val recompensas: StateFlow<List<RecompensaEntity>> = _recompensas.asStateFlow()
 
@@ -98,7 +97,11 @@ class PadreViewModel @Inject constructor(
                 )
                 tareaHijoRepository.save(tareaAprobada).collect { result ->
                     when (result) {
-                        is Resource.Success -> Log.d("PadreViewModel", "TareaHijo aprobada guardada")
+                        is Resource.Success -> Log.d(
+                            "PadreViewModel",
+                            "TareaHijo aprobada guardada"
+                        )
+
                         is Resource.Error -> throw Exception("Error al guardar TareaHijo: ${result.message}")
                         is Resource.Loading -> Log.d("PadreViewModel", "Guardando TareaHijo...")
                     }
@@ -114,6 +117,7 @@ class PadreViewModel @Inject constructor(
                             is Resource.Success -> {
                                 getHijosByPadre(hijo.padreId)
                             }
+
                             is Resource.Error -> throw Exception("Error al actualizar hijo: ${result.message}")
                             is Resource.Loading -> Log.d("PadreViewModel", "Actualizando saldo...")
                         }
@@ -128,26 +132,36 @@ class PadreViewModel @Inject constructor(
                     )
                     transaccionHijoRepository.save(transaccion).collect { result ->
                         when (result) {
-                            is Resource.Success -> Log.d("PadreViewModel", "Transacción guardada exitosamente")
-                            is Resource.Error -> Log.e("PadreViewModel", "Error al guardar transacción: ${result.message}")
-                            is Resource.Loading -> Log.d("PadreViewModel", "Guardando transacción...")
+                            is Resource.Success -> Log.d(
+                                "PadreViewModel",
+                                "Transacción guardada exitosamente"
+                            )
+                            is Resource.Error -> Log.e(
+                                "PadreViewModel",
+                                "Error al guardar transacción: ${result.message}"
+                            )
+                            is Resource.Loading -> Log.d(
+                                "PadreViewModel",
+                                "Guardando transacción..."
+                            )
                         }
                     }
                 } else {
                     throw Exception("Hijo o tarea no encontrados")
                 }
-                if (tareaOriginal != null) {
-                    val tareaActualizada = tareaOriginal.copy(
-                        estado = EstadoTarea.COMPLETADA,
-                        condicion = CondicionTarea.INACTIVA
-                    )
-                    Log.d("PadreViewModel", "Guardando TareaEntity actualizada: $tareaActualizada")
-                    tareaRepository.save(tareaActualizada).collect { result ->
-                        when (result) {
-                            is Resource.Success -> Log.d("PadreViewModel", "TareaEntity actualizada a COMPLETADA e INACTIVA")
-                            is Resource.Error -> throw Exception("Error al actualizar tarea: ${result.message}")
-                            is Resource.Loading -> Log.d("PadreViewModel", "Guardando TareaEntity...")
-                        }
+                val tareaActualizada = tareaOriginal.copy(
+                    estado = EstadoTarea.COMPLETADA,
+                    condicion = CondicionTarea.INACTIVA
+                )
+                tareaRepository.save(tareaActualizada).collect { result ->
+                    when (result) {
+                        is Resource.Success -> Log.d(
+                            "PadreViewModel",
+                            "TareaEntity actualizada a COMPLETADA e INACTIVA"
+                        )
+
+                        is Resource.Error -> throw Exception("Error al actualizar tarea: ${result.message}")
+                        is Resource.Loading -> Log.d("PadreViewModel", "Guardando TareaEntity...")
                     }
                 }
                 getTareasHijo()
@@ -159,12 +173,14 @@ class PadreViewModel @Inject constructor(
         }
     }
 
-    fun rechazarTarea(tarea: TareaHijo) {
+    fun rechazarTarea(tareaHijo: TareaHijo) {
         viewModelScope.launch {
             try {
-                tareaHijoRepository.delete(tarea)
+                tareaHijoRepository.delete(tareaHijo)
                 _toastMessage.value = "Tarea rechazada con éxito"
-                _tareasHijo.update { tareas -> tareas.filterNot { it.tareaHijoId == tarea.tareaHijoId } }
+                _tareasHijo.update { tareas ->
+                    tareas.filterNot { it.tareaHijoId == tareaHijo.tareaHijoId }
+                }
                 getTareasHijo()
             } catch (e: Exception) {
                 _errorMessage.value = "Error al rechazar tarea: ${e.message}"
@@ -176,7 +192,7 @@ class PadreViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val canjeoAprobado = canjeo.copy(
-                    estado = EstadoRecompensa.RECLAMADA,
+                    estado = EstadoCanjeo.APROBADO,
                     fecha = Date()
                 )
                 canjeoRepository.save(canjeoAprobado).collect { result ->
@@ -187,16 +203,17 @@ class PadreViewModel @Inject constructor(
                     }
                 }
 
-                val hijo = hijoRepository.find(canjeo.hijoId)
-                val recompensa = recompensaRepository.find(canjeo.recompensaId)
-                if (hijo != null && recompensa != null) {
-                    val puntosGastados = recompensa.puntosNecesarios
+                val hijo = hijoRepository.find(canjeo.hijoId ?: 0)
+                val recompensaOriginal = recompensaRepository.find(canjeo.recompensaId)
+                if (hijo != null && recompensaOriginal != null) {
+                    val puntosGastados = recompensaOriginal.puntosNecesarios
                     val hijoActualizado = hijo.copy(saldoActual = hijo.saldoActual - puntosGastados)
                     hijoRepository.save(hijoActualizado).collect { result ->
                         when (result) {
                             is Resource.Success -> {
                                 getHijosByPadre(hijo.padreId)
                             }
+
                             is Resource.Error -> throw Exception("Error al actualizar hijo: ${result.message}")
                             is Resource.Loading -> Log.d("PadreViewModel", "Actualizando saldo...")
                         }
@@ -206,44 +223,64 @@ class PadreViewModel @Inject constructor(
                         hijoId = hijo.hijoId,
                         tipo = TipoTransaccion.CONSUMIDO,
                         monto = puntosGastados,
-                        descripcion = "Puntos gastados por recompensa: ${recompensa.descripcion}",
+                        descripcion = "Puntos gastados por recompensa: ${recompensaOriginal.descripcion}",
                         fecha = Date()
                     )
                     transaccionHijoRepository.save(transaccion).collect { result ->
                         when (result) {
-                            is Resource.Success -> Log.d("PadreViewModel", "Transacción guardada exitosamente")
-                            is Resource.Error -> Log.e("PadreViewModel", "Error al guardar transacción: ${result.message}")
-                            is Resource.Loading -> Log.d("PadreViewModel", "Guardando transacción...")
+                            is Resource.Success -> Log.d(
+                                "PadreViewModel",
+                                "Transacción guardada exitosamente"
+                            )
+                            is Resource.Error -> Log.e(
+                                "PadreViewModel",
+                                "Error al guardar transacción: ${result.message}"
+                            )
+                            is Resource.Loading -> Log.d(
+                                "PadreViewModel",
+                                "Guardando transacción..."
+                            )
                         }
                     }
                 } else {
                     throw Exception("Hijo o recompensa no encontrados")
                 }
+                val recompensaActualizada = recompensaOriginal.copy(
+                    estado = EstadoRecompensa.COMPLETADA,
+                    condicion = CondicionRecompensa.INACTIVA
+                )
+                recompensaRepository.save(recompensaActualizada).collect { result ->
+                    when (result) {
+                        is Resource.Success -> Log.d(
+                            "PadreViewModel",
+                            "RecompensaEntity actualizada a COMPLETADA e INACTIVA"
+                        )
+                        is Resource.Error -> throw Exception("Error al actualizar recompensa: ${result.message}")
+                        is Resource.Loading -> Log.d("PadreViewModel", "Guardando RecompensaEntity...")
+                    }
+                }
                 getRecompensasHijo()
                 _toastMessage.value = "Recompensa validada con éxito"
-
             } catch (e: Exception) {
                 _errorMessage.value = "Error al validar recompensa: ${e.message}"
             }
         }
     }
 
-
     fun rechazarRecompensa(canjeo: CanjeoEntity) {
         viewModelScope.launch {
             try {
-                canjeoRepository.delete(canjeo) // Elimina el canjeo
+                canjeoRepository.delete(canjeo)
                 _toastMessage.value = "Recompensa rechazada con éxito"
                 _canjeoHijo.update { canjeos ->
-                    canjeos.filterNot { it.canjeoId == canjeo.canjeoId } // Filtra el canjeo eliminado
+                    canjeos.filterNot { it.canjeoId == canjeo.canjeoId }
                 }
-                getRecompensasHijo() // Refresca las recompensas
+                getRecompensasHijo()
             } catch (e: Exception) {
                 _errorMessage.value = "Error al rechazar recompensa: ${e.message}"
             }
         }
     }
-
 
     fun clearToast() {
         _toastMessage.value = null
@@ -265,7 +302,7 @@ class PadreViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        signInError = "ID de usuario inválido",
+                        signInError = "Id de usuario inválido",
                         isSignInSuccessful = false
                     )
                 }
@@ -294,10 +331,10 @@ class PadreViewModel @Inject constructor(
 
             _uiState.update {
                 it.copy(
-                    isSignInSuccessful = result.data != null,
+                    isSignInSuccessful = true,
                     signInError = result.errorMessage,
                     padreId = userId,
-                    nombre = result.data?.userName ?: "Padre",
+                    nombre = result.data.userName ?: "Padre",
                     email = result.data.email,
                     fotoPerfil = result.data.profilePictureUrl,
                     codigoSala = codigoSala,
@@ -410,6 +447,7 @@ class PadreViewModel @Inject constructor(
                     _uiState.update { it.copy(isSuccess = true) }
                     onSuccess()
                 }
+
                 is Resource.Error -> {
                     setLoading(false)
                     val alreadyExists = result.message?.contains("UNIQUE constraint failed") == true
@@ -428,7 +466,8 @@ class PadreViewModel @Inject constructor(
         viewModelScope.launch {
             hijoRepository.getAll().collect { resource ->
                 if (resource is Resource.Success) {
-                    val hijosDelPadre = resource.data?.filter { it.padreId == padreId } ?: emptyList()
+                    val hijosDelPadre =
+                        resource.data?.filter { it.padreId == padreId } ?: emptyList()
                     _hijos.value = hijosDelPadre
                     getRecompensasHijo()
                 } else if (resource is Resource.Error) {
@@ -444,9 +483,11 @@ class PadreViewModel @Inject constructor(
                 when (resource) {
                     is Resource.Loading -> {
                     }
+
                     is Resource.Success -> {
                         _recompensas.value = resource.data!!
                     }
+
                     is Resource.Error -> {
                         _uiState.update { it.copy(errorMessage = resource.message) }
                     }
@@ -462,9 +503,11 @@ class PadreViewModel @Inject constructor(
                 when (resource) {
                     is Resource.Loading -> {
                     }
+
                     is Resource.Success -> {
                         _tareasHijo.value = resource.data!!
                     }
+
                     is Resource.Error -> {
                         _uiState.update { it.copy(errorMessage = resource.message) }
                     }

@@ -37,6 +37,7 @@ import edu.ucne.doers.data.local.entity.HijoEntity
 import edu.ucne.doers.data.local.entity.RecompensaEntity
 import edu.ucne.doers.data.local.entity.TareaEntity
 import edu.ucne.doers.data.local.entity.TareaHijo
+import edu.ucne.doers.data.local.model.EstadoCanjeo
 import edu.ucne.doers.data.local.model.EstadoRecompensa
 import edu.ucne.doers.data.local.model.EstadoTareaHijo
 
@@ -116,10 +117,8 @@ fun ResumenPadreCards(
                             contentDescription = null
                         )
                     }
-                    val totalRecompensas = canjeos.count { it.estado == EstadoRecompensa.PENDIENTE } // Ajustado para usar canjeos
-                    Text(text = "$totalRecompensas recompensas", style = MaterialTheme.typography.bodyMedium)
-                    println("Recompensas pendientes count: $totalRecompensas")
-                    println("Total canjeos: ${canjeos.size}, Canjeos pendientes: ${canjeos.filter { it.estado == EstadoRecompensa.PENDIENTE }.size}")
+                    val canjeosPendientes = canjeos.count { it.estado == EstadoCanjeo.PENDIENTE_VERIFICACION }
+                    Text(text = "$canjeosPendientes recompensas", style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }
@@ -180,15 +179,12 @@ fun ResumenPadreCards(
         }
 
         if (expandedCard == "recompensas") {
-            println("Entering recompensas block. Canjeos size: ${canjeos.size}")
-            canjeos.filter { it.estado == EstadoRecompensa.PENDIENTE }.forEach { canjeo ->
+            canjeos.filter { it.estado == EstadoCanjeo.PENDIENTE_VERIFICACION }.forEach { canjeo ->
                 val hijo = hijos.find { it.hijoId == canjeo.hijoId }
                 val recompensa = recompensas.find { it.recompensaId == canjeo.recompensaId }
                 val recompensaDesc = recompensa?.descripcion ?: "Recompensa desconocida"
                 val puntosNecesarios = recompensa?.puntosNecesarios ?: 0
                 val nombreHijo = hijo?.nombre ?: "Desconocido"
-
-                println("Rendering canjeo - Hijo: $nombreHijo, Recompensa: $recompensaDesc, Puntos: $puntosNecesarios")
 
                 Card(
                     modifier = Modifier

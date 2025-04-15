@@ -62,7 +62,9 @@ fun RecompensaCard(
     var isExpanded by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    val isSwitchChecked = recompensa.estado == EstadoRecompensa.DISPONIBLE
+    val isRecompensaCompletada = recompensa.estado == EstadoRecompensa.COMPLETADA
+    val isSwitchChecked = if (isRecompensaCompletada) false else recompensa.condicion == CondicionRecompensa.ACTIVA
+
     val context = LocalContext.current
 
     Column(

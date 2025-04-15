@@ -10,7 +10,7 @@ data class RecompensaUiState(
     val descripcion: String = "",
     val imagenURL: String = "",
     val puntosNecesarios: Int = 0,
-    val estado: EstadoRecompensa = EstadoRecompensa.DISPONIBLE,
+    val estado: EstadoRecompensa = EstadoRecompensa.PENDIENTE,
     val condicion: CondicionRecompensa = CondicionRecompensa.ACTIVA,
     val errorMessage: String? = null,
     val listaRecompensas: List<RecompensaEntity> = emptyList(),

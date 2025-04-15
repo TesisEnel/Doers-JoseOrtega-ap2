@@ -1,19 +1,14 @@
 package edu.ucne.doers.data.repository
 
-import android.annotation.SuppressLint
 import edu.ucne.doers.data.local.dao.CanjeoDao
 import edu.ucne.doers.data.local.entity.CanjeoEntity
-import edu.ucne.doers.data.local.entity.TareaHijo
 import edu.ucne.doers.data.local.model.EstadoCanjeo
-import edu.ucne.doers.data.local.model.EstadoTareaHijo
 import edu.ucne.doers.data.remote.RemoteDataSource
 import edu.ucne.doers.data.remote.Resource
 import edu.ucne.doers.data.remote.dto.CanjeoDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
-import java.text.SimpleDateFormat
-import java.util.Date
 import javax.inject.Inject
 
 class CanjeoRepository @Inject constructor(

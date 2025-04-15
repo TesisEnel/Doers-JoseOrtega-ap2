@@ -67,14 +67,12 @@ fun PadreScreen(
     hijoViewModel: HijoViewModel,
     onNavigateToTareas: () -> Unit,
     onNavigateToRecompensas: () -> Unit,
-    onNavigateToPerfil: () -> Unit,
     onSignOut: () -> Unit
 ) {
     val padreUiState by padreViewModel.uiState.collectAsState()
 
     val hijos by padreViewModel.hijos.collectAsState()
     val tareasHijo by padreViewModel.tareasHijo.collectAsState()
-    //val recompensasMap by padreViewModel.recompensasPendientesMap.collectAsState()
     val recompensas by padreViewModel.recompensas.collectAsState()
     val canjeos by padreViewModel.canjeoHijo.collectAsState()
     val hijoUiState by hijoViewModel.uiState.collectAsState()
@@ -90,7 +88,6 @@ fun PadreScreen(
 
     val context = LocalContext.current
     val toastMessage by padreViewModel.toastMessage.collectAsState()
-    val hijoToastMessage by hijoViewModel.uiState.collectAsState()
 
     LaunchedEffect(toastMessage, hijoUiState.successMessage, hijoUiState.errorMessage) {
         toastMessage?.let {

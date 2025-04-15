@@ -26,7 +26,6 @@ interface TareaDao {
     )
     suspend fun find(id: Int): TareaEntity?
 
-    // Nueva funcion
     @Query(
         """
             SELECT * FROM Tareas 

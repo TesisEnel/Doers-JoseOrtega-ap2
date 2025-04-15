@@ -2,15 +2,11 @@ package edu.ucne.doers.data.repository
 
 import edu.ucne.doers.data.local.dao.HijoDao
 import edu.ucne.doers.data.local.dao.PadreDao
-import edu.ucne.doers.data.local.dao.TareaHijoDao
 import edu.ucne.doers.data.local.entity.HijoEntity
-import edu.ucne.doers.data.local.entity.PadreEntity
-import edu.ucne.doers.data.local.entity.TareaHijo
 import edu.ucne.doers.data.remote.RemoteDataSource
 import edu.ucne.doers.data.remote.Resource
 import edu.ucne.doers.data.remote.dto.HijoDto
 import edu.ucne.doers.data.remote.dto.PadreDto
-import edu.ucne.doers.presentation.extension.collectFirstOrNull
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flow
@@ -19,8 +15,6 @@ import javax.inject.Inject
 class HijoRepository @Inject constructor(
     private val hijoDao: HijoDao,
     private val padreDao: PadreDao,
-    private val padreRepository: PadreRepository,
-    private val tareaHijoDao: TareaHijoDao,
     private val remote: RemoteDataSource
 ) {
 
@@ -93,28 +87,6 @@ class HijoRepository @Inject constructor(
         }
     }
 
-    suspend fun findByNombreAndPadreId(nombre: String, padreId: String): HijoEntity? {
-        return hijoDao.findByNombreAndPadreId(nombre, padreId)
-    }
-
-    suspend fun getPadreIdByCodigoSala(codigoSala: String): String? {
-        return try {
-            val padreDto = remote.getPadreByCodigoSala(codigoSala)
-            val padre = padreDto.toEntity()
-            padreDao.save(padre)
-            padre.padreId
-        } catch (e: Exception) {
-            null
-        }
-    }
-
-    suspend fun savePadreLocalSiNoExiste(padre: PadreEntity) {
-        val exists = padreDao.find(padre.padreId)
-        if (exists == null) {
-            padreDao.save(padre)
-        }
-    }
-
     suspend fun saveLocal(hijo: HijoEntity) {
         hijoDao.save(hijo)
     }
@@ -154,22 +126,6 @@ class HijoRepository @Inject constructor(
             Resource.Error("El código de sala no existe o no hay conexión: ${e.localizedMessage}")
         }
     }
-
-    suspend fun getHijosConRecompensasByPadreId(padreId: String): List<HijoConRecompensas> {
-        return hijoDao.getHijosConRecompensasByPadreId(padreId)
-    }
-
-    suspend fun insertTareaHijo(tareaHijo: TareaHijo): Resource<Unit> {
-        return try {
-            tareaHijoDao.save(tareaHijo)
-            remote.saveTareaHijo(tareaHijo.toDto())
-            Resource.Success(Unit)
-        } catch (e: Exception) {
-            Resource.Error("Error al insertar tarea del hijo: ${e.localizedMessage}")
-        }
-    }
-
-    fun getTareasHijo(hijoId: Int): Flow<List<TareaHijo>> = tareaHijoDao.getByHijoId(hijoId)
 
     suspend fun getPadreByCodigoSala(codigoSala: String): PadreDto {
         return remote.getPadreByCodigoSala(codigoSala)

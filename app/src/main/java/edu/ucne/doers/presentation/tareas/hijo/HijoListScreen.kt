@@ -143,7 +143,7 @@ fun HijoBodyListScreen(
                             .padding(vertical = 8.dp)
                     )
 
-                    val tareasFiltradas = uiState.listaRecompensasFiltradas
+                    val tareasFiltradas = uiState.listaTareasFiltradas
 
                     if (tareasFiltradas.isEmpty()) {
                         Box(

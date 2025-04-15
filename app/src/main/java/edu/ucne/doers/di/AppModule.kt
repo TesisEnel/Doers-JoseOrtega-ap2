@@ -16,6 +16,7 @@ import dagger.hilt.components.SingletonComponent
 import edu.ucne.doers.data.local.database.DoersDb
 import edu.ucne.doers.data.remote.DoersApi
 import edu.ucne.doers.presentation.sign_in.GoogleAuthUiClient
+import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import javax.inject.Singleton
@@ -93,10 +94,25 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideDoersApi(moshi: Moshi): DoersApi {
+    fun provideOkHttpClient(): OkHttpClient {
+        return OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val original = chain.request()
+                val request = original.newBuilder()
+                    .header("Accept-Encoding", "identity")
+                    .build()
+                chain.proceed(request)
+            }
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideDoersApi(moshi: Moshi, okHttpClient: OkHttpClient): DoersApi {
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
             .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .client(okHttpClient)
             .build()
             .create(DoersApi::class.java)
     }

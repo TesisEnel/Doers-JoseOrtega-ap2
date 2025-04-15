@@ -32,7 +32,7 @@ class RecompensaViewModel @Inject constructor(
             descripcion = "",
             puntosNecesarios = 0,
             padreId = "",
-            estado = EstadoRecompensa.DISPONIBLE,
+            estado = EstadoRecompensa.PENDIENTE,
             condicion = CondicionRecompensa.INACTIVA
         )
     )
@@ -155,7 +155,7 @@ class RecompensaViewModel @Inject constructor(
                 descripcion = "",
                 puntosNecesarios = 0,
                 condicion = CondicionRecompensa.INACTIVA,
-                estado = EstadoRecompensa.DISPONIBLE,
+                estado = EstadoRecompensa.PENDIENTE,
                 errorMessage = null
             )
         }

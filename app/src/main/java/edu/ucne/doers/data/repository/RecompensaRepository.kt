@@ -53,20 +53,6 @@ class RecompensaRepository @Inject constructor(
         }
     }
 
-    fun getRecompensasByPadreId(padreId: String): Flow<Resource<List<RecompensaEntity>>> = flow {
-        emit(Resource.Loading())
-        recompensaDao.getByPadreId(padreId).collect { local ->
-            emit(Resource.Success(local ?: emptyList()))
-        }
-        try {
-            val remoteList = remote.getRecompensas().filter { it.padreId == padreId }
-            val entities = remoteList.map { it.toEntity() }
-            recompensaDao.save(entities)
-        } catch (e: Exception) {
-            emit(Resource.Error("No se pudo actualizar recompensas: ${e.localizedMessage}", null))
-        }
-    }
-
     suspend fun find(id: Int): RecompensaEntity? {
         return try {
             val local = recompensaDao.find(id)
