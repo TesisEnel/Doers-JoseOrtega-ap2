@@ -1,10 +1,8 @@
 package edu.ucne.doers.data.repository
 
+import android.util.Log
 import edu.ucne.doers.data.local.dao.RecompensaDao
 import edu.ucne.doers.data.local.entity.RecompensaEntity
-import edu.ucne.doers.data.local.entity.TareaEntity
-import edu.ucne.doers.data.local.model.CondicionRecompensa
-import edu.ucne.doers.data.local.model.CondicionTarea
 import edu.ucne.doers.data.remote.RemoteDataSource
 import edu.ucne.doers.data.remote.Resource
 import edu.ucne.doers.data.remote.dto.RecompensaDto
@@ -25,31 +23,49 @@ class RecompensaRepository @Inject constructor(
                 remote.updateRecompensa(recompensa.recompensaId, recompensa.toDto())
                 recompensa
             } else {
-                val saved = remote.saveRecompensa(recompensa.toDto())
-                saved.toEntity()
+                val savedDto = remote.saveRecompensa(recompensa.toDto())
+                val entity = savedDto.toEntity()
+                if (entity.recompensaId <= 0) {
+                    throw IllegalStateException("El servidor no asignó un ID válido a la recompensa")
+                }
+                entity
             }
 
-            recompensaDao.save(recompensaEntityConId)
+            try {
+                recompensaDao.save(recompensaEntityConId)
+                Log.d(
+                    "RecompensaRepository",
+                    "Recompensa guardada localmente: $recompensaEntityConId"
+                )
+            } catch (e: Exception) {
+                Log.e("RecompensaRepository", "Error al guardar en Room: ${e.localizedMessage}")
+                emit(Resource.Error("Error al guardar localmente: ${e.localizedMessage}"))
+                return@flow
+            }
+
             emit(Resource.Success(Unit))
 
         } catch (e: Exception) {
-            emit(Resource.Error("Error al guardar recompensa: ${e.localizedMessage}"))
+            Log.e("RecompensaRepository", "Error al guardar en API: ${e.localizedMessage}")
+            emit(Resource.Error("Error al guardar en el servidor: ${e.localizedMessage}"))
         }
     }
 
-    fun getAll(): Flow<Resource<List<RecompensaEntity>>> = flow {
-        emit(Resource.Loading())
-        val localData = recompensaDao.getAll().firstOrNull()
-        emit(Resource.Success(localData ?: emptyList()))
-
+    fun getAll(padreId: String): Flow<Resource<List<RecompensaEntity>>> = flow {
         try {
+            emit(Resource.Loading())
+
             val remoteList = remote.getRecompensas()
-            val entities = remoteList.map { it.toEntity() }
+
+            val filteredRemote = remoteList.filter { it.padreId == padreId }
+
+            val entities = filteredRemote.map { it.toEntity() }
             recompensaDao.save(entities)
-            val updatedLocal = recompensaDao.getAll().firstOrNull()
+
+            val updatedLocal = recompensaDao.getByPadreId(padreId).firstOrNull()
             emit(Resource.Success(updatedLocal ?: emptyList()))
         } catch (e: Exception) {
-            emit(Resource.Error("Error al obtener recompensas: ${e.localizedMessage}", localData))
+            emit(Resource.Error("Error al obtener recompensas: ${e.localizedMessage}"))
         }
     }
 
@@ -76,22 +92,6 @@ class RecompensaRepository @Inject constructor(
             Resource.Error("Error al eliminar recompensa: ${e.localizedMessage}")
         }
     }
-
-    fun getActiveRewards(): Flow<Resource<List<RecompensaEntity>>> = flow {
-        emit(Resource.Loading())
-        val local = recompensaDao.getByCondition(CondicionRecompensa.ACTIVA).firstOrNull()
-        emit(Resource.Success(local ?: emptyList()))
-
-        try {
-            val remoteData = remote.getRecompensasActivas()
-            val entities = remoteData.map { it.toEntity() }
-            recompensaDao.save(entities)
-            val updated = recompensaDao.getByCondition(CondicionRecompensa.ACTIVA).firstOrNull()
-            emit(Resource.Success(updated ?: emptyList()))
-        } catch (e: Exception) {
-            emit(Resource.Error("Error al obtener recompensas activas: ${e.localizedMessage}", local))
-        }
-    }
 }
 
 fun RecompensaEntity.toDto() = RecompensaDto(
@@ -113,3 +113,4 @@ fun RecompensaDto.toEntity() = RecompensaEntity(
     estado = this.estado,
     condicion = this.condicion
 )
+

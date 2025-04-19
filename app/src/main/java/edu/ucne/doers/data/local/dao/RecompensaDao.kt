@@ -6,7 +6,6 @@ import androidx.room.Query
 import androidx.room.Upsert
 import edu.ucne.doers.data.local.entity.RecompensaEntity
 import edu.ucne.doers.data.local.model.CondicionRecompensa
-import edu.ucne.doers.data.local.model.CondicionTarea
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -43,4 +42,12 @@ interface RecompensaDao {
         """
     )
     fun getByCondition(condicion: CondicionRecompensa): Flow<List<RecompensaEntity>>
+
+    @Query(
+        """
+        SELECT * FROM Recompensas 
+        WHERE padreId = :padreId AND condicion = :condicion
+    """
+    )
+    fun getActivasByPadre(padreId: String, condicion: CondicionRecompensa = CondicionRecompensa.ACTIVA): Flow<List<RecompensaEntity>>
 }

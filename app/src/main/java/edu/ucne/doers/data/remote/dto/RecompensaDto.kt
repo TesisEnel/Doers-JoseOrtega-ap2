@@ -3,6 +3,7 @@ package edu.ucne.doers.data.remote.dto
 import edu.ucne.doers.data.local.model.CondicionRecompensa
 import edu.ucne.doers.data.local.model.EstadoRecompensa
 
+
 data class RecompensaDto(
     val recompensaId: Int,
     val padreId: String,

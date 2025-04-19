@@ -24,7 +24,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 @Module
 object AppModule {
-    const val BASE_URL = "https://doers-app-2025-f3aketd8gbhbggd6.eastus2-01.azurewebsites.net"
+    const val BASE_URL = "https://doers-ahdvf9hjghe8chcx.eastus2-01.azurewebsites.net"
 
     //Moshi
     @Provides
