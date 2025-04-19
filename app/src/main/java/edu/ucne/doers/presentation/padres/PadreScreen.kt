@@ -67,6 +67,8 @@ fun PadreScreen(
     hijoViewModel: HijoViewModel,
     onNavigateToTareas: () -> Unit,
     onNavigateToRecompensas: () -> Unit,
+    goToTareasVerificar: () -> Unit,
+    goToToRecompensasVerificar: () -> Unit,
     onSignOut: () -> Unit
 ) {
     val padreUiState by padreViewModel.uiState.collectAsState()
@@ -306,24 +308,10 @@ fun PadreScreen(
                     Spacer(modifier = Modifier.height(20.dp))
 
                     ResumenPadreCards(
-                        hijos = hijos,
                         tareasHijo = tareasHijo,
-                        recompensas = recompensas,
                         canjeos = canjeos,
-                        tareas = padreViewModel.tareas.collectAsState().value,
-                        onCardClick = {tipo -> Log.d("PadreScreen", "Card $tipo clickeado")},
-                        onValidarTarea = { tarea ->
-                            padreViewModel.validarTarea(tarea)
-                        },
-                        onNoValidarTarea = { tarea ->
-                            padreViewModel.rechazarTarea(tarea)
-                        },
-                        onValidarRecompensa = { canjeo ->
-                            padreViewModel.validarRecompensa(canjeo)
-                        },
-                        onNoValidarRecompensa = { canjeo ->
-                            padreViewModel.rechazarRecompensa(canjeo)
-                        }
+                        goToTareasVerificar = goToTareasVerificar,
+                        goToRecompensasVerificar = goToToRecompensasVerificar
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))

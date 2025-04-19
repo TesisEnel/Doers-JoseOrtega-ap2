@@ -76,6 +76,12 @@ class PadreViewModel @Inject constructor(
     private val _toastMessage = MutableStateFlow<String?>(null)
     val toastMessage: StateFlow<String?> = _toastMessage.asStateFlow()
 
+    private val _tareasFiltradas = MutableStateFlow<List<TareaHijo>>(emptyList())
+    val tareasFiltradas: StateFlow<List<TareaHijo>> = _tareasFiltradas
+
+    private val _canjeosFiltrados = MutableStateFlow<List<CanjeoEntity>>(emptyList())
+    val canjeosFiltrados: StateFlow<List<CanjeoEntity>> = _canjeosFiltrados
+
     init {
         viewModelScope.launch {
             checkAuthenticatedUser()
@@ -395,6 +401,8 @@ class PadreViewModel @Inject constructor(
 
                 getHijosByPadre(currentUser.userId)
                 getTareasHijo()
+                getTareas()
+                getCanjeos()
                 getRecompensasHijo()
             } else {
                 _uiState.update {
@@ -479,23 +487,29 @@ class PadreViewModel @Inject constructor(
 
     private fun getRecompensasHijo() {
         viewModelScope.launch {
-            recompensaRepository.getAll().collect { resource ->
-                when (resource) {
-                    is Resource.Loading -> {
-                    }
-
-                    is Resource.Success -> {
-                        _recompensas.value = resource.data!!
-                    }
-
-                    is Resource.Error -> {
-                        _uiState.update { it.copy(errorMessage = resource.message) }
+            val padreId = uiState.value.padreId
+            if (!padreId.isNullOrBlank()) {
+                recompensaRepository.getAll(padreId).collect { resource ->
+                    when (resource) {
+                        is Resource.Loading -> {
+                            // Opcional: puedes mostrar estado de carga si quieres
+                        }
+                        is Resource.Success -> {
+                            _recompensas.value = resource.data ?: emptyList()
+                        }
+                        is Resource.Error -> {
+                            _uiState.update { it.copy(errorMessage = resource.message) }
+                        }
                     }
                 }
+            } else {
+                _uiState.update {
+                    it.copy(errorMessage = "ID de padre no disponible para cargar recompensas.")
+                }
             }
-
         }
     }
+
 
     private fun getTareasHijo() {
         viewModelScope.launch {
@@ -506,6 +520,7 @@ class PadreViewModel @Inject constructor(
 
                     is Resource.Success -> {
                         _tareasHijo.value = resource.data!!
+                        filtrarTareasPorHijo(null)
                     }
 
                     is Resource.Error -> {
@@ -514,6 +529,49 @@ class PadreViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private fun getCanjeos() {
+        viewModelScope.launch {
+            canjeoRepository.getAll().collect { resource ->
+                when (resource) {
+                    is Resource.Loading -> {}
+
+                    is Resource.Success -> {
+                        _canjeoHijo.value = resource.data ?: emptyList()
+                        filtrarRecompensasPorHijo(null)
+                    }
+
+                    is Resource.Error -> {
+                        _uiState.update { it.copy(errorMessage = resource.message) }
+                    }
+                }
+            }
+        }
+    }
+
+
+    private fun getTareas() {
+        viewModelScope.launch {
+            tareaRepository.getAll().collect { resource ->
+                if (resource is Resource.Success) {
+                    _tareas.value = resource.data ?: emptyList()
+                }
+            }
+        }
+    }
+
+
+    fun filtrarTareasPorHijo(hijoId: Int?) {
+        _tareasFiltradas.value = _tareasHijo.value
+            .filter { it.estado == EstadoTareaHijo.PENDIENTE_VERIFICACION }
+            .filter { hijoId == null || it.hijoId == hijoId }
+    }
+
+    fun filtrarRecompensasPorHijo(hijoId: Int?) {
+        _canjeosFiltrados.value = _canjeoHijo.value
+            .filter { it.estado == EstadoCanjeo.PENDIENTE_VERIFICACION }
+            .filter { hijoId == null || it.hijoId == hijoId }
     }
 }
 

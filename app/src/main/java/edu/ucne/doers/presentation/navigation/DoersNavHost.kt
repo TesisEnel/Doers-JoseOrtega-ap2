@@ -24,6 +24,8 @@ import edu.ucne.doers.presentation.hijos.HijoViewModel
 import edu.ucne.doers.presentation.home.HomeScreen
 import edu.ucne.doers.presentation.padres.PadreScreen
 import edu.ucne.doers.presentation.padres.PadreViewModel
+import edu.ucne.doers.presentation.padres.tareas.RecompensasPorVerificarScreen
+import edu.ucne.doers.presentation.padres.tareas.TareasPorVerificarScreen
 import edu.ucne.doers.presentation.recompensa.hijo.RecompensasHijoScreen
 import edu.ucne.doers.presentation.recompensa.padre.RecompensaScreen
 import edu.ucne.doers.presentation.recompensa.padre.RecompensasListScreen
@@ -119,6 +121,8 @@ fun DoersNavHost(
                     hijoViewModel = hijoViewModel,
                     onNavigateToTareas = { navHostController.navigate(Screen.TareaList) },
                     onNavigateToRecompensas = { navHostController.navigate(Screen.RecompensaList) },
+                    goToTareasVerificar = { navHostController.navigate(Screen.ActividadesTarea) },
+                    goToToRecompensasVerificar = { navHostController.navigate(Screen.ActividadesRecompensa) },
                     onSignOut = {
                         padreViewModel.signOut()
                         navHostController.navigate(Screen.Home) {
@@ -189,6 +193,16 @@ fun DoersNavHost(
                 HijoListScreen(
                     onNavigateToPerfil = { navHostController.navigate(Screen.Hijo) },
                     onNavigateToRecompensas = { navHostController.navigate(Screen.RecompensaHijo) }
+                )
+            }
+            composable<Screen.ActividadesTarea> {
+                TareasPorVerificarScreen(
+                    onNavigateToPerfil = { navHostController.navigate(Screen.Padre) }
+                )
+            }
+            composable<Screen.ActividadesRecompensa> {
+                RecompensasPorVerificarScreen(
+                    onNavigateToPerfil = { navHostController.navigate(Screen.Padre) }
                 )
             }
         }

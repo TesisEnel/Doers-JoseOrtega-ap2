@@ -10,6 +10,7 @@ import edu.ucne.doers.data.local.entity.CanjeoEntity
 import edu.ucne.doers.data.local.entity.HijoEntity
 import edu.ucne.doers.data.local.entity.TareaHijo
 import edu.ucne.doers.data.local.entity.TransaccionHijo
+import edu.ucne.doers.data.local.model.CondicionRecompensa
 import edu.ucne.doers.data.local.model.EstadoCanjeo
 import edu.ucne.doers.data.local.model.EstadoTareaHijo
 import edu.ucne.doers.data.local.model.PeriodicidadTarea
@@ -21,6 +22,7 @@ import edu.ucne.doers.data.repository.TareaHijoRepository
 import edu.ucne.doers.data.repository.TareaRepository
 import edu.ucne.doers.data.repository.TransaccionHijoRepository
 import edu.ucne.doers.presentation.extension.ifNullOrBlank
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,6 +30,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -58,6 +61,7 @@ class HijoViewModel @Inject constructor(
         observeTaskChanges()
         getTransacciones()
         loadSaldoActual()
+        loadRecompensas()
     }
 
     fun loadSaldoActual() {
@@ -114,7 +118,10 @@ class HijoViewModel @Inject constructor(
                             isAuthenticated = true
                         )
                     }
+
                     loadTareas()
+                    loadRecompensas() // ✅ Solo aquí cuando ya tengas el padreId
+
                 } else {
                     sharedPreferences.edit().remove("hijoId").apply()
                     _uiState.update {
@@ -484,62 +491,61 @@ class HijoViewModel @Inject constructor(
 
     private fun loadRecompensas() {
         viewModelScope.launch {
-            try {
-                _uiState.update { it.copy(isLoading = true) }
-                combine(
-                    recompensaRepository.getActiveRewards(),
-                    canjeoRepository.getAll()
-                ) { recompensasActivasResource, recompensasCompletadasResource ->
-                    when {
-                        recompensasActivasResource is Resource.Success && recompensasCompletadasResource is Resource.Success<*> -> {
-                            val recompensasActivas = recompensasActivasResource.data ?: emptyList()
-                            val recompensasCompletadas =
-                                (recompensasCompletadasResource.data as? List<CanjeoEntity>)
-                                    ?.filter { it.hijoId == _uiState.value.hijoId } ?: emptyList()
+            val padreId = withContext(Dispatchers.Default) {
+                while (_uiState.value.padreId.isNullOrBlank()) {
+                    delay(100)
+                }
+                _uiState.value.padreId!!
+            }
 
-                            val recompensasDisponibles = recompensasActivas.filter { recompensa ->
-                                !recompensasCompletadas.any {
-                                    it.recompensaId == recompensa.recompensaId && it.estado == EstadoCanjeo.APROBADO
-                                }
-                            }
+            _uiState.update { it.copy(isLoading = true) }
 
-                            _uiState.update {
-                                it.copy(
-                                    listaRecompensas = recompensasDisponibles,
-                                    listaRecompensasFiltradas = recompensasDisponibles,
-                                    isLoading = false,
-                                    errorMessage = null
-                                )
-                            }
+            val recompensasFlow = recompensaRepository.getAll(padreId)
+            val canjeosFlow = canjeoRepository.getAll()
+
+            combine(recompensasFlow, canjeosFlow) { recompensasResult, canjeosResult ->
+                Pair(recompensasResult, canjeosResult)
+            }.collect { (recompensasResult, canjeosResult) ->
+                when {
+                    recompensasResult is Resource.Success && canjeosResult is Resource.Success -> {
+                        val recompensas = recompensasResult.data ?: emptyList()
+                        val canjeos = canjeosResult.data ?: emptyList()
+
+                        val recompensasDisponibles = recompensas.filter { recompensa ->
+                            recompensa.condicion == CondicionRecompensa.ACTIVA &&
+                                    canjeos.none {
+                                        it.recompensaId == recompensa.recompensaId &&
+                                                it.hijoId == _uiState.value.hijoId &&
+                                                it.estado == EstadoCanjeo.APROBADO
+                                    }
                         }
 
-                        recompensasActivasResource is Resource.Error<*> || recompensasCompletadasResource is Resource.Error<*> -> {
-                            val mensajeError = buildString {
-                                if (recompensasActivasResource is Resource.Error<*>)
-                                    append("Recompensas activas: ${recompensasActivasResource.message} ")
-                                if (recompensasCompletadasResource is Resource.Error<*>)
-                                    append("Recompensas completadas: ${recompensasCompletadasResource.message}")
-                            }.ifBlank { "Error desconocido al cargar recompensas" }
-
-                            _uiState.update {
-                                it.copy(
-                                    errorMessage = mensajeError,
-                                    isLoading = false
-                                )
-                            }
-                        }
-
-                        else -> {
-                            _uiState.update { it.copy(isLoading = true) }
+                        _uiState.update {
+                            it.copy(
+                                listaRecompensas = recompensasDisponibles,
+                                listaRecompensasFiltradas = recompensasDisponibles,
+                                isLoading = false,
+                                errorMessage = null
+                            )
                         }
                     }
-                }.collect {}
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        errorMessage = "Error cargando recompensas: ${e.message}",
-                        isLoading = false
-                    )
+
+                    recompensasResult is Resource.Error || canjeosResult is Resource.Error -> {
+                        val errorMessage = buildString {
+                            if (recompensasResult is Resource.Error)
+                                append("Recompensas: ${recompensasResult.message} ")
+                            if (canjeosResult is Resource.Error)
+                                append("Canjeos: ${canjeosResult.message}")
+                        }.ifBlank { "Error desconocido al cargar recompensas." }
+
+                        _uiState.update {
+                            it.copy(errorMessage = errorMessage, isLoading = false)
+                        }
+                    }
+
+                    else -> {
+
+                    }
                 }
             }
         }
