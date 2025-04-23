@@ -28,7 +28,7 @@ import androidx.compose.ui.window.DialogProperties
 fun WelcomeModal(
     showModal: Boolean,
     onDismiss: () -> Unit,
-    userName: String
+    userName: String?
 ) {
     if (showModal) {
         AlertDialog(
@@ -46,7 +46,7 @@ fun WelcomeModal(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(2.dp) // Espacio para el borde
+                        .padding(2.dp)
                         .border(
                             width = 2.dp,
                             color = Color(0xFF4CAF50),

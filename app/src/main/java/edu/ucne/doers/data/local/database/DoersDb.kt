@@ -7,7 +7,6 @@ import edu.ucne.doers.data.local.dao.CanjeoDao
 import edu.ucne.doers.data.local.dao.HijoDao
 import edu.ucne.doers.data.local.dao.PadreDao
 import edu.ucne.doers.data.local.dao.RecompensaDao
-import edu.ucne.doers.data.local.dao.SolicitudRecompensaDao
 import edu.ucne.doers.data.local.dao.TareaDao
 import edu.ucne.doers.data.local.dao.TareaHijoDao
 import edu.ucne.doers.data.local.dao.TransaccionHijoDao
@@ -15,7 +14,6 @@ import edu.ucne.doers.data.local.entity.CanjeoEntity
 import edu.ucne.doers.data.local.entity.HijoEntity
 import edu.ucne.doers.data.local.entity.PadreEntity
 import edu.ucne.doers.data.local.entity.RecompensaEntity
-import edu.ucne.doers.data.local.entity.SolicitudRecompensa
 import edu.ucne.doers.data.local.entity.TareaEntity
 import edu.ucne.doers.data.local.entity.TareaHijo
 import edu.ucne.doers.data.local.entity.TransaccionHijo
@@ -29,9 +27,8 @@ import edu.ucne.doers.data.local.entity.TransaccionHijo
         RecompensaEntity::class,
         CanjeoEntity::class,
         TransaccionHijo::class,
-        SolicitudRecompensa::class
     ],
-    version = 1
+    version = 11
 )
 @TypeConverters(Converters::class)
 abstract class DoersDb : RoomDatabase() {
@@ -42,5 +39,4 @@ abstract class DoersDb : RoomDatabase() {
     abstract fun recompensaDao(): RecompensaDao
     abstract fun canjeoDao(): CanjeoDao
     abstract fun transaccionHijoDao(): TransaccionHijoDao
-    abstract fun solicitudRecompensaDao(): SolicitudRecompensaDao
 }

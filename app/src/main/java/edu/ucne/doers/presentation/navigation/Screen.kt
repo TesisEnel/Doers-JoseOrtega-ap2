@@ -23,4 +23,8 @@ sealed class Screen {
     data object HijoLogin : Screen()
     @Serializable
     data object Hijo : Screen()
+    @Serializable
+    data object ActividadesTarea : Screen()
+    @Serializable
+    data object ActividadesRecompensa : Screen()
 }

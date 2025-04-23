@@ -14,14 +14,17 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import edu.ucne.doers.data.local.database.DoersDb
-import edu.ucne.doers.data.repository.AuthRepository
+import edu.ucne.doers.data.remote.DoersApi
 import edu.ucne.doers.presentation.sign_in.GoogleAuthUiClient
+import okhttp3.OkHttpClient
+import retrofit2.Retrofit
+import retrofit2.converter.moshi.MoshiConverterFactory
 import javax.inject.Singleton
 
 @InstallIn(SingletonComponent::class)
 @Module
 object AppModule {
-    const val BASE_URL = ""
+    const val BASE_URL = "https://doers-ahdvf9hjghe8chcx.eastus2-01.azurewebsites.net"
 
     //Moshi
     @Provides
@@ -61,8 +64,6 @@ object AppModule {
     fun provideCanjeoDao(doersDb: DoersDb) = doersDb.canjeoDao()
     @Provides
     fun provideTransaccionHijoDao(doersDb: DoersDb) = doersDb.transaccionHijoDao()
-    @Provides
-    fun provideSolicitudRecompensaDao(doersDb: DoersDb) = doersDb.solicitudRecompensaDao()
 
     @Provides
     @Singleton
@@ -89,5 +90,30 @@ object AppModule {
     @Singleton
     fun provideSharedPreferences(@ApplicationContext context: Context): SharedPreferences {
         return context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+    }
+
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(): OkHttpClient {
+        return OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val original = chain.request()
+                val request = original.newBuilder()
+                    .header("Accept-Encoding", "identity")
+                    .build()
+                chain.proceed(request)
+            }
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideDoersApi(moshi: Moshi, okHttpClient: OkHttpClient): DoersApi {
+        return Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .client(okHttpClient)
+            .build()
+            .create(DoersApi::class.java)
     }
 }

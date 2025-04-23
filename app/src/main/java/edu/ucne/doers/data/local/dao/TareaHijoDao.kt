@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Query
 import androidx.room.Upsert
 import edu.ucne.doers.data.local.entity.TareaHijo
+import edu.ucne.doers.data.local.model.EstadoTareaHijo
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -12,7 +13,7 @@ interface TareaHijoDao {
     @Upsert
     suspend fun save(tareaHijo: TareaHijo)
 
-    @Upsert()
+    @Upsert
     suspend fun save(tareaHijo: List<TareaHijo>)
 
     @Query(
@@ -38,4 +39,13 @@ interface TareaHijoDao {
 
     @Query("SELECT * FROM TareasHijos")
     fun getAll(): Flow<List<TareaHijo>>
+
+    @Query("SELECT * FROM TareasHijos WHERE hijoId = :hijoId AND estado = :estado")
+    fun getByHijoIdAndEstado(hijoId: Int, estado: EstadoTareaHijo): Flow<List<TareaHijo>>
+
+    @Query("""
+        SELECT COUNT(*) FROM TareasHijos 
+        WHERE tareaId = :tareaId AND hijoId = :hijoId AND estado = :estado
+    """)
+    suspend fun countPendingTasks(tareaId: Int, hijoId: Int, estado: EstadoTareaHijo): Int
 }

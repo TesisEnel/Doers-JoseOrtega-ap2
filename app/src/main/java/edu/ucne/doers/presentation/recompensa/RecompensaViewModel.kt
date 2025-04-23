@@ -1,16 +1,16 @@
 package edu.ucne.doers.presentation.recompensa
 
-import android.app.Application
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import edu.ucne.doers.data.local.entity.RecompensaEntity
+import edu.ucne.doers.data.local.model.CondicionRecompensa
 import edu.ucne.doers.data.local.model.EstadoRecompensa
+import edu.ucne.doers.data.remote.Resource
 import edu.ucne.doers.data.repository.PadreRepository
 import edu.ucne.doers.data.repository.RecompensaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,101 +24,142 @@ import javax.inject.Inject
 @HiltViewModel
 class RecompensaViewModel @Inject constructor(
     private val recompensaRepository: RecompensaRepository,
-    private val padreRepository: PadreRepository,
-    application: Application
+    private val padreRepository: PadreRepository
 ) : ViewModel() {
-    private val appContext: Application = application
-    private val _uiState = MutableStateFlow(RecompensaUiState())
+    private val _uiState = MutableStateFlow(
+        RecompensaUiState(
+            recompensaId = 0,
+            descripcion = "",
+            puntosNecesarios = 0,
+            padreId = "",
+            estado = EstadoRecompensa.PENDIENTE,
+            condicion = CondicionRecompensa.INACTIVA
+        )
+    )
     val uiState = _uiState.asStateFlow()
 
-    private suspend fun loadPadreId() {
-        val currentPadre = padreRepository.getCurrentUser()
-        if (currentPadre == null) {
-            Log.e("RecompensaViewModel", "Error: No se encontró un PadreEntity para el usuario autenticado")
-            _uiState.update {
-                it.copy(errorMessage = "No se encontró un usuario autenticado. Por favor, inicia sesión nuevamente.")
+    init {
+        loadPadreId()
+    }
+
+    private fun loadPadreId() {
+        viewModelScope.launch {
+            val currentPadre = padreRepository.getCurrentUser()
+            if (currentPadre == null) {
+                _uiState.update {
+                    it.copy(errorMessage = "No se encontró un usuario autenticado. Por favor, inicia sesión nuevamente.")
+                }
+            } else {
+                _uiState.update {
+                    it.copy(padreId = currentPadre.padreId)
+                }
+                getAllRecompensas()
             }
-        } else {
-            _uiState.update {
-                it.copy(padreId = currentPadre.padreId)
-            }
-            Log.d("RecompensaViewModel", "padreId cargado: ${currentPadre.padreId}")
         }
     }
 
-    init {
-        viewModelScope.launch {
-            loadPadreId()
-            loadRecompensas()
+    private fun handleError(errorMessage: String?) {
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                errorMessage = errorMessage ?: "Error desconocido"
+            )
+        }
+    }
+
+    fun getAllRecompensas() {
+        val padreId = uiState.value.padreId
+        if (padreId.isNotBlank()) {
+            viewModelScope.launch {
+                recompensaRepository.getAll(padreId).collect { result ->
+                    when (result) {
+                        is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
+                        is Resource.Success -> _uiState.update {
+                            it.copy(listaRecompensas = result.data ?: emptyList(), isLoading = false)
+                        }
+                        is Resource.Error -> handleError(result.message)
+                    }
+                }
+            }
+        } else {
+            handleError("No se ha encontrado un ID de padre válido para cargar recompensas.")
         }
     }
 
     fun savePhotoFromUri(context: Context, uri: Uri) {
         viewModelScope.launch {
-            val inputStream = context.contentResolver.openInputStream(uri)
-            val bitmap = BitmapFactory.decodeStream(inputStream)
-            inputStream?.close()
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val bitmap = BitmapFactory.decodeStream(inputStream)
+                inputStream?.close()
 
-            if (bitmap != null) {
-                val file = File(context.filesDir, "recompensa_${System.currentTimeMillis()}.jpg")
-                FileOutputStream(file).use { out ->
-                    bitmap.compress(Bitmap.CompressFormat.JPEG, 85, out)
+                if (bitmap != null) {
+                    val file = File(context.filesDir, "recompensa_${System.currentTimeMillis()}.jpg")
+                    FileOutputStream(file).use { out ->
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 85, out)
+                    }
+                    _uiState.update { it.copy(imagenURL = file.absolutePath) }
+                } else {
+                    handleError("No se pudo cargar la imagen")
                 }
-                _uiState.update { it.copy(imagenURL = file.absolutePath) }
+            } catch (e: Exception) {
+                handleError("Error al procesar la imagen: ${e.message}")
             }
         }
     }
-
-    fun loadRecompensas() {
-        viewModelScope.launch {
-            val padreId = uiState.value.padreId
-            if (padreId.isNullOrEmpty()) {
-                Log.e("RecompensaViewModel", "padreId no está disponible al cargar recompensas")
-                _uiState.update {
-                    it.copy(errorMessage = "No se pudo cargar el usuario. Por favor, inicia sesión nuevamente.")
-                }
-                return@launch
-            }
-            recompensaRepository.getRecompensasByPadreId(padreId).collect { recompensas ->
-                _uiState.update { it.copy(recompensas = recompensas.map { it.toUiState() }) }
-                Log.d("RecompensaViewModel", "Recompensas cargadas para padreId $padreId: $recompensas")
-            }
-        }
-    }
-
-    /*fun getRecompensas() {
-        viewModelScope.launch {
-            recompensaRepository.getAll().collect { recompensas ->
-                _uiState.update {
-                    it.copy(recompensas = recompensas.map { recompensa -> recompensa.toUiState() })
-                }
-            }
-        }
-    }*/
 
     fun save() {
         viewModelScope.launch {
-            if(isValidate()) {
-                recompensaRepository.save(_uiState.value.toEntity())
-                _uiState.update { it.copy(errorMessage = null) }
-                new()
+            if (uiState.value.padreId.isBlank()) {
+                handleError("ID de padre no válido")
+                return@launch
+            }
+            if (isValid()) {
+                recompensaRepository.save(_uiState.value.toEntity()).collect { result ->
+                    when (result) {
+                        is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
+                        is Resource.Success -> {
+                            getAllRecompensas() // Refresca la lista desde Room
+                            _uiState.update { it.copy(errorMessage = null, isLoading = false) }
+                            new()
+                        }
+                        is Resource.Error -> handleError(result.message)
+                    }
+                }
             }
         }
     }
 
-    fun saveRecompensa(recompensa: RecompensaEntity) {
+    fun find(recompensaId: Int) {
         viewModelScope.launch {
-            recompensaRepository.save(recompensa)
-            Log.d("RecompensaViewModel", "Recompensa actualizada: $recompensa")
+            val recompensa = recompensaRepository.find(recompensaId)
+            if (recompensa != null) {
+                _uiState.update {
+                    it.copy(
+                        recompensaId = recompensa.recompensaId,
+                        descripcion = recompensa.descripcion,
+                        puntosNecesarios = recompensa.puntosNecesarios,
+                        estado = recompensa.estado,
+                        padreId = recompensa.padreId,
+                        condicion = recompensa.condicion
+                    )
+                }
+            } else {
+                handleError("No se encontró la recompensa con ID $recompensaId")
+            }
         }
     }
 
     fun delete(recompensa: RecompensaEntity) {
         viewModelScope.launch {
-            val file = File(recompensa.imagenURL)
-            if (file.exists()) file.delete()
-            recompensaRepository.delete(recompensa)
-            loadRecompensas()
+            when (val result = recompensaRepository.delete(recompensa)) {
+                is Resource.Success -> {
+                    _uiState.update { it.copy(isLoading = false) }
+                    getAllRecompensas()
+                }
+                is Resource.Error -> handleError(result.message)
+                is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
+            }
         }
     }
 
@@ -127,88 +168,73 @@ class RecompensaViewModel @Inject constructor(
             it.copy(
                 recompensaId = 0,
                 descripcion = "",
-                imagenURL = "",
                 puntosNecesarios = 0,
-                estado = EstadoRecompensa.DISPONIBLE,
+                condicion = CondicionRecompensa.INACTIVA,
+                estado = EstadoRecompensa.PENDIENTE,
+                imagenURL = "",
                 errorMessage = null
             )
         }
     }
 
     fun onDescripcionChange(descripcion: String) {
+        val descripcionRegularExpression = "^[A-Za-z0-9\\s'.,:;!?áéíóúÁÉÍÓÚñÑ-]+$".toRegex()
+
         _uiState.update {
             it.copy(
                 descripcion = descripcion,
-                errorMessage = if (descripcion.isBlank()) "Debes rellenar el campo Descripción" else null
+                errorMessage = when {
+                    descripcion.isBlank() -> "La descripción no puede estar vacía"
+                    !descripcion.matches(descripcionRegularExpression) -> "La descripción contiene caracteres no permitidos"
+                    else -> null
+                }
             )
         }
     }
 
-    fun onPuntosNecesariosChange(puntosNecesarios: Int) {
-        _uiState.update { it.copy(puntosNecesarios = puntosNecesarios) }
-    }
-
-    fun onEstadoChange(estado: EstadoRecompensa, recompensaId: Int? = null) {
-        viewModelScope.launch {
-            if (recompensaId != null) {
-                val recompensa = recompensaRepository.find(recompensaId)
-                if (recompensa != null) {
-                    val updatedRecompensa = recompensa.copy(estado = estado.toString())
-                    recompensaRepository.save(updatedRecompensa)
-                    loadRecompensas()
-                }
-            } else {
-                _uiState.update { it.copy(estado = estado) }
-            }
-        }
-    }
-
-    fun updateAvailability(recompensaId: Int, isAvailable: Boolean) {
+    fun onCondicionChange(recompensaId: Int, nuevaCondicion: CondicionRecompensa) {
         viewModelScope.launch {
             val recompensa = recompensaRepository.find(recompensaId)
             if (recompensa != null) {
-                val newEstado = if (isAvailable) EstadoRecompensa.DISPONIBLE else EstadoRecompensa.AGOTADA
-                val updatedRecompensa = recompensa.copy(estado = newEstado.toString())
-                recompensaRepository.save(updatedRecompensa)
-                loadRecompensas()
+                val recompensaActualizada = recompensa.copy(condicion = nuevaCondicion)
+                recompensaRepository.save(recompensaActualizada).collect {}
+                getAllRecompensas()
+            } else {
+                handleError("No se encontró la recompensa con ID $recompensaId")
             }
         }
     }
 
-    fun find(recompensaId: Int) {
-        viewModelScope.launch {
-            if (recompensaId > 0) {
-                val dto = recompensaRepository.find(recompensaId)
-                if (dto != null) {
-                    _uiState.update {
-                        it.copy(
-                            recompensaId = dto.recompensaId,
-                            descripcion = dto.descripcion,
-                            imagenURL = dto.imagenURL,
-                            puntosNecesarios = dto.puntosNecesarios,
-                            estado = EstadoRecompensa.valueOf(dto.estado)
-                        )
-                    }
-                }
-            }
+    fun onPuntosNecesariosChange(puntosNecesarios: Int) {
+        _uiState.update {
+            it.copy(
+                puntosNecesarios = puntosNecesarios,
+                errorMessage = if (puntosNecesarios <= 0) "Los puntos deben ser mayor a 0" else null
+            )
         }
     }
-    private fun isValidate(): Boolean {
+
+    fun clearImage() {
+        _uiState.update { it.copy(imagenURL = "") }
+    }
+
+    private fun isValid(): Boolean {
         val state = uiState.value
+        val isValid = state.descripcion.isNotBlank() && state.puntosNecesarios > 0
 
-        if (state.descripcion.isBlank() || state.puntosNecesarios <= 0) {
+        if (!isValid) {
             _uiState.update { it.copy(errorMessage = "Todos los campos son requeridos.") }
-            return false
         }
-        return true
+        return isValid
     }
 }
 
 fun RecompensaUiState.toEntity() = RecompensaEntity(
     recompensaId = recompensaId,
-    padreId = padreId,
     descripcion = descripcion,
-    imagenURL = imagenURL,
     puntosNecesarios = puntosNecesarios,
-    estado = estado.toString()
+    padreId = padreId,
+    estado = estado,
+    condicion = condicion,
+    imagenURL = imagenURL
 )

@@ -23,7 +23,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -42,6 +41,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import edu.ucne.doers.presentation.tareas.TareaUiState
+import edu.ucne.doers.presentation.tareas.TareaViewModel
 import edu.ucne.doers.presentation.tareas.components.PeriodoDropdownMenu
 
 @Composable
@@ -127,14 +128,12 @@ fun CreateTaskForm(
     goBackToPantallaTareas: () -> Unit,
     tareaId: Int = 0
 ) {
-    // Envolvemos el contenido en un Column con scroll vertical
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState()) // Habilita el scroll vertical
+            .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
-        // Título centralizado "Crear Tarea"
         Text(
             text = if (tareaId > 0) "Modificar Tarea" else "Crear Nueva Tarea",
             fontSize = 24.sp,
@@ -145,8 +144,6 @@ fun CreateTaskForm(
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
         )
-
-        // Campo Descripción
         OutlinedTextField(
             value = uiState.descripcion,
             onValueChange = viewModel::onDescripcionChange,
@@ -159,10 +156,7 @@ fun CreateTaskForm(
                 }
             }
         )
-
         Spacer(modifier = Modifier.height(16.dp))
-
-        // Campo Puntos
         OutlinedTextField(
             value = uiState.puntos.toString(),
             onValueChange = { puntos ->
@@ -178,49 +172,19 @@ fun CreateTaskForm(
             },
             keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number)
         )
-
         Spacer(modifier = Modifier.height(16.dp))
-
-        // Campo Periodo (Dropdown)
         PeriodoDropdownMenu(
             selectedPeriodo = uiState.periodicidad,
             onPeriodoSelected = viewModel::onPeriodicidadChange
         )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Campo Estado
-        OutlinedTextField(
-            label = { Text("Estado") },
-            value = uiState.estado.name,
-            onValueChange = {},
-            readOnly = true,
-            modifier = Modifier.fillMaxWidth(),
-            enabled = false
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = if (uiState.padreId.isNotEmpty()) {"Padre ID: ${uiState.padreId}"}
-            else {"Padre ID: No encontrado"},
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 8.dp, top = 4.dp)
-        )
-
         Spacer(modifier = Modifier.height(24.dp))
-
-        // Mensaje de error general
         if (uiState.errorMessage != null && uiState.errorMessage.contains("requeridos")) {
             Text(
-                text = uiState.errorMessage ?: "",
+                text = uiState.errorMessage,
                 color = Color.Red,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
         }
-
-        // Botones
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -231,7 +195,6 @@ fun CreateTaskForm(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Botón Modificar
                     Button(
                         onClick = {
                             viewModel.save()
@@ -254,7 +217,6 @@ fun CreateTaskForm(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Botón Nuevo
                     Button(
                         onClick = {
                             viewModel.new()
@@ -269,8 +231,6 @@ fun CreateTaskForm(
                         Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                         Text("Nuevo", color = Color.White)
                     }
-
-                    // Botón Guardar
                     Button(
                         onClick = {
                             viewModel.save()

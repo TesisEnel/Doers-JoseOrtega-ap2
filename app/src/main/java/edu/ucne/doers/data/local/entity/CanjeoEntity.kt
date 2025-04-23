@@ -4,6 +4,8 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import edu.ucne.doers.data.local.model.EstadoCanjeo
+import edu.ucne.doers.data.local.model.EstadoRecompensa
 import java.util.Date
 
 @Entity(
@@ -16,7 +18,8 @@ import java.util.Date
 )
 data class CanjeoEntity(
     @PrimaryKey(autoGenerate = true) val canjeoId: Int = 0,
-    val hijoId: Int,
     val recompensaId: Int,
-    val fecha: Date
+    val hijoId: Int? = null,
+    val estado: EstadoCanjeo = EstadoCanjeo.PENDIENTE_VERIFICACION,
+    val fecha: Date? = null
 )

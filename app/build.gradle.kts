@@ -64,6 +64,9 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
     implementation(libs.firebase.auth.ktx)
+    implementation(libs.androidx.camera.core)
+    implementation(libs.play.services.mlkit.barcode.scanning)
+    implementation(libs.androidx.camera.lifecycle)
     annotationProcessor(libs.androidx.room.compiler)
     ksp(libs.androidx.room.compiler)
     //  optional - Kotlin Extensions and Coroutines support for Room
@@ -113,6 +116,15 @@ dependencies {
 
     //icon api
     implementation(libs.androidx.material.icons.extended.v175)
+
+    implementation (libs.core)
+
+    implementation (libs.barcode.scanning)
+    implementation (libs.androidx.camera.core.v132)
+    implementation (libs.androidx.camera.camera2)
+    implementation (libs.androidx.camera.lifecycle.v132)
+    implementation (libs.androidx.camera.view)
+    implementation (libs.androidx.activity.compose.v190)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

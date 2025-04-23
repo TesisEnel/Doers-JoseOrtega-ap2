@@ -22,6 +22,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import edu.ucne.doers.R
+import edu.ucne.doers.data.local.model.EstadoCanjeo
 import edu.ucne.doers.data.local.model.EstadoTarea
 import edu.ucne.doers.ui.theme.DoersTheme
 
@@ -43,7 +44,6 @@ fun TaskCounter(
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.padding(16.dp)
         ) {
-            // Contador de tareas
             Text(
                 text = count.toString(),
                 fontSize = 32.sp,
@@ -55,8 +55,6 @@ fun TaskCounter(
                     else -> Color.Black
                 }
             )
-
-            // Etiqueta (pendiente o completada)
             Text(
                 text = label,
                 fontSize = 16.sp,
@@ -70,7 +68,7 @@ fun TaskCounter(
                         painter = painterResource(id = R.drawable.check),
                         contentDescription = "Completado",
                         modifier = Modifier.size(30.dp).padding(top = 4.dp),
-                        tint = estado.color,
+                        tint = estado.color(),
 
                     )
                 }
@@ -79,7 +77,7 @@ fun TaskCounter(
                         painter = painterResource(id = R.drawable.exclamation_mark),
                         contentDescription = "Pendiente",
                         modifier = Modifier.size(30.dp).padding(top = 4.dp),
-                        tint = estado.color
+                        tint = estado.color()
                     )
                 }
                 else -> {

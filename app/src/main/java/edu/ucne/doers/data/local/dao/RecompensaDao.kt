@@ -5,6 +5,7 @@ import androidx.room.Delete
 import androidx.room.Query
 import androidx.room.Upsert
 import edu.ucne.doers.data.local.entity.RecompensaEntity
+import edu.ucne.doers.data.local.model.CondicionRecompensa
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -26,11 +27,27 @@ interface RecompensaDao {
     suspend fun find(id: Int): RecompensaEntity?
 
     @Query("SELECT * FROM Recompensas WHERE padreId = :padreId")
-    fun getRecompensasByPadreId(padreId: String): Flow<List<RecompensaEntity>>
+    fun getByPadreId(padreId: String): Flow<List<RecompensaEntity>>
 
     @Delete
     suspend fun delete(recompensaEntity: RecompensaEntity)
 
     @Query("SELECT * FROM Recompensas")
     fun getAll(): Flow<List<RecompensaEntity>>
+
+    @Query(
+        """
+            SELECT * FROM Recompensas 
+            WHERE condicion = :condicion
+        """
+    )
+    fun getByCondition(condicion: CondicionRecompensa): Flow<List<RecompensaEntity>>
+
+    @Query(
+        """
+        SELECT * FROM Recompensas 
+        WHERE padreId = :padreId AND condicion = :condicion
+    """
+    )
+    fun getActivasByPadre(padreId: String, condicion: CondicionRecompensa = CondicionRecompensa.ACTIVA): Flow<List<RecompensaEntity>>
 }

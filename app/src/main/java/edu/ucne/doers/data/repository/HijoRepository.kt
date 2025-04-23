@@ -2,49 +2,150 @@ package edu.ucne.doers.data.repository
 
 import edu.ucne.doers.data.local.dao.HijoDao
 import edu.ucne.doers.data.local.dao.PadreDao
-import edu.ucne.doers.data.local.dao.TareaHijoDao
 import edu.ucne.doers.data.local.entity.HijoEntity
-import edu.ucne.doers.data.local.entity.TareaHijo
+import edu.ucne.doers.data.remote.RemoteDataSource
 import edu.ucne.doers.data.remote.Resource
-import edu.ucne.doers.presentation.extension.collectFirstOrNull
+import edu.ucne.doers.data.remote.dto.HijoDto
+import edu.ucne.doers.data.remote.dto.PadreDto
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 class HijoRepository @Inject constructor(
     private val hijoDao: HijoDao,
-    private val tareaHijoDao: TareaHijoDao,
     private val padreDao: PadreDao,
-    private val padreRepository: PadreRepository
+    private val remote: RemoteDataSource
 ) {
-    suspend fun save(hijo: HijoEntity) = hijoDao.save(hijo)
 
-    suspend fun find(id: Int) = hijoDao.find(id)
+    fun save(hijo: HijoEntity): Flow<Resource<Unit>> = flow {
+        emit(Resource.Loading())
 
-    fun getAll(): Flow<List<HijoEntity>> = hijoDao.getAll()
+        try {
+            val existing = hijoDao.findByNombreAndPadreId(hijo.nombre, hijo.padreId)
 
-    suspend fun delete(hijo: HijoEntity) = hijoDao.delete(hijo)
+            if (existing != null) {
+                val actualizado = existing.copy(
+                    saldoActual = hijo.saldoActual,
+                    balance = hijo.balance,
+                    fotoPerfil = hijo.fotoPerfil
+                )
+                hijoDao.save(actualizado)
+                remote.updateHijo(actualizado.hijoId, actualizado.toDto())
+                emit(Resource.Success(Unit))
+                return@flow
+            }
 
-    suspend fun findByNombreAndPadreId(nombre: String, padreId: String): HijoEntity? {
-        return hijoDao.findByNombreAndPadreId(nombre, padreId)
-    }
-
-    suspend fun getPadreIdByCodigoSala(codigoSala: String): String? {
-        val padre = padreRepository.getAll().collectFirstOrNull()?.find { it.codigoSala == codigoSala }
-        return padre?.padreId
-    }
-
-    suspend fun insertTareaHijo(tareaHijo: TareaHijo) = tareaHijoDao.save(tareaHijo)
-
-    fun getTareasHijo(hijoId: Int): Flow<List<TareaHijo>> = tareaHijoDao.getByHijoId(hijoId)
-    
-    suspend fun loginHijo(nombre: String, codigoSala: String): Resource<Boolean> {
-        val padre = padreDao.findByCodigoSala(codigoSala)
-        return if (padre != null) {
-            val hijo = HijoEntity(padreId = padre.padreId, nombre = nombre)
             hijoDao.save(hijo)
-            Resource.Success(true)
-        } else {
-            Resource.Error("El código de sala no existe")
+            remote.saveHijo(hijo.toDto())
+
+            emit(Resource.Success(Unit))
+        } catch (e: Exception) {
+            emit(Resource.Error("Error al guardar hijo: ${e.localizedMessage}"))
         }
     }
+
+    suspend fun find(id: Int): HijoEntity? {
+        return try {
+            val local = hijoDao.find(id)
+            if (local != null) return local
+
+            val remoteItem = remote.getHijo(id)
+            val entity = remoteItem.toEntity()
+            hijoDao.save(entity)
+            entity
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun getAll(): Flow<Resource<List<HijoEntity>>> = flow {
+        emit(Resource.Loading())
+
+        val local = hijoDao.getAll().firstOrNull()
+        emit(Resource.Success(local ?: emptyList()))
+
+        try {
+            val remoteData = remote.getHijos()
+            val entities = remoteData.map { it.toEntity() }
+            hijoDao.save(entities)
+
+            val updated = hijoDao.getAll().firstOrNull()
+            emit(Resource.Success(updated ?: emptyList()))
+        } catch (e: Exception) {
+            emit(Resource.Error("Error al obtener hijos: ${e.localizedMessage}", local))
+        }
+    }
+
+    suspend fun delete(hijo: HijoEntity): Resource<Unit> {
+        return try {
+            hijoDao.delete(hijo)
+            remote.deleteHijo(hijo.hijoId)
+            Resource.Success(Unit)
+        } catch (e: Exception) {
+            Resource.Error("Error al eliminar hijo: ${e.localizedMessage}")
+        }
+    }
+
+    suspend fun saveLocal(hijo: HijoEntity) {
+        hijoDao.save(hijo)
+    }
+
+    suspend fun loginHijo(nombre: String, codigoSala: String): Resource<HijoEntity> {
+        return try {
+            val padreDto = remote.getPadreByCodigoSala(codigoSala)
+            val padre = padreDto.toEntity()
+
+            val padreLocal = padreDao.find(padre.padreId)
+            if (padreLocal == null) {
+                padreDao.save(padre)
+            }
+
+            val existingHijo = hijoDao.findByNombreAndPadreId(nombre, padre.padreId)
+            if (existingHijo != null) {
+                return Resource.Success(existingHijo)
+            }
+
+            val hijo = HijoEntity(
+                padreId = padre.padreId,
+                nombre = nombre,
+                fotoPerfil = "personaje_1"
+            )
+            val hijoDto = remote.saveHijo(hijo.toDto())
+            val hijoConFoto = if (hijoDto.fotoPerfil.isNullOrBlank()) {
+                hijoDto.copy(fotoPerfil = "personaje_1").toEntity()
+            } else {
+                hijoDto.toEntity()
+            }
+
+            hijoDao.save(hijoConFoto)
+
+            Resource.Success(hijoConFoto)
+
+        } catch (e: Exception) {
+            Resource.Error("El código de sala no existe o no hay conexión: ${e.localizedMessage}")
+        }
+    }
+
+    suspend fun getPadreByCodigoSala(codigoSala: String): PadreDto {
+        return remote.getPadreByCodigoSala(codigoSala)
+    }
 }
+
+fun HijoEntity.toDto() = HijoDto(
+    hijoId = hijoId,
+    padreId = padreId,
+    nombre = nombre,
+    saldoActual = saldoActual,
+    balance = balance,
+    fotoPerfil = fotoPerfil
+)
+
+fun HijoDto.toEntity() = HijoEntity(
+    hijoId = hijoId,
+    padreId = padreId,
+    nombre = nombre,
+    saldoActual = saldoActual,
+    balance = balance,
+    fotoPerfil = fotoPerfil
+)

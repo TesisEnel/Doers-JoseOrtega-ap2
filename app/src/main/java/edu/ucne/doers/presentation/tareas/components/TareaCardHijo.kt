@@ -61,7 +61,7 @@ fun TareaCardHijo(
                 )
 
                 Text(
-                    text = tarea.periodicidad.toString(),
+                    text = tarea.periodicidad?.nombreMostrable() ?: "Sin periodicidad",
                     style = MaterialTheme.typography.bodyMedium.copy(
                         color = Color(0xFF1976D2),
                         fontWeight = FontWeight.SemiBold
@@ -70,11 +70,13 @@ fun TareaCardHijo(
             }
 
             Spacer(modifier = Modifier.height(12.dp))
+
             Text(
                 text = tarea.descripcion,
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(bottom = 12.dp)
             )
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,

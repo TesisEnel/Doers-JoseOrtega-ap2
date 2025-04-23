@@ -1,10 +1,9 @@
 package edu.ucne.doers.presentation.tareas.hijo
 
-import android.content.res.Configuration
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,56 +13,55 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Checklist
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
-import androidx.navigation.NavHostController
+import edu.ucne.doers.AppReferences
 import edu.ucne.doers.R
-import edu.ucne.doers.data.local.model.PeriodicidadTarea
+import edu.ucne.doers.presentation.hijos.HijoUiState
+import edu.ucne.doers.presentation.hijos.HijoViewModel
 import edu.ucne.doers.presentation.navigation.Screen
+import edu.ucne.doers.presentation.recompensa.comp.HijoNavBar
 import edu.ucne.doers.presentation.tareas.components.HorizontalFilter
 import edu.ucne.doers.presentation.tareas.components.TareaCardHijo
 import edu.ucne.doers.presentation.tareas.components.WelcomeModal
-import kotlin.math.min
 
 @Composable
 fun HijoListScreen(
     viewModel: HijoViewModel = hiltViewModel(),
-    navController: NavHostController
+    onNavigateToRecompensas: () -> Unit,
+    onNavigateToPerfil: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     HijoBodyListScreen(
         uiState,
         viewModel,
-        navController
+        onNavigateToRecompensas = onNavigateToRecompensas,
+        onNavigateToPerfil = onNavigateToPerfil
+
     )
 }
 
@@ -72,149 +70,134 @@ fun HijoListScreen(
 fun HijoBodyListScreen(
     uiState: HijoUiState,
     viewModel: HijoViewModel,
-    navController: NavHostController
+    onNavigateToRecompensas: () -> Unit,
+    onNavigateToPerfil: () -> Unit
 ) {
-    val periodicidades = remember {
-        listOf("Todas") + PeriodicidadTarea.entries.map { it.nombreMostrable }
-    }
+    val periodicidades by viewModel.periodicidadesDisponibles.collectAsState()
     var filtroSeleccionado by remember { mutableStateOf("Todas") }
 
-    val configuration = LocalConfiguration.current
-    val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
-    var showModal by remember { mutableStateOf(isPortrait) }
+    val context = LocalContext.current
+    val appReferences = remember { AppReferences(context) }
+    var showModal by rememberSaveable { mutableStateOf(appReferences.isFirstTime()) }
 
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val boxConstraints = this.constraints
+    LaunchedEffect(uiState.errorMessage, uiState.successMessage) {
+        uiState.errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.clearMessages()
+        }
 
-        Box(modifier = Modifier.fillMaxSize()) {
-            if (showModal) {
-                WelcomeModal(
-                    showModal = showModal,
-                    onDismiss = { showModal = false },
-                    userName = uiState.nombre
-                )
-            }
+        uiState.successMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearMessages()
+        }
+    }
 
-            Column(modifier = Modifier.fillMaxSize()) {
-                CenterAlignedTopAppBar(
-                    title = { Text("Doers", color = Color.White, fontWeight = FontWeight.Bold) },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = Color(0xFF1976D2)
-                    ),
-                    modifier = Modifier.shadow(elevation = 8.dp)
-                )
+    Box(modifier = Modifier.fillMaxSize()) {
+        WelcomeModal(
+            showModal = showModal,
+            onDismiss = {
+                showModal = false
+                appReferences.setFirstTimeCompleted()
+            },
+            userName = uiState.nombre
+        )
 
-                if (uiState.isLoading) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(48.dp),
-                            color = Color(0xFF1976D2)
-                        )
-                    }
-                } else {
-                    Column(modifier = Modifier.weight(1f)) {
-                        HorizontalFilter(
-                            options = periodicidades,
-                            selectedOption = filtroSeleccionado,
-                            onOptionSelected = { filtroSeleccionado = it },
-                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-                        )
+        Column(modifier = Modifier.fillMaxSize()) {
+            CenterAlignedTopAppBar(
+                title = { Text("Doers", color = Color.White, fontWeight = FontWeight.Bold) },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color(0xFF1976D2)
+                ),
+                modifier = Modifier.shadow(elevation = 8.dp)
+            )
 
-                        Text(
-                            "Tareas asignadas por tu padre o tutor",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                color = Color(0xFF1976D2),
-                                fontWeight = FontWeight.Bold
-                            ),
-                            textAlign = TextAlign.Center,
+            if (uiState.isLoading && uiState.ultimaAccionProcesada == null) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(48.dp),
+                        color = Color(0xFF1976D2)
+                    )
+                }
+            } else {
+                Column(modifier = Modifier.weight(1f)) {
+                    HorizontalFilter(
+                        options = periodicidades,
+                        selectedOption = filtroSeleccionado,
+                        onOptionSelected = {
+                            filtroSeleccionado = it
+                            viewModel.filtrarTareas(it)
+                        },
+                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                    )
+
+                    Text(
+                        if (uiState.listaTareas.isEmpty()) "Tu padre o tutor no te ha asignado tareas"
+                        else "Tareas asignadas por tu padre o tutor",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            color = Color(0xFF1976D2),
+                            fontWeight = FontWeight.Bold
+                        ),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    )
+
+                    val tareasFiltradas = uiState.listaTareasFiltradas
+
+                    if (tareasFiltradas.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.pantalla_de_espera),
+                                    contentDescription = "No se encontró tarea",
+                                    contentScale = ContentScale.Fit,
+                                    modifier = Modifier.size(250.dp)
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    when {
+                                        uiState.listaTareas.isEmpty() -> "No tienes tareas asignadas"
+                                        filtroSeleccionado != "Todas" -> "No hay tareas con esta periodicidad"
+                                        else -> "No hay tareas disponibles"
+                                    },
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = Color.Gray,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
+                            }
+                        }
+                    } else {
+                        LazyColumn(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp)
-                        )
-
-                        val tareasFiltradas =
-                            remember(uiState.listaTareas, filtroSeleccionado) {
-                                if (filtroSeleccionado == "Todas") {
-                                    uiState.listaTareas
-                                } else {
-                                    uiState.listaTareas.filter { it.periodicidad?.nombreMostrable == filtroSeleccionado }
-                                }
-                            }
-
-                        if (tareasFiltradas.isEmpty()) {
-                            Box(
-                                modifier = Modifier.fillMaxSize(),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Image(
-                                        painter = painterResource(id = R.drawable.pantalla_de_espera),
-                                        contentDescription = "No se encontró tarea",
-                                        contentScale = ContentScale.Fit,
-                                        modifier = Modifier.size(250.dp)
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Text(
-                                        "No se han encontrado tareas con este estado",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = Color.Gray,
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.padding(horizontal = 16.dp)
-                                    )
-                                }
-                            }
-                        } else {
-                            LazyColumn(
-                                modifier = Modifier
-                                    .padding(horizontal = 8.dp)
-                                    .weight(1f)
-                            ) {
-                                items(tareasFiltradas, key = { it.tareaId }) { tarea ->
-                                    TareaCardHijo(
-                                        tarea = tarea,
-                                        onCompletar = { viewModel.completarTarea(tarea.tareaId) }
-                                    )
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                }
+                                .padding(horizontal = 8.dp)
+                                .weight(1f)
+                        ) {
+                            items(tareasFiltradas, key = { it.tareaId }) { tarea ->
+                                TareaCardHijo(
+                                    tarea = tarea,
+                                    onCompletar = { viewModel.completarTarea(tarea.tareaId) }
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
                             }
                         }
                     }
                 }
-                BottomNavigationBar(navController, Screen.TareaHijo)
+
+                HijoNavBar(
+                    currentScreen = Screen.TareaHijo,
+                    onTareasClick = {},
+                    onRecompensasClick = onNavigateToRecompensas,
+                    onPerfilClick = onNavigateToPerfil
+                )
             }
         }
-    }
-}
-
-@Composable
-fun BottomNavigationBar(
-    navController: NavController,
-    currentScreen: Screen
-) {
-    NavigationBar(
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface
-    ) {
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Checklist, contentDescription = "Tareas") },
-            label = { Text("Tareas") },
-            selected = currentScreen == Screen.TareaHijo,
-            onClick = {}
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Star, contentDescription = "Recompensas") },
-            label = { Text("Recompensas") },
-            selected = currentScreen == Screen.RecompensaHijo,
-            onClick = { navController.navigate(Screen.RecompensaHijo) }
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Person, contentDescription = "Perfil") },
-            label = { Text("Perfil") },
-            selected = currentScreen == Screen.Hijo,
-            onClick = { navController.navigate(Screen.Hijo) }
-        )
     }
 }

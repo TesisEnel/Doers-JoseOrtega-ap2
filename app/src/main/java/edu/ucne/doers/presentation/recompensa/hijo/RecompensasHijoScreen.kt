@@ -1,32 +1,25 @@
 package edu.ucne.doers.presentation.recompensa.hijo
 
-import androidx.compose.foundation.Image
+import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Checklist
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -37,94 +30,96 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavController
-import coil.compose.rememberImagePainter
-import edu.ucne.doers.data.local.model.EstadoRecompensa
+import edu.ucne.doers.data.local.entity.RecompensaEntity
+import edu.ucne.doers.presentation.componentes.ImagenRecompensa
 import edu.ucne.doers.presentation.hijos.HijoViewModel
 import edu.ucne.doers.presentation.navigation.Screen
-import edu.ucne.doers.presentation.recompensa.RecompensaUiState
-import edu.ucne.doers.presentation.recompensa.RecompensaViewModel
-import java.io.File
+import edu.ucne.doers.presentation.recompensa.comp.HijoNavBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecompensasHijoScreen(
-    viewModel: RecompensaViewModel = hiltViewModel(),
-    hijoViewModel: HijoViewModel = hiltViewModel(),
-    padreId: String,
-    navController: NavController
+    viewModel: HijoViewModel = hiltViewModel(),
+    onNavigateToTareas: () -> Unit,
+    onNavigateToPerfil: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val azulMar = Color(0xFF1976D2)
+    val context = LocalContext.current
 
-    LaunchedEffect(padreId) {
-        viewModel.loadRecompensas()
+    val azulCielo = Color(0xFF1976D2)
+
+    LaunchedEffect(uiState.errorMessage, uiState.successMessage) {
+        uiState.errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            viewModel.clearMessages()
+        }
+        uiState.successMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            viewModel.clearMessages()
+        }
+        viewModel.loadSaldoActual()
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Box(
+                    Column(
                         modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Doers",
-                            fontSize = 30.sp,
+                            text = "Recompensas",
+                            fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center,
-                            color = Color.White,
+                            color = Color.White
+                        )
+                        Text(
+                            text = "${uiState.saldoActual} 🪙",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.White
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = azulMar
+                    containerColor = azulCielo
                 )
             )
         },
         bottomBar = {
-            BottomNavigationBar(navController = navController, currentScreen = Screen.RecompensaHijo)
+            HijoNavBar(
+                currentScreen = Screen.RecompensaHijo,
+                onTareasClick = onNavigateToTareas,
+                onRecompensasClick = {},
+                onPerfilClick = onNavigateToPerfil
+            )
         },
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.onSurface
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .background(MaterialTheme.colorScheme.surface)
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(16.dp)
             ) {
-                val availableRecompensas = uiState.recompensas.filter { it.estado == EstadoRecompensa.DISPONIBLE }
-                val pairedRecompensas = availableRecompensas.chunked(2)
-                items(pairedRecompensas) { pair ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        pair.forEach { recompensa ->
-                            RecompensaRow(
-                                recompensa = recompensa,
-                                viewModel = viewModel,
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(horizontal = 4.dp)
-                            )
-                        }
-                        if (pair.size == 1) {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                    }
+                val recompensasFiltradas = uiState.listaRecompensasFiltradas
+                items(recompensasFiltradas, key = { it.recompensaId }) { recompensa ->
+                    RecompensaCardHijo(
+                        recompensa = recompensa,
+                        onReclamar = { viewModel.reclamarRecompensa(recompensa.recompensaId) }
+                    )
                 }
             }
         }
@@ -132,102 +127,50 @@ fun RecompensasHijoScreen(
 }
 
 @Composable
-fun RecompensaRow(
-    recompensa: RecompensaUiState,
-    viewModel: RecompensaViewModel,
-    hijoViewModel: HijoViewModel = hiltViewModel(),
-    modifier: Modifier = Modifier
+fun RecompensaCardHijo(
+    recompensa: RecompensaEntity,
+    onReclamar: () -> Unit
 ) {
-    if (recompensa.estado == EstadoRecompensa.DISPONIBLE) {
-        Card(
-            modifier = modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            )
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                if (recompensa.imagenURL.isNotEmpty()) {
-                    Image(
-                        painter = rememberImagePainter(File(recompensa.imagenURL)),
-                        contentDescription = "Imagen de recompensa",
-                        modifier = Modifier
-                            .size(60.dp)
-                            .padding(end = 8.dp)
-                    )
-                } else {
-                    Spacer(
-                        modifier = Modifier
-                            .size(60.dp)
-                            .padding(end = 8.dp)
-                    )
-                }
-
+            ImagenRecompensa(recompensa)
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = recompensa.descripcion,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 1,
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurface
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black
                 )
                 Text(
-                    text = "${recompensa.puntosNecesarios} pts",
-                    style = MaterialTheme.typography.bodySmall,
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurface
+                    text = "${recompensa.puntosNecesarios} 🪙",
+                    fontSize = 16.sp,
+                    color = Color(0xFFFF5722)
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Button(
-                    onClick = {
-                    },
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .width(100.dp)
-                        .height(36.dp),
-                    contentPadding = PaddingValues(
-                        horizontal = 8.dp,
-                        vertical = 4.dp
-                    )
-                ) {
-                    Text("Reclamar")
-                }
+            }
+            Button(
+                onClick = onReclamar,
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFFFFD740),
+                    contentColor = Color.Black
+                )
+            ) {
+                Text(
+                    text = "Reclamar",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
-    }
-}
-
-@Composable
-fun BottomNavigationBar(
-    navController: NavController,
-    currentScreen: Screen
-) {
-    NavigationBar(
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface
-    ) {
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Checklist, contentDescription = "Tareas") },
-            label = { Text("Tareas") },
-            selected = currentScreen == Screen.TareaHijo,
-            onClick = { navController.navigate(Screen.TareaHijo) }
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Star, contentDescription = "Recompensas") },
-            label = { Text("Recompensas") },
-            selected = currentScreen == Screen.RecompensaHijo,
-            onClick = {}
-        )
-        NavigationBarItem(
-            icon = { Icon(Icons.Filled.Person, contentDescription = "Perfil") },
-            label = { Text("Perfil") },
-            selected = currentScreen == Screen.Hijo,
-            onClick = { navController.navigate(Screen.Hijo) }
-        )
     }
 }

@@ -30,7 +30,7 @@ fun HorizontalFilter(
             .fillMaxWidth()
             .horizontalScroll(scrollState)
             .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly // Centramos los filtros
+        horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         options.forEach { option ->
             FilterChip(

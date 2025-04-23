@@ -4,36 +4,292 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import edu.ucne.doers.data.local.entity.CanjeoEntity
+import edu.ucne.doers.data.local.entity.HijoEntity
 import edu.ucne.doers.data.local.entity.PadreEntity
+import edu.ucne.doers.data.local.entity.RecompensaEntity
+import edu.ucne.doers.data.local.entity.TareaEntity
+import edu.ucne.doers.data.local.entity.TareaHijo
+import edu.ucne.doers.data.local.entity.TransaccionHijo
+import edu.ucne.doers.data.local.model.CondicionRecompensa
+import edu.ucne.doers.data.local.model.CondicionTarea
+import edu.ucne.doers.data.local.model.EstadoCanjeo
+import edu.ucne.doers.data.local.model.EstadoRecompensa
+import edu.ucne.doers.data.local.model.EstadoTarea
+import edu.ucne.doers.data.local.model.EstadoTareaHijo
+import edu.ucne.doers.data.local.model.TipoTransaccion
+import edu.ucne.doers.data.remote.Resource
 import edu.ucne.doers.data.repository.AuthRepository
+import edu.ucne.doers.data.repository.CanjeoRepository
+import edu.ucne.doers.data.repository.HijoRepository
 import edu.ucne.doers.data.repository.PadreRepository
-import edu.ucne.doers.presentation.extension.collectFirstOrNull
+import edu.ucne.doers.data.repository.RecompensaRepository
+import edu.ucne.doers.data.repository.TareaHijoRepository
+import edu.ucne.doers.data.repository.TareaRepository
+import edu.ucne.doers.data.repository.TransaccionHijoRepository
 import edu.ucne.doers.presentation.sign_in.GoogleAuthUiClient
 import edu.ucne.doers.presentation.sign_in.SignInResult
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.Date
 import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
 class PadreViewModel @Inject constructor(
     private val padreRepository: PadreRepository,
+    private val hijoRepository: HijoRepository,
+    private val tareaHijoRepository: TareaHijoRepository,
+    private val tareaRepository: TareaRepository,
+    private val recompensaRepository: RecompensaRepository,
+    private val canjeoRepository: CanjeoRepository,
     private val authRepository: AuthRepository,
-    private val googleAuthUiClient: GoogleAuthUiClient
+    private val googleAuthUiClient: GoogleAuthUiClient,
+    private val transaccionHijoRepository: TransaccionHijoRepository
 ) : ViewModel() {
+
     private val _uiState = MutableStateFlow(PadreUiState())
     val uiState = _uiState.asStateFlow()
 
+    private val _hijos = MutableStateFlow<List<HijoEntity>>(emptyList())
+    val hijos: StateFlow<List<HijoEntity>> = _hijos.asStateFlow()
+
+    private val _tareasHijo = MutableStateFlow<List<TareaHijo>>(emptyList())
+    val tareasHijo: StateFlow<List<TareaHijo>> = _tareasHijo.asStateFlow()
+
+    private val _recompensas = MutableStateFlow<List<RecompensaEntity>>(emptyList())
+    val recompensas: StateFlow<List<RecompensaEntity>> = _recompensas.asStateFlow()
+
+    private val _canjeoHijo = MutableStateFlow<List<CanjeoEntity>>(emptyList())
+    val canjeoHijo: StateFlow<List<CanjeoEntity>> = _canjeoHijo.asStateFlow()
+
+    private val _tareas = MutableStateFlow<List<TareaEntity>>(emptyList())
+    val tareas: StateFlow<List<TareaEntity>> = _tareas.asStateFlow()
+
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage.asStateFlow()
+
+    private val _toastMessage = MutableStateFlow<String?>(null)
+    val toastMessage: StateFlow<String?> = _toastMessage.asStateFlow()
+
+    private val _tareasFiltradas = MutableStateFlow<List<TareaHijo>>(emptyList())
+    val tareasFiltradas: StateFlow<List<TareaHijo>> = _tareasFiltradas
+
+    private val _canjeosFiltrados = MutableStateFlow<List<CanjeoEntity>>(emptyList())
+    val canjeosFiltrados: StateFlow<List<CanjeoEntity>> = _canjeosFiltrados
+
     init {
-        viewModelScope.launch { checkAuthenticatedUser() }
+        viewModelScope.launch {
+            checkAuthenticatedUser()
+        }
     }
 
     private suspend fun checkAuthenticatedUser() {
         if (isAuthenticated()) {
             getCurrentUser()
         }
+    }
+
+    fun validarTarea(tarea: TareaHijo) {
+        viewModelScope.launch {
+            try {
+                val tareaAprobada = tarea.copy(
+                    estado = EstadoTareaHijo.APROBADA,
+                    fechaVerificacion = Date()
+                )
+                tareaHijoRepository.save(tareaAprobada).collect { result ->
+                    when (result) {
+                        is Resource.Success -> Log.d(
+                            "PadreViewModel",
+                            "TareaHijo aprobada guardada"
+                        )
+
+                        is Resource.Error -> throw Exception("Error al guardar TareaHijo: ${result.message}")
+                        is Resource.Loading -> Log.d("PadreViewModel", "Guardando TareaHijo...")
+                    }
+                }
+
+                val hijo = hijoRepository.find(tarea.hijoId ?: 0)
+                val tareaOriginal = tareaRepository.find(tarea.tareaId)
+                if (hijo != null && tareaOriginal != null) {
+                    val puntosGanados = tareaOriginal.puntos
+                    val hijoActualizado = hijo.copy(saldoActual = hijo.saldoActual + puntosGanados)
+                    hijoRepository.save(hijoActualizado).collect { result ->
+                        when (result) {
+                            is Resource.Success -> {
+                                getHijosByPadre(hijo.padreId)
+                            }
+
+                            is Resource.Error -> throw Exception("Error al actualizar hijo: ${result.message}")
+                            is Resource.Loading -> Log.d("PadreViewModel", "Actualizando saldo...")
+                        }
+                    }
+                    val transaccion = TransaccionHijo(
+                        transaccionId = 0,
+                        hijoId = hijo.hijoId,
+                        tipo = TipoTransaccion.RECIBIDO,
+                        monto = puntosGanados,
+                        descripcion = "Puntos recibidos por tarea: ${tareaOriginal.descripcion}",
+                        fecha = Date()
+                    )
+                    transaccionHijoRepository.save(transaccion).collect { result ->
+                        when (result) {
+                            is Resource.Success -> Log.d(
+                                "PadreViewModel",
+                                "Transacción guardada exitosamente"
+                            )
+                            is Resource.Error -> Log.e(
+                                "PadreViewModel",
+                                "Error al guardar transacción: ${result.message}"
+                            )
+                            is Resource.Loading -> Log.d(
+                                "PadreViewModel",
+                                "Guardando transacción..."
+                            )
+                        }
+                    }
+                } else {
+                    throw Exception("Hijo o tarea no encontrados")
+                }
+                val tareaActualizada = tareaOriginal.copy(
+                    estado = EstadoTarea.COMPLETADA,
+                    condicion = CondicionTarea.INACTIVA
+                )
+                tareaRepository.save(tareaActualizada).collect { result ->
+                    when (result) {
+                        is Resource.Success -> Log.d(
+                            "PadreViewModel",
+                            "TareaEntity actualizada a COMPLETADA e INACTIVA"
+                        )
+
+                        is Resource.Error -> throw Exception("Error al actualizar tarea: ${result.message}")
+                        is Resource.Loading -> Log.d("PadreViewModel", "Guardando TareaEntity...")
+                    }
+                }
+                getTareasHijo()
+                _toastMessage.value = "Tarea validada con éxito"
+
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al validar tarea: ${e.message}"
+            }
+        }
+    }
+
+    fun rechazarTarea(tareaHijo: TareaHijo) {
+        viewModelScope.launch {
+            try {
+                tareaHijoRepository.delete(tareaHijo)
+                _toastMessage.value = "Tarea rechazada con éxito"
+                _tareasHijo.update { tareas ->
+                    tareas.filterNot { it.tareaHijoId == tareaHijo.tareaHijoId }
+                }
+                getTareasHijo()
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al rechazar tarea: ${e.message}"
+            }
+        }
+    }
+
+    fun validarRecompensa(canjeo: CanjeoEntity) {
+        viewModelScope.launch {
+            try {
+                val canjeoAprobado = canjeo.copy(
+                    estado = EstadoCanjeo.APROBADO,
+                    fecha = Date()
+                )
+                canjeoRepository.save(canjeoAprobado).collect { result ->
+                    when (result) {
+                        is Resource.Success -> Log.d("PadreViewModel", "Canjeo aprobado guardado")
+                        is Resource.Error -> throw Exception("Error al guardar canjeo: ${result.message}")
+                        is Resource.Loading -> Log.d("PadreViewModel", "Guardando canjeo...")
+                    }
+                }
+
+                val hijo = hijoRepository.find(canjeo.hijoId ?: 0)
+                val recompensaOriginal = recompensaRepository.find(canjeo.recompensaId)
+                if (hijo != null && recompensaOriginal != null) {
+                    val puntosGastados = recompensaOriginal.puntosNecesarios
+                    val hijoActualizado = hijo.copy(saldoActual = hijo.saldoActual - puntosGastados)
+                    hijoRepository.save(hijoActualizado).collect { result ->
+                        when (result) {
+                            is Resource.Success -> {
+                                getHijosByPadre(hijo.padreId)
+                            }
+
+                            is Resource.Error -> throw Exception("Error al actualizar hijo: ${result.message}")
+                            is Resource.Loading -> Log.d("PadreViewModel", "Actualizando saldo...")
+                        }
+                    }
+                    val transaccion = TransaccionHijo(
+                        transaccionId = 0,
+                        hijoId = hijo.hijoId,
+                        tipo = TipoTransaccion.CONSUMIDO,
+                        monto = puntosGastados,
+                        descripcion = "Puntos gastados por recompensa: ${recompensaOriginal.descripcion}",
+                        fecha = Date()
+                    )
+                    transaccionHijoRepository.save(transaccion).collect { result ->
+                        when (result) {
+                            is Resource.Success -> Log.d(
+                                "PadreViewModel",
+                                "Transacción guardada exitosamente"
+                            )
+                            is Resource.Error -> Log.e(
+                                "PadreViewModel",
+                                "Error al guardar transacción: ${result.message}"
+                            )
+                            is Resource.Loading -> Log.d(
+                                "PadreViewModel",
+                                "Guardando transacción..."
+                            )
+                        }
+                    }
+                } else {
+                    throw Exception("Hijo o recompensa no encontrados")
+                }
+                val recompensaActualizada = recompensaOriginal.copy(
+                    estado = EstadoRecompensa.COMPLETADA,
+                    condicion = CondicionRecompensa.INACTIVA
+                )
+                recompensaRepository.save(recompensaActualizada).collect { result ->
+                    when (result) {
+                        is Resource.Success -> Log.d(
+                            "PadreViewModel",
+                            "RecompensaEntity actualizada a COMPLETADA e INACTIVA"
+                        )
+                        is Resource.Error -> throw Exception("Error al actualizar recompensa: ${result.message}")
+                        is Resource.Loading -> Log.d("PadreViewModel", "Guardando RecompensaEntity...")
+                    }
+                }
+                getRecompensasHijo()
+                _toastMessage.value = "Recompensa validada con éxito"
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al validar recompensa: ${e.message}"
+            }
+        }
+    }
+
+    fun rechazarRecompensa(canjeo: CanjeoEntity) {
+        viewModelScope.launch {
+            try {
+                canjeoRepository.delete(canjeo)
+                _toastMessage.value = "Recompensa rechazada con éxito"
+                _canjeoHijo.update { canjeos ->
+                    canjeos.filterNot { it.canjeoId == canjeo.canjeoId }
+                }
+                getRecompensasHijo()
+            } catch (e: Exception) {
+                _errorMessage.value = "Error al rechazar recompensa: ${e.message}"
+            }
+        }
+    }
+
+    fun clearToast() {
+        _toastMessage.value = null
     }
 
     fun setLoading(isLoading: Boolean) {
@@ -44,50 +300,55 @@ class PadreViewModel @Inject constructor(
         _uiState.update { it.copy(signInError = error) }
     }
 
-    fun onSignInResult(result: SignInResult) {
+    fun onSignInResult(result: SignInResult, onSuccessNavigate: () -> Unit) {
         viewModelScope.launch {
-            try {
-                setLoading(true)
-                Log.d("PadreViewModel", "onSignInResult: data = ${result.data}, error = ${result.errorMessage}")
+            setLoading(true)
 
-                val existingPadre = result.data?.userId?.let { padreRepository.find(it) }
-                val codigoSala = if (existingPadre != null && existingPadre.codigoSala.isNotEmpty()) {
-                    Log.d("PadreViewModel", "Código existente encontrado: ${existingPadre.codigoSala}")
-                    existingPadre.codigoSala
-                } else {
-                    val newCode = generateUniqueRoomCode()
-                    Log.d("PadreViewModel", "Nuevo código generado: $newCode")
-                    newCode
-                }
-
-                _uiState.update {
-                    it.copy(
-                        isSignInSuccessful = result.data != null,
-                        signInError = result.errorMessage,
-                        padreId = result.data?.userId,
-                        nombre = result.data?.userName ?: "Padre",
-                        email = result.data?.email,
-                        fotoPerfil = result.data?.profilePictureUrl,
-                        codigoSala = codigoSala,
-                        isLoading = false
-                    )
-                }
-                if (result.data != null) {
-                    guardarPadre()
-                }
-                Log.d("PadreViewModel", "Después de onSignInResult - Estado final: isLoading = ${_uiState.value.isLoading}, " +
-                        "isSignInSuccessful = ${_uiState.value.isSignInSuccessful}, " +
-                        "nombre = ${_uiState.value.nombre}, " +
-                        "codigoSala = ${_uiState.value.codigoSala}")
-            } catch (e: Exception) {
-                Log.e("PadreViewModel", "Error en onSignInResult: ${e.message}", e)
+            val userId = result.data?.userId ?: run {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        signInError = "Error al procesar el inicio de sesión: ${e.message}"
+                        signInError = "Id de usuario inválido",
+                        isSignInSuccessful = false
                     )
                 }
+                return@launch
             }
+
+            val existingPadre = padreRepository.find(userId)
+            if (existingPadre != null) {
+                _uiState.update {
+                    it.copy(
+                        isSignInSuccessful = true,
+                        signInError = null,
+                        padreId = existingPadre.padreId,
+                        nombre = existingPadre.nombre,
+                        email = existingPadre.email,
+                        fotoPerfil = existingPadre.profilePictureUrl,
+                        codigoSala = existingPadre.codigoSala,
+                        isLoading = false
+                    )
+                }
+                onSuccessNavigate()
+                return@launch
+            }
+
+            val codigoSala = generateUniqueRoomCode()
+
+            _uiState.update {
+                it.copy(
+                    isSignInSuccessful = true,
+                    signInError = result.errorMessage,
+                    padreId = userId,
+                    nombre = result.data.userName ?: "Padre",
+                    email = result.data.email,
+                    fotoPerfil = result.data.profilePictureUrl,
+                    codigoSala = codigoSala,
+                    isLoading = false
+                )
+            }
+
+            guardarPadre(onSuccessNavigate)
         }
     }
 
@@ -108,7 +369,6 @@ class PadreViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                Log.e("PadreViewModel", "Error en signOut: ${e.message}", e)
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -119,89 +379,199 @@ class PadreViewModel @Inject constructor(
         }
     }
 
-    fun getCurrentUser() {
+    private fun getCurrentUser() {
         viewModelScope.launch {
-            try {
-                setLoading(true)
-                val currentUser = authRepository.getUser()
-                Log.d("PadreViewModel", "getCurrentUser - currentUser: $currentUser")
-                if (currentUser != null) {
-                    val existingPadre = padreRepository.find(currentUser.userId)
-                    val codigoSala = if (existingPadre != null && existingPadre.codigoSala.isNotEmpty()) {
-                        Log.d("PadreViewModel", "Código existente encontrado en getCurrentUser: ${existingPadre.codigoSala}")
-                        existingPadre.codigoSala
-                    } else {
-                        val newCode = generateUniqueRoomCode()
-                        Log.d("PadreViewModel", "Nuevo código generado en getCurrentUser: $newCode")
-                        newCode
-                    }
+            setLoading(true)
+            val currentUser = authRepository.getUser()
+            if (currentUser != null) {
+                val existingPadre = padreRepository.find(currentUser.userId)
+                val codigoSala = existingPadre?.codigoSala ?: generateUniqueRoomCode()
 
-                    _uiState.update {
-                        it.copy(
-                            isSignInSuccessful = true,
-                            padreId = currentUser.userId,
-                            nombre = currentUser.userName ?: "Padre",
-                            email = currentUser.email,
-                            fotoPerfil = currentUser.profilePictureUrl,
-                            codigoSala = codigoSala,
-                            signInError = null
-                        )
-                    }
-                    Log.d("PadreViewModel", "getCurrentUser - Estado actualizado: isSignInSuccessful = ${_uiState.value.isSignInSuccessful}, " +
-                            "codigoSala = ${_uiState.value.codigoSala}")
-                    guardarPadre()
-                } else {
-                    _uiState.update {
-                        it.copy(
-                            isSignInSuccessful = false,
-                            signInError = "No user logged in"
-                        )
-                    }
-                }
-                setLoading(false)
-            } catch (e: Exception) {
-                Log.e("PadreViewModel", "Error en getCurrentUser: ${e.message}", e)
                 _uiState.update {
                     it.copy(
-                        isLoading = false,
-                        signInError = "Error al obtener el usuario: ${e.message}"
+                        isSignInSuccessful = true,
+                        padreId = currentUser.userId,
+                        nombre = currentUser.userName ?: "Padre",
+                        email = currentUser.email,
+                        fotoPerfil = currentUser.profilePictureUrl,
+                        codigoSala = codigoSala,
+                        signInError = null
+                    )
+                }
+
+                getHijosByPadre(currentUser.userId)
+                getTareasHijo()
+                getTareas()
+                getCanjeos()
+                getRecompensasHijo()
+            } else {
+                _uiState.update {
+                    it.copy(
+                        isSignInSuccessful = false,
+                        signInError = "No user logged in"
                     )
                 }
             }
+            setLoading(false)
         }
     }
 
     suspend fun isAuthenticated(): Boolean {
         return try {
             val user = authRepository.getUser()
-            Log.d("PadreViewModel", "isAuthenticated - user: $user")
-            val isAuthenticated = user?.userId != null
-            Log.d("PadreViewModel", "isAuthenticated - resultado: $isAuthenticated")
-            isAuthenticated
+            user?.userId != null
         } catch (e: Exception) {
-            Log.e("PadreViewModel", "Error en isAuthenticated: ${e.message}", e)
             false
         }
     }
 
     private suspend fun generateUniqueRoomCode(): String {
         var code: String
+        var existsRemotely: Boolean
+        var existingPadreLocal: PadreEntity?
+
         do {
             code = UUID.randomUUID().toString().substring(0, 6).uppercase()
-            Log.d("PadreViewModel", "Generando código: $code")
-            val padres = padreRepository.getAll().collectFirstOrNull() ?: emptyList()
-            Log.d("PadreViewModel", "Lista de padres obtenida: $padres")
-            val existingPadre = padres.find { it.codigoSala == code }
-            if (existingPadre != null) {
-                Log.d("PadreViewModel", "Código $code ya existe, generando uno nuevo")
+            val localResource = padreRepository.getAll().firstOrNull()
+            val padres = if (localResource is Resource.Success) localResource.data else emptyList()
+            existingPadreLocal = padres?.find { it.codigoSala == code }
+            existsRemotely = try {
+                padreRepository.getByCodigoSala(code) != null
+            } catch (e: Exception) {
+                false
             }
-        } while (existingPadre != null)
-        Log.d("PadreViewModel", "Código único generado: $code")
+        } while (existingPadreLocal != null || existsRemotely)
+
         return code
     }
 
-    private suspend fun guardarPadre() {
-        padreRepository.save(_uiState.value.toEntity())
+    private suspend fun guardarPadre(onSuccess: () -> Unit) {
+        val padre = _uiState.value.toEntity()
+        padreRepository.save(padre).collect { result ->
+            when (result) {
+                is Resource.Loading -> setLoading(true)
+                is Resource.Success -> {
+                    setLoading(false)
+                    _uiState.update { it.copy(isSuccess = true) }
+                    onSuccess()
+                }
+
+                is Resource.Error -> {
+                    setLoading(false)
+                    val alreadyExists = result.message?.contains("UNIQUE constraint failed") == true
+                    if (alreadyExists) {
+                        _uiState.update { it.copy(isSuccess = true) }
+                        onSuccess()
+                    } else {
+                        setSignInError(result.message ?: "Error al guardar padre")
+                    }
+                }
+            }
+        }
+    }
+
+    fun getHijosByPadre(padreId: String) {
+        viewModelScope.launch {
+            hijoRepository.getAll().collect { resource ->
+                if (resource is Resource.Success) {
+                    val hijosDelPadre =
+                        resource.data?.filter { it.padreId == padreId } ?: emptyList()
+                    _hijos.value = hijosDelPadre
+                    getRecompensasHijo()
+                } else if (resource is Resource.Error) {
+                    _hijos.value = resource.data?.filter { it.padreId == padreId } ?: emptyList()
+                }
+            }
+        }
+    }
+
+    private fun getRecompensasHijo() {
+        viewModelScope.launch {
+            val padreId = uiState.value.padreId
+            if (!padreId.isNullOrBlank()) {
+                recompensaRepository.getAll(padreId).collect { resource ->
+                    when (resource) {
+                        is Resource.Loading -> {
+                            // Opcional: puedes mostrar estado de carga si quieres
+                        }
+                        is Resource.Success -> {
+                            _recompensas.value = resource.data ?: emptyList()
+                        }
+                        is Resource.Error -> {
+                            _uiState.update { it.copy(errorMessage = resource.message) }
+                        }
+                    }
+                }
+            } else {
+                _uiState.update {
+                    it.copy(errorMessage = "ID de padre no disponible para cargar recompensas.")
+                }
+            }
+        }
+    }
+
+
+    private fun getTareasHijo() {
+        viewModelScope.launch {
+            tareaHijoRepository.getAll().collect { resource ->
+                when (resource) {
+                    is Resource.Loading -> {
+                    }
+
+                    is Resource.Success -> {
+                        _tareasHijo.value = resource.data!!
+                        filtrarTareasPorHijo(null)
+                    }
+
+                    is Resource.Error -> {
+                        _uiState.update { it.copy(errorMessage = resource.message) }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun getCanjeos() {
+        viewModelScope.launch {
+            canjeoRepository.getAll().collect { resource ->
+                when (resource) {
+                    is Resource.Loading -> {}
+
+                    is Resource.Success -> {
+                        _canjeoHijo.value = resource.data ?: emptyList()
+                        filtrarRecompensasPorHijo(null)
+                    }
+
+                    is Resource.Error -> {
+                        _uiState.update { it.copy(errorMessage = resource.message) }
+                    }
+                }
+            }
+        }
+    }
+
+
+    private fun getTareas() {
+        viewModelScope.launch {
+            tareaRepository.getAll().collect { resource ->
+                if (resource is Resource.Success) {
+                    _tareas.value = resource.data ?: emptyList()
+                }
+            }
+        }
+    }
+
+
+    fun filtrarTareasPorHijo(hijoId: Int?) {
+        _tareasFiltradas.value = _tareasHijo.value
+            .filter { it.estado == EstadoTareaHijo.PENDIENTE_VERIFICACION }
+            .filter { hijoId == null || it.hijoId == hijoId }
+    }
+
+    fun filtrarRecompensasPorHijo(hijoId: Int?) {
+        _canjeosFiltrados.value = _canjeoHijo.value
+            .filter { it.estado == EstadoCanjeo.PENDIENTE_VERIFICACION }
+            .filter { hijoId == null || it.hijoId == hijoId }
     }
 }
 

@@ -1,57 +1,43 @@
 package edu.ucne.doers.presentation.recompensa.padre
 
-import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Button
-import androidx.compose.material3.ElevatedCard
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import coil.compose.rememberAsyncImagePainter
-import edu.ucne.doers.data.local.model.ImageUtils
 import edu.ucne.doers.presentation.recompensa.RecompensaUiState
 import edu.ucne.doers.presentation.recompensa.RecompensaViewModel
-import edu.ucne.doers.presentation.recompensa.toEntity
-import java.io.File
+import edu.ucne.doers.presentation.recompensa.components.CreateRecompensaForm
 
 @Composable
 fun RecompensaScreen(
     viewModel: RecompensaViewModel = hiltViewModel(),
+    goRecompensasList: () -> Unit,
     recompensaId: Int,
-    goRecompensasList: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -63,153 +49,77 @@ fun RecompensaScreen(
             val inputStream = context.contentResolver.openInputStream(it)
             val bitmap = BitmapFactory.decodeStream(inputStream)
             inputStream?.close()
-
-            bitmap?.let { bmp ->
-                val byteArray = ImageUtils.bitmapToByteArray(bmp)
-                viewModel.savePhotoFromUri(context, it)
+            bitmap?.let {
+                viewModel.savePhotoFromUri(context, uri)
             }
         }
     }
 
     RecompensaBodyScreen(
-        recompensaId,
         viewModel,
         uiState,
-        goRecompensasList,
-        onPickImage = { imagePickerLauncher.launch("image/*") },
-        context
+        recompensaId,
+        goRecompensasList = goRecompensasList,
+        onPickImage = { imagePickerLauncher.launch("image/*") }
     )
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecompensaBodyScreen(
-    recompensaId: Int,
     viewModel: RecompensaViewModel,
     uiState: RecompensaUiState,
+    recompensaId: Int,
     goRecompensasList: () -> Unit,
-    onPickImage: () -> Unit,
-    context: Context
+    onPickImage: () -> Unit
 ) {
     LaunchedEffect(recompensaId) {
-        if (recompensaId > 0) {
+        if (recompensaId > 0)
             viewModel.find(recompensaId)
-        } else {
-            viewModel.new()
-        }
     }
+
+    val azulMar = Color(0xFF1976D2)
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (recompensaId == 0) "Nueva Recompensa" else "Editar Recompensa") }
+                title = {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Doers",
+                            fontSize = 30.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            color = Color.White,
+                            modifier = Modifier.padding(end = 50.dp)
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = goRecompensasList) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = Color.White
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = azulMar)
+            )
+        },
+        content = { paddingValues ->
+            CreateRecompensaForm(
+                modifier = Modifier.padding(paddingValues),
+                viewModel = viewModel,
+                uiState = uiState,
+                goRecompensasList = goRecompensasList,
+                recompensaId = recompensaId,
+                onPickImage = onPickImage
             )
         }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(8.dp)
-        ) {
-            ElevatedCard(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
-                ) {
-                    if (uiState.imagenURL.isNotEmpty()) {
-                        Image(
-                            painter = rememberAsyncImagePainter(File(uiState.imagenURL)),
-                            contentDescription = "Preview de la imagen",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(150.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .padding(bottom = 8.dp)
-                        )
-                    }
-                    Button(onClick = onPickImage) {
-                        Text("Seleccionar Imagen")
-                    }
-                    Spacer(modifier = Modifier.padding(4.dp))
-
-                    OutlinedTextField(
-                        label = { Text(text = "Descripción") },
-                        value = uiState.descripcion,
-                        onValueChange = viewModel::onDescripcionChange,
-                        modifier = Modifier.fillMaxWidth(),
-                        isError = uiState.errorMessage?.contains("Descripción") == true
-                    )
-                    Spacer(modifier = Modifier.padding(4.dp))
-
-                    Text(
-                        text = if (uiState.padreId.isNotEmpty()) {"Padre ID: ${uiState.padreId}"}
-                        else {"Padre ID: No encontrado"},
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 8.dp, top = 4.dp)
-                    )
-                    Spacer(modifier = Modifier.padding(4.dp))
-
-                    OutlinedTextField(
-                        label = { Text(text = "Puntos Necesarios") },
-                        value = uiState.puntosNecesarios.toString(),
-                        onValueChange = {
-                            viewModel.onPuntosNecesariosChange(
-                                it.toIntOrNull() ?: 0
-                            )
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                        isError = uiState.errorMessage?.contains("puntos") == true // Resaltar si hay error en puntos
-                    )
-                    Spacer(modifier = Modifier.padding(4.dp))
-
-                    // Mostrar mensaje de error
-                    uiState.errorMessage?.let {
-                        Text(
-                            text = it,
-                            color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(8.dp)
-                        )
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        OutlinedButton(onClick = {
-                            if (recompensaId > 0) {
-                                viewModel.delete(uiState.toEntity())
-                                goRecompensasList()
-                            } else {
-                                viewModel.new()
-                            }
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = if (recompensaId > 0) "Borrar" else "Limpiar"
-                            )
-                            Text(text = if (recompensaId > 0) "Borrar" else "Limpiar")
-                        }
-                        OutlinedButton(
-                            onClick = {
-                                viewModel.save()
-                                goRecompensasList()
-                            }) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = "Guardar"
-                            )
-                            Text(text = "Guardar")
-                        }
-                    }
-                }
-            }
-        }
-    }
+    )
 }

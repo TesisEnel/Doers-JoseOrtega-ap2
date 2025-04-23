@@ -1,5 +1,6 @@
 package edu.ucne.doers.presentation.tareas.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -21,7 +22,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import edu.ucne.doers.data.local.entity.TareaEntity
 import edu.ucne.doers.data.local.model.EstadoTarea
-import edu.ucne.doers.presentation.tareas.padre.TareaViewModel
+import edu.ucne.doers.presentation.tareas.TareaViewModel
 
 @Composable
 fun TaskOverview(
@@ -40,7 +41,6 @@ fun TaskOverview(
                 .padding(16.dp)
         ) {
             if (!isHorizontal) {
-                // Título
                 Text(
                     text = "Reporte de Tareas",
                     fontSize = 25.sp,
@@ -49,27 +49,27 @@ fun TaskOverview(
                     modifier = Modifier.padding(bottom = 16.dp, top = 22.dp)
                 )
 
-
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    TaskCounter(
-                        "Tareas completadas",
-                        tareas.count { it.estado == EstadoTarea.COMPLETADA },
-                        EstadoTarea.COMPLETADA
-                    )
-                    TaskCounter(
-                        "Tareas pendientes",
-                        tareas.count { it.estado == EstadoTarea.PENDIENTE },
-                        EstadoTarea.PENDIENTE
-                    )
+                AnimatedVisibility(visible = !isHorizontal) {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        TaskCounter(
+                            "Tareas completadas",
+                            tareas.count { it.estado == EstadoTarea.COMPLETADA },
+                            EstadoTarea.COMPLETADA
+                        )
+                        TaskCounter(
+                            "Tareas pendientes",
+                            tareas.count { it.estado == EstadoTarea.PENDIENTE },
+                            EstadoTarea.PENDIENTE
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // Lista de tareas
             Text(
                 text = if (tareas.isEmpty()) "No se han creado tareas" else "Listado de pendientes",
                 fontSize = 22.sp,
@@ -94,3 +94,4 @@ fun TaskOverview(
         }
     }
 }
+

@@ -1,6 +1,5 @@
-package edu.ucne.doers.presentation.tareas.padre
+package edu.ucne.doers.presentation.tareas
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -8,6 +7,7 @@ import edu.ucne.doers.data.local.entity.TareaEntity
 import edu.ucne.doers.data.local.model.CondicionTarea
 import edu.ucne.doers.data.local.model.EstadoTarea
 import edu.ucne.doers.data.local.model.PeriodicidadTarea
+import edu.ucne.doers.data.remote.Resource
 import edu.ucne.doers.data.repository.PadreRepository
 import edu.ucne.doers.data.repository.TareaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,14 +34,15 @@ class TareaViewModel @Inject constructor(
     )
     val uiState = _uiState.asStateFlow()
 
+    init {
+        getAllTareas()
+        loadPadreId()
+    }
+
     private fun loadPadreId() {
         viewModelScope.launch {
             val currentPadre = padreRepository.getCurrentUser()
             if (currentPadre == null) {
-                Log.e(
-                    "RecompensaViewModel",
-                    "Error: No se encontró un PadreEntity para el usuario autenticado"
-                )
                 _uiState.update {
                     it.copy(errorMessage = "No se encontró un usuario autenticado. Por favor, inicia sesión nuevamente.")
                 }
@@ -49,22 +50,24 @@ class TareaViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(padreId = currentPadre.padreId)
                 }
-                Log.d("RecompensaViewModel", "padreId cargado: ${currentPadre.padreId}")
             }
         }
     }
 
-    init {
-        getAllTareas()
-        loadPadreId()
-    }
-
     fun getAllTareas() {
         viewModelScope.launch {
-            tareaRepository.getAll().collect { listaTareas ->
-                _uiState.update {
-                    it.copy(listaTareas = listaTareas)
-
+            tareaRepository.getAll().collect { result ->
+                when (result) {
+                    is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
+                    is Resource.Success -> _uiState.update {
+                        it.copy(listaTareas = result.data ?: emptyList(), isLoading = false)
+                    }
+                    is Resource.Error -> _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = result.message ?: "Error desconocido al cargar tareas"
+                        )
+                    }
                 }
             }
         }
@@ -72,10 +75,23 @@ class TareaViewModel @Inject constructor(
 
     fun save() {
         viewModelScope.launch {
-            if (isValidate()) {
-                tareaRepository.save(_uiState.value.toEntity())
-                _uiState.update { it.copy(errorMessage = null) }
-                new()
+            if (isValid()) {
+                tareaRepository.save(_uiState.value.toEntity()).collect { result ->
+                    when (result) {
+                        is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
+                        is Resource.Success -> {
+                            getAllTareas()
+                            _uiState.update { it.copy(errorMessage = null, isLoading = false) }
+                            new()
+                        }
+                        is Resource.Error -> _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMessage = result.message ?: "Error al guardar tarea"
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -83,7 +99,6 @@ class TareaViewModel @Inject constructor(
     fun find(tareaId: Int) {
         viewModelScope.launch {
             val tarea = tareaRepository.find(tareaId)
-
             if (tarea != null) {
                 _uiState.update {
                     it.copy(
@@ -91,7 +106,9 @@ class TareaViewModel @Inject constructor(
                         descripcion = tarea.descripcion,
                         puntos = tarea.puntos,
                         estado = tarea.estado,
-                        periodicidad = tarea.periodicidad
+                        periodicidad = tarea.periodicidad,
+                        padreId = tarea.padreId,
+                        condicion = tarea.condicion
                     )
                 }
             }
@@ -100,7 +117,13 @@ class TareaViewModel @Inject constructor(
 
     fun delete(tarea: TareaEntity) {
         viewModelScope.launch {
-            tareaRepository.delete(tarea)
+            tareaRepository.delete(tarea).let { result ->
+                when (result) {
+                    is Resource.Success -> getAllTareas()
+                    is Resource.Error -> _uiState.update { it.copy(errorMessage = result.message) }
+                    is Resource.Loading -> _uiState.update { it.copy(isLoading = true) }
+                }
+            }
         }
     }
 
@@ -109,7 +132,8 @@ class TareaViewModel @Inject constructor(
             val tarea = tareaRepository.find(tareaId)
             if (tarea != null) {
                 val tareaActualizada = tarea.copy(condicion = nuevaCondicion)
-                tareaRepository.save(tareaActualizada)
+                tareaRepository.save(tareaActualizada).collect {}
+                getAllTareas()
             }
         }
     }
@@ -121,13 +145,16 @@ class TareaViewModel @Inject constructor(
                 descripcion = "",
                 puntos = 0,
                 periodicidad = null,
+                condicion = CondicionTarea.INACTIVA,
+                estado = EstadoTarea.PENDIENTE,
                 errorMessage = null
             )
         }
     }
 
     fun onDescripcionChange(descripcion: String) {
-        val descripcionRegularExpression = "^[A-Za-z0-9\\s'.,:áéíóúÁÉÍÓÚ-]+$".toRegex()
+        val descripcionRegularExpression = "^[A-Za-z0-9\\s'.,:áéíóúÁÉÍÓÚñÑ-]+$".toRegex()
+
         _uiState.update {
             it.copy(
                 descripcion = descripcion,
@@ -155,14 +182,14 @@ class TareaViewModel @Inject constructor(
         }
     }
 
-    private fun isValidate(): Boolean {
+    private fun isValid(): Boolean {
         val state = uiState.value
+        val isValid = state.descripcion.isNotBlank() && state.puntos > 0 && state.periodicidad != null
 
-        if (state.descripcion.isBlank() || state.puntos <= 0 || state.periodicidad == null) {
+        if (!isValid) {
             _uiState.update { it.copy(errorMessage = "Todos los campos son requeridos.") }
-            return false
         }
-        return true
+        return isValid
     }
 }
 
@@ -171,7 +198,6 @@ fun TareaUiState.toEntity() = TareaEntity(
     descripcion = descripcion,
     puntos = puntos,
     padreId = padreId,
-    imagenURL = imagenURL,
     estado = estado,
     periodicidad = periodicidad,
     condicion = condicion

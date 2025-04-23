@@ -24,6 +24,8 @@ import edu.ucne.doers.presentation.hijos.HijoViewModel
 import edu.ucne.doers.presentation.home.HomeScreen
 import edu.ucne.doers.presentation.padres.PadreScreen
 import edu.ucne.doers.presentation.padres.PadreViewModel
+import edu.ucne.doers.presentation.padres.tareas.RecompensasPorVerificarScreen
+import edu.ucne.doers.presentation.padres.tareas.TareasPorVerificarScreen
 import edu.ucne.doers.presentation.recompensa.hijo.RecompensasHijoScreen
 import edu.ucne.doers.presentation.recompensa.padre.RecompensaScreen
 import edu.ucne.doers.presentation.recompensa.padre.RecompensasListScreen
@@ -31,7 +33,6 @@ import edu.ucne.doers.presentation.sign_in.GoogleAuthUiClient
 import edu.ucne.doers.presentation.tareas.hijo.HijoListScreen
 import edu.ucne.doers.presentation.tareas.padre.TareaScreen
 import edu.ucne.doers.presentation.tareas.padre.TareasListScreen
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -52,17 +53,10 @@ fun DoersNavHost(
                     val signInResult = googleAuthUiClient.signInWithIntent(
                         intent = result.data ?: return@launch
                     )
-                    padreViewModel.onSignInResult(signInResult)
-                    delay(500)
-                    if (padreState.isSignInSuccessful && signInResult.errorMessage == null) {
+                    padreViewModel.onSignInResult(signInResult) {
                         navHostController.navigate(Screen.Padre) {
                             popUpTo(Screen.Home) { inclusive = true }
                         }
-                    } else {
-                        padreViewModel.setLoading(false)
-                        padreViewModel.setSignInError(
-                            signInResult.errorMessage ?: "Error desconocido"
-                        )
                     }
                 }
             } else {
@@ -90,27 +84,18 @@ fun DoersNavHost(
                         scope.launch {
                             val isAuthenticated = padreViewModel.isAuthenticated()
                             if (isAuthenticated) {
-                                padreViewModel.setLoading(true)
-                                padreViewModel.getCurrentUser()
-                                delay(100)
-                                if (padreState.isSignInSuccessful) {
-                                    navHostController.navigate(Screen.Padre) {
-                                        popUpTo(Screen.Home) { inclusive = true }
-                                    }
-                                } else {
-                                    padreViewModel.setSignInError("Error al cargar datos del usuario")
+                                // Ya autenticado → ir directo al perfil
+                                navHostController.navigate(Screen.Padre) {
+                                    popUpTo(Screen.Home) { inclusive = true }
                                 }
-                                padreViewModel.setLoading(false)
                             } else {
                                 padreViewModel.setLoading(true)
-                                val signInIntentSender = googleAuthUiClient.signIn()
-                                if (signInIntentSender != null) {
-                                    launcher.launch(
-                                        IntentSenderRequest.Builder(signInIntentSender).build()
-                                    )
+                                val intentSender = googleAuthUiClient.signIn()
+                                if (intentSender != null) {
+                                    launcher.launch(IntentSenderRequest.Builder(intentSender).build())
                                 } else {
                                     padreViewModel.setLoading(false)
-                                    padreViewModel.setSignInError("Error al iniciar el proceso de autenticación")
+                                    padreViewModel.setSignInError("Error al iniciar sesión con Google")
                                 }
                             }
                         }
@@ -132,24 +117,38 @@ fun DoersNavHost(
 
             composable<Screen.Padre> {
                 PadreScreen(
-                    viewModel = padreViewModel,
-                    navController = navHostController
+                    padreViewModel = padreViewModel,
+                    hijoViewModel = hijoViewModel,
+                    onNavigateToTareas = { navHostController.navigate(Screen.TareaList) },
+                    onNavigateToRecompensas = { navHostController.navigate(Screen.RecompensaList) },
+                    goToTareasVerificar = { navHostController.navigate(Screen.ActividadesTarea) },
+                    goToToRecompensasVerificar = { navHostController.navigate(Screen.ActividadesRecompensa) },
+                    onSignOut = {
+                        padreViewModel.signOut()
+                        navHostController.navigate(Screen.Home) {
+                            popUpTo(Screen.Padre) { inclusive = true }
+                        }
+                    }
                 )
             }
             composable<Screen.Hijo> {
                 HijoScreen(
                     hijoViewModel = hijoViewModel,
                     padreViewModel = padreViewModel,
-                    navController = navHostController
+                    onNavigateToTareas = { navHostController.navigate(Screen.TareaHijo) },
+                    onNavigateToRecompensas = { navHostController.navigate(Screen.RecompensaHijo) }
                 )
             }
             composable<Screen.HijoLogin> {
                 HijoLoginScreen(
                     onChildLoggedIn = {
-                        navHostController.navigate(Screen.Hijo) {
-                            popUpTo(Screen.Home) { inclusive = true }
+                        scope.launch {
+                            navHostController.navigate(Screen.Hijo) {
+                                popUpTo(Screen.Home) { inclusive = true }
+                            }
                         }
-                    }
+                    },
+                    navController = navHostController
                 )
             }
             composable<Screen.Recompensa> { arg ->
@@ -161,21 +160,26 @@ fun DoersNavHost(
             }
             composable<Screen.RecompensaList> {
                 RecompensasListScreen(
-                    createRecompensa = { navHostController.navigate(Screen.Recompensa(0)) },
-                    goToRecompensa = { navHostController.navigate(Screen.Recompensa(it)) },
-                    navController = navHostController
+                    goToAgregarRecompensa = { navHostController.navigate(Screen.Recompensa(0)) },
+                    goToEditarRecompensa = { navHostController.navigate(Screen.Recompensa(it)) },
+                    onNavigateToPerfil = { navHostController.navigate(Screen.Padre) },
+                    onNavigateToTareas = { navHostController.navigate(Screen.TareaList) }
                 )
             }
             composable<Screen.RecompensaHijo> {
                 RecompensasHijoScreen(
-                    navController = navHostController,
-                    padreId = padreState.padreId ?: ""
+                    onNavigateToPerfil = { navHostController.navigate(Screen.Hijo) },
+                    onNavigateToTareas = { navHostController.navigate(Screen.TareaHijo) },
                 )
             }
             composable<Screen.TareaList> {
                 TareasListScreen(
                     goToAgregarTarea = { navHostController.navigate(Screen.Tarea(0)) },
-                    navController = navHostController
+                    onNavigateToPerfil = { navHostController.navigate(Screen.Padre) },
+                    onNavigateToRecompensas = { navHostController.navigate(Screen.RecompensaList) },
+                    goToEditarTarea = { tareaId ->
+                        navHostController.navigate(Screen.Tarea(tareaId))
+                    }
                 )
             }
             composable<Screen.Tarea> {
@@ -186,7 +190,20 @@ fun DoersNavHost(
                 )
             }
             composable<Screen.TareaHijo> {
-                HijoListScreen(navController = navHostController)
+                HijoListScreen(
+                    onNavigateToPerfil = { navHostController.navigate(Screen.Hijo) },
+                    onNavigateToRecompensas = { navHostController.navigate(Screen.RecompensaHijo) }
+                )
+            }
+            composable<Screen.ActividadesTarea> {
+                TareasPorVerificarScreen(
+                    onNavigateToPerfil = { navHostController.navigate(Screen.Padre) }
+                )
+            }
+            composable<Screen.ActividadesRecompensa> {
+                RecompensasPorVerificarScreen(
+                    onNavigateToPerfil = { navHostController.navigate(Screen.Padre) }
+                )
             }
         }
     }

@@ -1,18 +1,23 @@
 package edu.ucne.doers.presentation.home
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
@@ -26,9 +31,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import edu.ucne.doers.R
@@ -43,115 +47,135 @@ fun HomeScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(errorMessage) {
-        if (errorMessage != null) {
-            snackbarHostState.showSnackbar(errorMessage)
-        }
+        errorMessage?.let { snackbarHostState.showSnackbar(it) }
     }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(Color.White)
             .padding(16.dp)
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center, // Mantenemos Arrangement.Center para centrar los botones
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 150.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Doers",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 32.sp
-                ),
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(bottom = 140.dp) // Aumentamos más el padding inferior para subir el título
+
+            Image(
+                painter = painterResource(id = R.drawable.doers_logo),
+                contentDescription = "Logo Doers",
+                modifier = Modifier
+                    .height(80.dp)
+                    .padding(bottom = 16.dp)
             )
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(48.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Spacer(modifier = Modifier.height(60.dp))
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 12.dp)
+                    .clickable(enabled = !isLoading) { onSignClickWithGoogle() },
+                shape = RoundedCornerShape(20.dp),
+                elevation = CardDefaults.cardElevation(10.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF4A90E2))
             ) {
-                Button(
-                    onClick = onSignClickWithGoogle,
+                Row(
                     modifier = Modifier
-                        .size(140.dp)
-                        .clip(CircleShape)
-                        .semantics { contentDescription = "Iniciar sesión como Padre" },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4A90E2),
-                        contentColor = Color.White
-                    ),
-                    shape = CircleShape,
-                    enabled = !isLoading
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = Color.White
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(CircleShape)
+                            .background(Color.White),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.icono_padre),
+                            contentDescription = "Icono Padre",
+                            modifier = Modifier.size(42.dp),
+                            tint = Color(0xFF4A90E2)
                         )
-                    } else {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.icono_padre),
-                                contentDescription = "Padre",
-                                modifier = Modifier.size(48.dp)
-                            )
-                            Text(
-                                text = "Padre",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(top = 8.dp)
-                            )
-                        }
                     }
-                }
 
-                Button(
-                    onClick = onHijoClick,
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Text(
+                        text = "Ingresar como Padre",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(15.dp))
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 12.dp)
+                    .clickable(enabled = !isLoading) { onHijoClick() },
+                shape = RoundedCornerShape(20.dp),
+                elevation = CardDefaults.cardElevation(10.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFA000))
+            ) {
+                Row(
                     modifier = Modifier
-                        .size(140.dp)
-                        .clip(CircleShape)
-                        .semantics { contentDescription = "Iniciar como Hijo" },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFFEA2F),
-                        contentColor = Color.Black.copy(alpha = 0.5f)
-                    ),
-                    shape = CircleShape,
-                    enabled = !isLoading
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Text(
+                        text = "Ingresar como Hijo",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(CircleShape)
+                            .background(Color.White),
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.icono_hijo),
-                            contentDescription = "Hijo",
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Text(
-                            text = "Hijo",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(top = 8.dp)
+                            contentDescription = "Icono Hijo",
+                            modifier = Modifier.size(42.dp),
+                            tint = Color(0xFFFFA000)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.padding(40.dp))
+            Spacer(modifier = Modifier.height(32.dp))
+
             Text(
-                text = "Comienza tu experiencia",
+                text = "¡Haz tareas, gana recompensas y diviértete!",
                 style = MaterialTheme.typography.bodyLarge.copy(
-                    fontWeight = FontWeight.Medium,
-                    color = Color(0xFFB0B0B0)
+                    color = Color.DarkGray,
+                    textAlign = TextAlign.Center,
+                    fontSize = 15.sp
                 )
             )
         }
+
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
 }
+
+
