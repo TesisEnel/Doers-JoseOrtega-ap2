@@ -1,4 +1,4 @@
-package edu.ucne.doers.presentation.padres.components
+package edu.ucne.doers.presentation.recompensa.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,22 +23,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import edu.ucne.doers.R
-import edu.ucne.doers.data.local.entity.HijoEntity
-
 
 @Composable
-fun EliminarHijoDialog(
+fun ModalSaldoInsuficiente(
     showDialog: Boolean,
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
-    selectedHijo: HijoEntity?
+    saldoActual: Int,
+    saldoNecesario: Int
 ) {
-    if (showDialog && selectedHijo != null) {
+    if (showDialog) {
         AlertDialog(
             onDismissRequest = onDismiss,
             modifier = Modifier
@@ -58,7 +57,7 @@ fun EliminarHijoDialog(
             },
             title = {
                 Text(
-                    text = "¿Eliminar a ${selectedHijo.nombre}?",
+                    text = "¡Saldo insuficiente!",
                     style = MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 22.sp,
@@ -76,7 +75,7 @@ fun EliminarHijoDialog(
                         .padding(horizontal = 8.dp)
                 ) {
                     Text(
-                        text = "¡Esta acción no se puede deshacer!",
+                        text = "No tienes suficientes puntos para reclamar esta recompensa.",
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
@@ -87,7 +86,7 @@ fun EliminarHijoDialog(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Se eliminarán todos los datos asociados a ${selectedHijo.nombre}.",
+                        text = "Tienes $saldoActual y necesitas $saldoNecesario para esta recompensa.",
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontSize = 14.sp,
                             color = Color(0xFF666666)
@@ -95,14 +94,23 @@ fun EliminarHijoDialog(
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Completa más tareas para ganar puntos y canjear recompensas.",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = 14.sp,
+                            color = Color(0xFF666666)
+                        ),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             },
             confirmButton = {
                 Button(
-                    onClick = {
-                        onConfirm()
-                        onDismiss()
-                    },
+                    onClick = onDismiss,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFE53935),
                         contentColor = Color.White
@@ -112,25 +120,11 @@ fun EliminarHijoDialog(
                     modifier = Modifier
                         .padding(vertical = 8.dp)
                         .height(48.dp)
+                        .fillMaxWidth()
                 ) {
                     Text(
-                        text = "Sí, eliminar",
+                        text = "Entendido",
                         fontWeight = FontWeight.SemiBold,
-                        fontSize = 16.sp
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = onDismiss,
-                    modifier = Modifier
-                        .padding(vertical = 8.dp)
-                        .height(48.dp)
-                ) {
-                    Text(
-                        text = "Cancelar",
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF4A90E2),
                         fontSize = 16.sp
                     )
                 }
