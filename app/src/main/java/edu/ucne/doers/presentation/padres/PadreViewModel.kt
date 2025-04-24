@@ -82,6 +82,9 @@ class PadreViewModel @Inject constructor(
     private val _canjeosFiltrados = MutableStateFlow<List<CanjeoEntity>>(emptyList())
     val canjeosFiltrados: StateFlow<List<CanjeoEntity>> = _canjeosFiltrados
 
+    private val _canjeos = MutableStateFlow<List<CanjeoEntity>>(emptyList())
+    val canjeos: StateFlow<List<CanjeoEntity>> = _canjeos
+
     init {
         viewModelScope.launch {
             checkAuthenticatedUser()
