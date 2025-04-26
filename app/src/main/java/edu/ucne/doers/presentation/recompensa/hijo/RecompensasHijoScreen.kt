@@ -284,7 +284,7 @@ fun RecompensasHijoScreen(
                             "Recompensas Disponibles",
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
-                            color = azulCielo
+                            color = amarilloMoneda
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         LazyColumn(

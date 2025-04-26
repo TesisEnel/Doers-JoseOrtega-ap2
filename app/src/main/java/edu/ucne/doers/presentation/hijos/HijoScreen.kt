@@ -116,7 +116,7 @@ fun HijoScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFF4A90E2))
+                        .background(Color(0xFFFFA000))
                         .height(200.dp)
                 )
 
@@ -149,7 +149,7 @@ fun HijoScreen(
                             text = hijoUiState.nombre ?: "Hijo",
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp,
-                            color = Color(0xFF4A90E2),
+                            color = Color(0xFFFFA000),
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(8.dp))
@@ -206,7 +206,7 @@ fun HijoScreen(
                                     }
                                     withStyle(
                                         style = SpanStyle(
-                                            color = Color(0xFFFFA000),
+                                            color = Color(0xFF4A90E2),
                                             fontWeight = FontWeight.SemiBold
                                         )
                                     ) {
@@ -219,7 +219,7 @@ fun HijoScreen(
                                 text = padreUiState.codigoSala ?: "N/A",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 22.sp,
-                                color = Color(0xFF4A90E2)
+                                color = Color(0xFFFFA000)
                             )
                         }
                         IconButton(onClick = {
@@ -251,13 +251,13 @@ fun HijoScreen(
                                 text = "Últimas Transacciones",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 18.sp,
-                                color = Color(0xFF4A90E2)
+                                color = Color(0xFFFFA000)
                             )
                             IconButton(onClick = {
                                 hijoViewModel.getTransacciones()
                                 Toast.makeText(context, "Transacciones actualizadas", Toast.LENGTH_SHORT).show()
                             }) {
-                                Icon(Icons.Default.Refresh, contentDescription = null, tint = Color(0xFF4A90E2))
+                                Icon(Icons.Default.Refresh, contentDescription = null, tint = Color(0xFFFFA000))
                             }
                         }
 
@@ -280,7 +280,7 @@ fun HijoScreen(
                                         .padding(vertical = 6.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Icon(Icons.Default.Visibility, contentDescription = null, tint = Color(0xFF4A90E2))
+                                    Icon(Icons.Default.Visibility, contentDescription = null, tint = Color(0xFFFFA000))
                                     Text(
                                         text = "${transaccion.tipo.nombreMostrable}: ${transaccion.monto} 🪙",
                                         color = if (transaccion.tipo == TipoTransaccion.RECIBIDO) Color(0xFF388E3C) else Color.Red,

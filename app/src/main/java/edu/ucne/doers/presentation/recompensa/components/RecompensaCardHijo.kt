@@ -71,7 +71,7 @@ fun RecompensaCardHijo(
             onClick = onReclamar,
             shape = RoundedCornerShape(10.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF4A90E2),
+                containerColor = Color(0xFFFFA000),
                 contentColor = Color.White
             ),
             modifier = Modifier

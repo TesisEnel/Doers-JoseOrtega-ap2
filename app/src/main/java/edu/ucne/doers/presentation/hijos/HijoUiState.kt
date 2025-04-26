@@ -26,7 +26,8 @@ data class HijoUiState(
     val listaRecompensas: List<RecompensaEntity> = emptyList(),
     val listaRecompensasFiltradas: List<RecompensaEntity> = emptyList(),
     val successMessage: String? = null,
-    val ultimaAccionProcesada: Int? = null
+    val ultimaAccionProcesada: Int? = null,
+    val isReadyToNavigate: Boolean = false
 )
 
 fun HijoUiState.toEntity(): HijoEntity? {
