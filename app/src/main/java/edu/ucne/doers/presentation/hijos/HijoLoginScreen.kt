@@ -64,6 +64,14 @@ fun HijoLoginScreen(
         }
     }
 
+    // ✅ Nueva lógica: navegación solo cuando el ViewModel lo indique
+    LaunchedEffect(uiState.isReadyToNavigate) {
+        if (uiState.isReadyToNavigate) {
+            onChildLoggedIn()
+            viewModel.resetNavigationFlag()
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()

@@ -198,6 +198,7 @@ class HijoViewModel @Inject constructor(
 
     fun isAuthenticated(): Boolean = uiState.value.isAuthenticated
 
+    // Tu función loginChild actualizada correctamente
     fun loginChild(nombre: String, codigoSala: String) {
         viewModelScope.launch {
             if (nombre.isBlank()) {
@@ -239,8 +240,6 @@ class HijoViewModel @Inject constructor(
                     _uiState.update { it.copy(isLoading = true) }
 
                     viewModelScope.launch {
-                        delay(150)
-                        // Calcular el saldo efectivo después de login
                         val saldoEfectivo = calculateSaldoEfectivo(hijoConFoto.saldoActual, hijoConFoto.hijoId)
                         _uiState.update {
                             it.copy(
@@ -254,7 +253,8 @@ class HijoViewModel @Inject constructor(
                                 isSuccess = true,
                                 isSignInSuccessful = true,
                                 isLoading = false,
-                                isAuthenticated = true
+                                isAuthenticated = true,
+                                isReadyToNavigate = true // <<--- Agregado aquí correctamente
                             )
                         }
                     }
@@ -702,6 +702,12 @@ class HijoViewModel @Inject constructor(
                     is Resource.Loading -> {}
                 }
             }
+        }
+    }
+
+    fun resetNavigationFlag() {
+        _uiState.update {
+            it.copy(isReadyToNavigate = false)
         }
     }
 
