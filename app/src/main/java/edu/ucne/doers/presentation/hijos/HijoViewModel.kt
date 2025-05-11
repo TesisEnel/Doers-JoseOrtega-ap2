@@ -2,8 +2,12 @@ package edu.ucne.doers.presentation.hijos
 
 import android.content.Context
 import android.util.Log
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import edu.ucne.doers.data.local.entity.CanjeoEntity
@@ -28,6 +32,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -54,8 +59,16 @@ class HijoViewModel @Inject constructor(
     private val _transacciones = MutableStateFlow<List<TransaccionHijo>>(emptyList())
     val transacciones: StateFlow<List<TransaccionHijo>> = _transacciones.asStateFlow()
 
+    private val _cantidades = mutableStateMapOf<String, Int>()
+    val cantidades: SnapshotStateMap<String, Int> = _cantidades
+
+    private val _cantidadTemporal = mutableStateMapOf<String, Int>()
+    val cantidadTemporal: SnapshotStateMap<String, Int> get() = _cantidadTemporal
+
+    private val gson = Gson()
 
     init {
+        loadCantidadesFromSharedPreferences()
         checkAuthenticatedHijo()
         actualizarPeriodicidades()
         observeTaskChanges()
@@ -64,19 +77,62 @@ class HijoViewModel @Inject constructor(
         loadRecompensas()
     }
 
+    // Función para cargar las cantidades desde SharedPreferences
+    private fun loadCantidadesFromSharedPreferences() {
+        val cantidadesJson = sharedPreferences.getString("cantidades", null)
+        if (cantidadesJson != null) {
+            val type = object : TypeToken<Map<String, Int>>() {}.type
+            val cantidadesGuardadas: Map<String, Int> = gson.fromJson(cantidadesJson, type) ?: emptyMap()
+            _cantidades.putAll(cantidadesGuardadas)
+        }
+    }
+
+    // Función para guardar las cantidades en SharedPreferences
+    private fun saveCantidadesToSharedPreferences() {
+        val cantidadesJson = gson.toJson(_cantidades)
+        sharedPreferences.edit().putString("cantidades", cantidadesJson).apply()
+    }
+
     fun loadSaldoActual() {
         viewModelScope.launch {
             val hijoId = _uiState.value.hijoId
-
             if (hijoId != null) {
                 val hijo = hijoRepository.find(hijoId)
                 if (hijo != null) {
+                    // Calcular el saldo efectivo restando los puntos de los canjeos pendientes
+                    val saldoEfectivo = calculateSaldoEfectivo(hijo.saldoActual, hijoId)
                     _uiState.update {
-                        it.copy(saldoActual = hijo.saldoActual)
+                        it.copy(
+                            saldoActual = hijo.saldoActual,
+                            saldoEfectivo = saldoEfectivo
+                        )
                     }
                 }
             }
         }
+    }
+
+    // Nueva función para calcular el saldo efectivo
+    private suspend fun calculateSaldoEfectivo(saldoActual: Int, hijoId: Int): Int {
+        // Obtener todos los canjeos del hijo
+        val canjeosFlow = canjeoRepository.getAll()
+        val canjeos = canjeosFlow.firstOrNull { it is Resource.Success }?.let {
+            (it as Resource.Success).data ?: emptyList()
+        } ?: emptyList()
+
+        // Filtrar canjeos pendientes de verificación para este hijo
+        val canjeosPendientes = canjeos.filter {
+            it.hijoId == hijoId && it.estado == EstadoCanjeo.PENDIENTE_VERIFICACION
+        }
+
+        // Calcular el total de puntos de los canjeos pendientes
+        val puntosPendientes = canjeosPendientes.sumOf { canjeo ->
+            val recompensa = _uiState.value.listaRecompensasFiltradas.find { it.recompensaId == canjeo.recompensaId }
+            recompensa?.puntosNecesarios ?: 0
+        }
+
+        // Restar los puntos pendientes al saldo actual
+        return maxOf(0, saldoActual - puntosPendientes)
     }
 
     private fun observeTaskChanges() {
@@ -86,15 +142,11 @@ class HijoViewModel @Inject constructor(
                     is Resource.Success -> {
                         loadTareas()
                     }
-
                     is Resource.Error -> {
                         _uiState.update {
-                            it.copy(
-                                errorMessage = resource.message ?: "Error al observar tareas hijo"
-                            )
+                            it.copy(errorMessage = resource.message ?: "Error al observar tareas hijo")
                         }
                     }
-
                     is Resource.Loading -> {
                         _uiState.update { it.copy(isLoading = true) }
                     }
@@ -109,19 +161,22 @@ class HijoViewModel @Inject constructor(
             if (hijoId > 0) {
                 val hijo = hijoRepository.find(hijoId)
                 if (hijo != null) {
+                    // Calcular el saldo efectivo al autenticar
+                    val saldoEfectivo = calculateSaldoEfectivo(hijo.saldoActual, hijoId)
                     _uiState.update {
                         it.copy(
                             hijoId = hijo.hijoId,
                             padreId = hijo.padreId,
                             nombre = hijo.nombre,
+                            saldoActual = hijo.saldoActual,
+                            saldoEfectivo = saldoEfectivo,
+                            balance = hijo.balance,
                             fotoPerfil = hijo.fotoPerfil,
                             isAuthenticated = true
                         )
                     }
-
                     loadTareas()
-                    loadRecompensas() // ✅ Solo aquí cuando ya tengas el padreId
-
+                    loadRecompensas()
                 } else {
                     sharedPreferences.edit().remove("hijoId").apply()
                     _uiState.update {
@@ -129,6 +184,10 @@ class HijoViewModel @Inject constructor(
                             hijoId = 0,
                             padreId = "",
                             nombre = "",
+                            saldoActual = 0,
+                            saldoEfectivo = 0,
+                            balance = 0,
+                            fotoPerfil = "",
                             isAuthenticated = false
                         )
                     }
@@ -139,6 +198,7 @@ class HijoViewModel @Inject constructor(
 
     fun isAuthenticated(): Boolean = uiState.value.isAuthenticated
 
+    // Tu función loginChild actualizada correctamente
     fun loginChild(nombre: String, codigoSala: String) {
         viewModelScope.launch {
             if (nombre.isBlank()) {
@@ -180,8 +240,7 @@ class HijoViewModel @Inject constructor(
                     _uiState.update { it.copy(isLoading = true) }
 
                     viewModelScope.launch {
-                        delay(150)
-
+                        val saldoEfectivo = calculateSaldoEfectivo(hijoConFoto.saldoActual, hijoConFoto.hijoId)
                         _uiState.update {
                             it.copy(
                                 hijoId = hijoConFoto.hijoId,
@@ -189,17 +248,19 @@ class HijoViewModel @Inject constructor(
                                 nombre = hijoConFoto.nombre,
                                 fotoPerfil = hijoConFoto.fotoPerfil,
                                 codigoSala = codigoSalaReal,
+                                saldoActual = hijoConFoto.saldoActual,
+                                saldoEfectivo = saldoEfectivo,
                                 isSuccess = true,
                                 isSignInSuccessful = true,
                                 isLoading = false,
-                                isAuthenticated = true
+                                isAuthenticated = true,
+                                isReadyToNavigate = true // <<--- Agregado aquí correctamente
                             )
                         }
                     }
 
                     sharedPreferences.edit().putInt("hijoId", hijoConFoto.hijoId).apply()
                 }
-
                 is Resource.Error -> {
                     _uiState.update {
                         it.copy(
@@ -211,7 +272,6 @@ class HijoViewModel @Inject constructor(
                         )
                     }
                 }
-
                 else -> {}
             }
         }
@@ -224,10 +284,8 @@ class HijoViewModel @Inject constructor(
                     is Resource.Loading -> {
                         _uiState.update { it.copy(isLoading = true) }
                     }
-
                     is Resource.Success -> {
-                        val hijosFiltrados =
-                            result.data?.filter { it.padreId == padreId } ?: emptyList()
+                        val hijosFiltrados = result.data?.filter { it.padreId == padreId } ?: emptyList()
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
@@ -235,7 +293,6 @@ class HijoViewModel @Inject constructor(
                             )
                         }
                     }
-
                     is Resource.Error -> {
                         _uiState.update {
                             it.copy(
@@ -252,17 +309,23 @@ class HijoViewModel @Inject constructor(
     fun agregarPuntos(hijo: HijoEntity, puntos: String) {
         viewModelScope.launch {
             try {
-                val puntosInt = puntos.toIntOrNull()
-                    ?: throw IllegalArgumentException("Ingrese un número válido de puntos")
+                val puntosInt = puntos.toIntOrNull() ?: throw IllegalArgumentException("Ingrese un número válido de puntos")
                 if (puntosInt <= 0) throw IllegalArgumentException("Los puntos deben ser mayores a 0")
 
                 val hijoActualizado = hijo.copy(saldoActual = hijo.saldoActual + puntosInt)
                 hijoRepository.save(hijoActualizado).collect { result ->
                     when (result) {
                         is Resource.Success -> {
-                            _uiState.update { it.copy(successMessage = "Puntos agregados con éxito") }
+                            // Recalcular el saldo efectivo después de agregar puntos
+                            val saldoEfectivo = calculateSaldoEfectivo(hijoActualizado.saldoActual, hijo.hijoId)
+                            _uiState.update {
+                                it.copy(
+                                    successMessage = "Puntos agregados con éxito",
+                                    saldoActual = hijoActualizado.saldoActual,
+                                    saldoEfectivo = saldoEfectivo
+                                )
+                            }
                         }
-
                         is Resource.Error -> throw Exception("Error al agregar puntos: ${result.message}")
                         is Resource.Loading -> Log.d("HijoViewModel", "Guardando puntos...")
                     }
@@ -328,7 +391,6 @@ class HijoViewModel @Inject constructor(
                             }
                             loadTareas()
                         }
-
                         is Resource.Error -> {
                             _uiState.update {
                                 it.copy(
@@ -338,7 +400,6 @@ class HijoViewModel @Inject constructor(
                                 )
                             }
                         }
-
                         is Resource.Loading -> {}
                     }
                 }
@@ -354,11 +415,48 @@ class HijoViewModel @Inject constructor(
         }
     }
 
+    // Función para manejar el cambio de cantidades
+    fun onCantidadChange(recompensaId: String, cantidad: Int) {
+        if (cantidad >= 0) {
+            _cantidades[recompensaId] = cantidad
+            saveCantidadesToSharedPreferences() // Guardar en SharedPreferences
+        }
+    }
+
+    // Función para calcular el total de puntos
+    fun getTotalPuntos(): Int {
+        return _cantidades.entries.sumOf { (id, cantidad) ->
+            val recompensa = _uiState.value.listaRecompensasFiltradas.find { it.recompensaId.toString() == id }
+            (recompensa?.puntosNecesarios ?: 0) * cantidad
+        }
+    }
+
     fun reclamarRecompensa(recompensaId: Int) {
         viewModelScope.launch {
             val hijoId = _uiState.value.hijoId
             if (hijoId == 0 || hijoId == null) {
                 _uiState.update { it.copy(errorMessage = "Error: No se encontró el Id del hijo") }
+                return@launch
+            }
+
+            val recompensa = _uiState.value.listaRecompensasFiltradas.find { it.recompensaId == recompensaId }
+            if (recompensa == null) {
+                _uiState.update { it.copy(errorMessage = "Error: Recompensa no encontrada") }
+                return@launch
+            }
+
+            val cantidad = _cantidades[recompensaId.toString()] ?: 1
+            val totalCosto = cantidad * recompensa.puntosNecesarios
+
+            if (cantidad == 0) {
+                _uiState.update { it.copy(errorMessage = "Selecciona al menos una unidad") }
+                return@launch
+            }
+
+            // Verificar el saldo efectivo antes de reclamar
+            val saldoEfectivo = calculateSaldoEfectivo(_uiState.value.saldoActual, hijoId)
+            if (saldoEfectivo < totalCosto) {
+                _uiState.update { it.copy(errorMessage = "No tienes suficientes puntos (saldo efectivo: $saldoEfectivo)") }
                 return@launch
             }
 
@@ -372,49 +470,54 @@ class HijoViewModel @Inject constructor(
             }
 
             try {
-                val countPending =
-                    canjeoRepository.countPendingRewards(
-                        recompensaId = recompensaId,
-                        hijoId = hijoId,
-                        estado = EstadoCanjeo.PENDIENTE_VERIFICACION
-                    )
-
-                if (countPending > 0) {
-                    throw Exception("Ya reclamaste esta recompensa")
-                }
-                val nuevoCanjeo = CanjeoEntity(
+                val countPending = canjeoRepository.countPendingRewards(
                     recompensaId = recompensaId,
                     hijoId = hijoId,
                     estado = EstadoCanjeo.PENDIENTE_VERIFICACION
                 )
 
-                canjeoRepository.save(nuevoCanjeo).collect { saveResult ->
-                    when (saveResult) {
-                        is Resource.Success -> {
-                            _uiState.update {
-                                it.copy(
-                                    isLoading = false,
-                                    successMessage = "Recompensa reclamada",
-                                    ultimaAccionProcesada = null
-                                )
-                            }
-                            loadRecompensas()
-                        }
-
-                        is Resource.Error -> {
-                            _uiState.update {
-                                it.copy(
-                                    isLoading = false,
-                                    errorMessage = saveResult.message ?: "Error al guardar recompensa",
-                                    ultimaAccionProcesada = null
-                                )
-                            }
-                        }
-
-                        is Resource.Loading -> {}
-                    }
+                if (countPending > 0) {
+                    throw Exception("Ya reclamaste esta recompensa")
                 }
 
+                // Crear múltiples canjeos según la cantidad
+                repeat(cantidad) {
+                    val nuevoCanjeo = CanjeoEntity(
+                        recompensaId = recompensaId,
+                        hijoId = hijoId,
+                        estado = EstadoCanjeo.PENDIENTE_VERIFICACION
+                    )
+                    canjeoRepository.save(nuevoCanjeo).collect { saveResult ->
+                        when (saveResult) {
+                            is Resource.Success -> {
+                                // Recalcular el saldo efectivo después de reclamar
+                                val nuevoSaldoEfectivo = calculateSaldoEfectivo(_uiState.value.saldoActual, hijoId)
+                                _uiState.update {
+                                    it.copy(
+                                        isLoading = false,
+                                        successMessage = "Recompensa reclamada ($cantidad unidad${if (cantidad > 1) "es" else ""})",
+                                        ultimaAccionProcesada = null,
+                                        saldoEfectivo = nuevoSaldoEfectivo
+                                    )
+                                }
+                                loadRecompensas()
+                                loadSaldoActual()
+                                _cantidades[recompensaId.toString()] = 0 // Resetear cantidad
+                                saveCantidadesToSharedPreferences() // Guardar el estado actualizado
+                            }
+                            is Resource.Error -> {
+                                _uiState.update {
+                                    it.copy(
+                                        isLoading = false,
+                                        errorMessage = saveResult.message ?: "Error al guardar recompensa",
+                                        ultimaAccionProcesada = null
+                                    )
+                                }
+                            }
+                            is Resource.Loading -> {}
+                        }
+                    }
+                }
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
@@ -437,9 +540,8 @@ class HijoViewModel @Inject constructor(
                     when {
                         tareasActivasResource is Resource.Success && tareasCompletadasResource is Resource.Success<*> -> {
                             val tareasActivas = tareasActivasResource.data ?: emptyList()
-                            val tareasCompletadas =
-                                (tareasCompletadasResource.data as? List<TareaHijo>)
-                                    ?.filter { it.hijoId == _uiState.value.hijoId } ?: emptyList()
+                            val tareasCompletadas = (tareasCompletadasResource.data as? List<TareaHijo>)
+                                ?.filter { it.hijoId == _uiState.value.hijoId } ?: emptyList()
 
                             val tareasDisponibles = tareasActivas.filter { tarea ->
                                 !tareasCompletadas.any {
@@ -456,7 +558,6 @@ class HijoViewModel @Inject constructor(
                                 )
                             }
                         }
-
                         tareasActivasResource is Resource.Error<*> || tareasCompletadasResource is Resource.Error<*> -> {
                             val mensajeError = buildString {
                                 if (tareasActivasResource is Resource.Error<*>)
@@ -472,7 +573,6 @@ class HijoViewModel @Inject constructor(
                                 )
                             }
                         }
-
                         else -> {
                             _uiState.update { it.copy(isLoading = true) }
                         }
@@ -520,16 +620,24 @@ class HijoViewModel @Inject constructor(
                                     }
                         }
 
+                        // Recalcular el saldo efectivo después de cargar las recompensas y canjeos
+                        val hijoId = _uiState.value.hijoId
+                        val saldoEfectivo = if (hijoId != null) {
+                            calculateSaldoEfectivo(_uiState.value.saldoActual, hijoId)
+                        } else {
+                            _uiState.value.saldoActual
+                        }
+
                         _uiState.update {
                             it.copy(
                                 listaRecompensas = recompensasDisponibles,
                                 listaRecompensasFiltradas = recompensasDisponibles,
+                                saldoEfectivo = saldoEfectivo,
                                 isLoading = false,
                                 errorMessage = null
                             )
                         }
                     }
-
                     recompensasResult is Resource.Error || canjeosResult is Resource.Error -> {
                         val errorMessage = buildString {
                             if (recompensasResult is Resource.Error)
@@ -542,10 +650,7 @@ class HijoViewModel @Inject constructor(
                             it.copy(errorMessage = errorMessage, isLoading = false)
                         }
                     }
-
-                    else -> {
-
-                    }
+                    else -> {}
                 }
             }
         }
@@ -570,8 +675,7 @@ class HijoViewModel @Inject constructor(
 
     private fun actualizarPeriodicidades() {
         viewModelScope.launch {
-            val periodicidades =
-                listOf("Todas") + PeriodicidadTarea.entries.map { it.nombreMostrable() }
+            val periodicidades = listOf("Todas") + PeriodicidadTarea.entries.map { it.nombreMostrable() }
             _periodicidadesDisponibles.value = periodicidades
         }
     }
@@ -594,15 +698,31 @@ class HijoViewModel @Inject constructor(
                         val filtered = result.data?.filter { it.hijoId == hijoId } ?: emptyList()
                         _transacciones.value = filtered
                     }
-
-                    is Resource.Error -> Log.e(
-                        "HijoViewModel",
-                        "Error al cargar transacciones: ${result.message}"
-                    )
-
+                    is Resource.Error -> Log.e("HijoViewModel", "Error al cargar transacciones: ${result.message}")
                     is Resource.Loading -> {}
                 }
             }
         }
+    }
+
+    fun resetNavigationFlag() {
+        _uiState.update {
+            it.copy(isReadyToNavigate = false)
+        }
+    }
+
+    fun setCantidadTemporal(recompensaId: String, cantidad: Int) {
+        if (cantidad >= 1) {
+            _cantidadTemporal[recompensaId] = cantidad
+        }
+    }
+
+    fun clearCantidadTemporal(recompensaId: String) {
+        _cantidadTemporal.remove(recompensaId)
+    }
+
+    fun clearCarrito() {
+        _cantidades.clear()
+        saveCantidadesToSharedPreferences()
     }
 }

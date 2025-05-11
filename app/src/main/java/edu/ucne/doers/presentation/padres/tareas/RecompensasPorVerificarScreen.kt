@@ -14,6 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -31,6 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import edu.ucne.doers.data.local.model.EstadoCanjeo
 import edu.ucne.doers.presentation.padres.PadreViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,6 +43,7 @@ fun RecompensasPorVerificarScreen(
 ) {
     val hijos by padreViewModel.hijos.collectAsState()
     val canjeosFiltrados by padreViewModel.canjeosFiltrados.collectAsState()
+    val canjeos by padreViewModel.canjeoHijo.collectAsState()
     val recompensas by padreViewModel.recompensas.collectAsState()
     val selectedIndex = remember { mutableIntStateOf(0) }
 
@@ -83,17 +86,16 @@ fun RecompensasPorVerificarScreen(
             Text(
                 text = "Recompensas pendientes a verificación",
                 fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
+                fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 24.dp)
+                modifier = Modifier
+                    .padding(bottom = 24.dp)
+                    .fillMaxWidth()
             )
-
-            Spacer(modifier = Modifier.height(24.dp))
 
             Text(
                 text = "Filtrar por hijo",
                 fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
 
@@ -109,18 +111,36 @@ fun RecompensasPorVerificarScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            LazyColumn(Modifier.fillMaxSize()) {
-                items(canjeosFiltrados) { canjeo ->
-                    val hijo = hijos.find { it.hijoId == canjeo.hijoId }
-                    val recompensa = recompensas.find { it.recompensaId == canjeo.recompensaId }
+            val hayPendientesGlobal = canjeos.any { it.estado == EstadoCanjeo.PENDIENTE_VERIFICACION }
 
-                    RewardVerificationCard(
-                        hijoNombre = hijo?.nombre ?: "Desconocido",
-                        recompensaDescripcion = recompensa?.descripcion ?: "Recompensa desconocida",
-                        puntos = recompensa?.puntosNecesarios ?: 0,
-                        onValidar = { padreViewModel.validarRecompensa(canjeo) },
-                        onRechazar = { padreViewModel.rechazarRecompensa(canjeo) }
+            when {
+                !hayPendientesGlobal -> {
+                    Text("No hay recompensas pendientes a verificar",
+                        style = MaterialTheme.typography.bodyMedium
                     )
+                }
+
+                canjeosFiltrados.isEmpty() -> {
+                    Text("No hay recompensas pendientes para este hijo",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                else -> {
+                    LazyColumn(Modifier.fillMaxSize()) {
+                        items(canjeosFiltrados) { canjeo ->
+                            val hijo = hijos.find { it.hijoId == canjeo.hijoId }
+                            val recompensa = recompensas.find { it.recompensaId == canjeo.recompensaId }
+
+                            RewardVerificationCard(
+                                hijoNombre = hijo?.nombre ?: "Desconocido",
+                                recompensaDescripcion = recompensa?.descripcion ?: "Recompensa desconocida",
+                                puntos = recompensa?.puntosNecesarios ?: 0,
+                                onValidar = { padreViewModel.validarRecompensa(canjeo) },
+                                onRechazar = { padreViewModel.rechazarRecompensa(canjeo) }
+                            )
+                        }
+                    }
                 }
             }
         }

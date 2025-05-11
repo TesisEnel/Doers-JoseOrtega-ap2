@@ -20,89 +20,13 @@ fun PadreNavBar(
     currentScreen: Screen,
     onTareasClick: () -> Unit = {},
     onRecompensasClick: () -> Unit = {},
-    onPerfilClick: () -> Unit = {},
-    containerColor: Color = MaterialTheme.colorScheme.surface,
-    contentColor: Color = MaterialTheme.colorScheme.onSurface,
-    selectedItemColor: Color = MaterialTheme.colorScheme.primary,
-    unselectedItemColor: Color = contentColor.copy(alpha = 0.6f)
+    onPerfilClick: () -> Unit = {}
 ) {
-    NavigationBar(
-        containerColor = containerColor,
-        tonalElevation = 8.dp
-    ) {
-        NavigationBarItem(
-            icon = {
-                Icon(
-                    Icons.Filled.Checklist,
-                    contentDescription = "Tareas",
-                    tint = if (currentScreen == Screen.TareaList) selectedItemColor else unselectedItemColor
-                )
-            },
-            label = {
-                Text(
-                    "Tareas",
-                    color = if (currentScreen == Screen.TareaList) selectedItemColor else unselectedItemColor
-                )
-            },
-            selected = currentScreen == Screen.TareaList,
-            onClick = onTareasClick,
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = selectedItemColor,
-                selectedTextColor = selectedItemColor,
-                unselectedIconColor = unselectedItemColor,
-                unselectedTextColor = unselectedItemColor,
-                indicatorColor = containerColor
-            )
-        )
-
-        NavigationBarItem(
-            icon = {
-                Icon(
-                    Icons.Filled.Star,
-                    contentDescription = "Recompensas",
-                    tint = if (currentScreen == Screen.RecompensaList) selectedItemColor else unselectedItemColor
-                )
-            },
-            label = {
-                Text(
-                    "Recompensas",
-                    color = if (currentScreen == Screen.RecompensaList) selectedItemColor else unselectedItemColor
-                )
-            },
-            selected = currentScreen == Screen.RecompensaList,
-            onClick = onRecompensasClick,
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = selectedItemColor,
-                selectedTextColor = selectedItemColor,
-                unselectedIconColor = unselectedItemColor,
-                unselectedTextColor = unselectedItemColor,
-                indicatorColor = containerColor
-            )
-        )
-
-        NavigationBarItem(
-            icon = {
-                Icon(
-                    Icons.Filled.Person,
-                    contentDescription = "Perfil",
-                    tint = if (currentScreen == Screen.Padre) selectedItemColor else unselectedItemColor
-                )
-            },
-            label = {
-                Text(
-                    "Perfil",
-                    color = if (currentScreen == Screen.Padre) selectedItemColor else unselectedItemColor
-                )
-            },
-            selected = currentScreen == Screen.Padre,
-            onClick = onPerfilClick,
-            colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = selectedItemColor,
-                selectedTextColor = selectedItemColor,
-                unselectedIconColor = unselectedItemColor,
-                unselectedTextColor = unselectedItemColor,
-                indicatorColor = containerColor
-            )
-        )
-    }
+    CustomTabBar(
+        currentScreen = currentScreen,
+        onTareasClick = onTareasClick,
+        onRecompensasClick = onRecompensasClick,
+        onPerfilClick = onPerfilClick,
+        isHijo = false
+    )
 }

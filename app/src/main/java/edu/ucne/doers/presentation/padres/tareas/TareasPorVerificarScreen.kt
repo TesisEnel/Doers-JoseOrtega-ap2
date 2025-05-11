@@ -88,7 +88,9 @@ fun TareasPorVerificarScreen(
                 fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 24.dp)
+                modifier = Modifier
+                    .padding(bottom = 24.dp)
+                    .fillMaxWidth()
             )
 
             Text(
@@ -128,8 +130,7 @@ fun TareasPorVerificarScreen(
 
                             TaskVerificationCard(
                                 hijoNombre = hijo?.nombre ?: "Desconocido",
-                                tareaDescripcion = tareas.firstOrNull { it.tareaId == tareaHijo.tareaId }?.descripcion
-                                    ?: "Tarea desconocida",
+                                tareaDescripcion = tarea?.descripcion ?: "Tarea desconocida",
                                 onValidar = { padreViewModel.validarTarea(tareaHijo) },
                                 onRechazar = { padreViewModel.rechazarTarea(tareaHijo) }
                             )

@@ -19,22 +19,15 @@ data class HijoUiState(
     val errorMessage: String? = null,
     val isAuthenticated: Boolean = false,
     val saldoActual: Int = 0,
+    val saldoEfectivo: Int = 0,
     val balance: Int = 0,
     val listaTareas: List<TareaEntity> = emptyList(),
     val listaTareasFiltradas: List<TareaEntity> = emptyList(),
     val listaRecompensas: List<RecompensaEntity> = emptyList(),
     val listaRecompensasFiltradas: List<RecompensaEntity> = emptyList(),
     val successMessage: String? = null,
-    val ultimaAccionProcesada: Int? = null
-)
-
-fun HijoEntity.toUiState() = HijoUiState(
-    hijoId = this.hijoId,
-    padreId = this.padreId,
-    nombre = this.nombre,
-    fotoPerfil = this.fotoPerfil,
-    saldoActual = this.saldoActual,
-    balance = this.balance
+    val ultimaAccionProcesada: Int? = null,
+    val isReadyToNavigate: Boolean = false
 )
 
 fun HijoUiState.toEntity(): HijoEntity? {
